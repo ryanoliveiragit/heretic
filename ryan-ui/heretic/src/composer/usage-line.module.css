@@ -1,0 +1,50 @@
+/* Compact daily-token meter under the composer. Green while under 80%, silver after. */
+.usage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 4px 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+.text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.usage[data-tone="out"] .text {
+  color: var(--text-secondary);
+}
+.track {
+  position: relative;
+  width: 96px;
+  height: 3px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-strong, #1a1a1e);
+}
+.fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: #c8c8ce;
+  transition: width var(--duration-standard, 0.24s) var(--ease-standard, ease), background-color var(--duration-fast, 0.15s) linear;
+}
+.usage[data-tone="ok"] .fill {
+  background: var(--accent);
+}
+@media (max-width: 420px) {
+  .track {
+    width: 56px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+}

@@ -7,6 +7,9 @@ export interface ModelInfo { id: string; label: string; price_in: number; price_
 export type Mode = "chat" | "agent" | "heavy";
 export type Routes = Record<Mode, { model: string }>;
 export interface RouteInfo { model: string; provider: string; maxCtx: number; tools: boolean; uncensored: boolean; label: string }
+export interface MeModel { id: string; name: string; short: string; note: string; tier: "free" | "pro"; locked: boolean; provider?: string; cost100?: number | null }
+export interface Usage { used: number; limit: number; remaining: number }
+export interface Me extends Usage { plan: string; models: MeModel[] }
 export interface Health {
   ok: boolean;
   providers?: Record<string, { ok: boolean }>;
@@ -21,6 +24,7 @@ async function j<T>(res: Response): Promise<T> {
 }
 
 export const api = {
+  me: () => fetch(`${API}/me`).then(j<Me>),
   health: () => fetch(`${API}/health`).then(j<Health>),
   models: () => fetch(`${API}/models`).then(j<ModelInfo[]>),
   routes: () => fetch(`${API}/routes`).then(j<Routes>),
@@ -73,13 +77,20 @@ export interface ChatParams { temperature: number; top_p: number; max_tokens: nu
 export interface StreamHandlers {
   onToken: (full: string) => void;
   onWarning?: (data: unknown) => void;
-  onError?: (message: string) => void;
+  /** `status` is set when the server refused the request before streaming (e.g. 429, 403). */
+  onError?: (message: string, info?: { status: number; code?: string }) => void;
   onDone?: (content: string) => void;
+  onUsage?: (usage: Usage) => void;
 }
+
+const REFUSALS: Record<string, string> = {
+  daily_token_limit: "You've used today's free tokens. They reset at midnight UTC.",
+  pro_model: "This model is part of Pro.",
+};
 
 /** Abre o SSE de /api/chat e repassa os eventos. Retorna o AbortController para parar. */
 export function streamChat(
-  body: { conversationId: number; mode: Mode; messages: Msg[]; params: ChatParams },
+  body: { conversationId: number; mode: Mode; messages: Msg[]; params: ChatParams; agent?: string; model?: string },
   h: StreamHandlers,
 ): AbortController {
   const ctrl = new AbortController();
@@ -92,7 +103,18 @@ export function streamChat(
         body: JSON.stringify(body),
         signal: ctrl.signal,
       });
-      if (!res.body) throw new Error("sem corpo de resposta");
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string; used?: number; limit?: number };
+        const code = data.error;
+        if (res.status === 429 && typeof data.used === "number" && typeof data.limit === "number") {
+          h.onUsage?.({ used: data.used, limit: data.limit, remaining: Math.max(0, data.limit - data.used) });
+        }
+        const message = (code ? REFUSALS[code] : undefined)
+          ?? (res.status === 429 ? REFUSALS.daily_token_limit! : res.status === 403 ? REFUSALS.pro_model! : data.message ?? code ?? `${res.status} ${res.statusText}`);
+        h.onError?.(message, { status: res.status, code });
+        return;
+      }
+      if (!res.body) throw new Error("No response body");
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buf = "";
@@ -110,7 +132,8 @@ export function streamChat(
             const data = JSON.parse(line.slice(6));
             if (event === "token" && data.token) { full += data.token; h.onToken(full); }
             else if (event === "warning") h.onWarning?.(data);
-            else if (event === "error") h.onError?.(data.message ?? "erro");
+            else if (event === "usage" && typeof data.used === "number" && typeof data.limit === "number") h.onUsage?.({ used: data.used, limit: data.limit, remaining: typeof data.remaining === "number" ? data.remaining : Math.max(0, data.limit - data.used) });
+            else if (event === "error") h.onError?.(data.message ?? "Something went wrong");
             else if (event === "done") h.onDone?.(data.content || full);
           } catch { /* linha parcial */ }
         }

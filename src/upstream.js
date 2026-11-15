@@ -8,19 +8,18 @@ export const MODEL_CATALOG = [
   { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', label: 'Dolphin 24B 🔓 barato', provider: 'openrouter', price_in: 0.20, price_out: 0.90, ctx: 128000, tools: false, uncensored: true, note: 'Dolphin, explicitamente uncensored' },
   { id: 'thedrummer/unslopnemo-12b', label: 'Unslopnemo 12B 🆓 baratíssimo', provider: 'openrouter', price_in: 0.40, price_out: 0.40, ctx: 1024000, tools: false, uncensored: true, note: '12B, 1M ctx, mais barato' },
   { id: 'thedrummer/cydonia-24b-v4.1', label: 'Cydonia 24B', provider: 'openrouter', price_in: 0.30, price_out: 0.50, ctx: 131072, tools: false, uncensored: true, note: '24B, sem censura' },
+  { id: 'thedrummer/skyfall-36b-v2', label: 'Skyfall 36B', provider: 'openrouter', price_in: 0.55, price_out: 0.80, ctx: 32768, tools: false, uncensored: true, note: '36B, sem censura' },
+  { id: 'anthracite-org/magnum-v4-72b', label: 'Magnum v4 72B', provider: 'openrouter', price_in: 2.50, price_out: 5.00, ctx: 32768, tools: false, uncensored: true, note: '72B, escrita' },
   { id: 'gryphe/mythomax-l2-13b', label: 'MythoMax 13B (8K ctx)', provider: 'openrouter', price_in: 0.08, price_out: 0.11, ctx: 8192, tools: false, uncensored: true, note: '13B, ctx muito pequeno' },
-
-  // === Free (censurados, mas com tools) ===
-  { id: 'inclusionai/ling-3.2-flash:free', label: 'Ling 3.2 Flash (free, tools)', provider: 'openrouter', price_in: 0, price_out: 0, ctx: 1048576, tools: true, uncensored: false, note: 'Grátis, 1M ctx, tem tools' },
-  { id: 'particle-ai/particle-1:free', label: 'Particle 1 (free, tools)', provider: 'openrouter', price_in: 0, price_out: 0, ctx: 1048576, tools: true, uncensored: false, note: 'Grátis, tem tools' },
-  { id: 'baidu/ernie-5.5-flash-preview:free', label: 'Ernie 5.5 (free, tools)', provider: 'openrouter', price_in: 0, price_out: 0, ctx: 1024000, tools: true, uncensored: false, note: 'Grátis, Baidu' },
 
   // === Venice (uncensored, chave disponível) ===
   { id: 'venice:venice-uncensored-1-2', label: 'Venice Uncensored 1.2 🔓 SEM CENSURA', provider: 'venice', venice_model: 'venice-uncensored-1-2', price_in: 0.20, price_out: 0.90, ctx: 128000, tools: true, uncensored: true, note: 'Sem censura real, tem tools, visão' },
   { id: 'venice:venice-uncensored-role-play', label: 'Venice Uncensored RP 🔓 roleplay', provider: 'venice', venice_model: 'venice-uncensored-role-play', price_in: 0.50, price_out: 2.00, ctx: 128000, tools: true, uncensored: true, note: 'Sem censura, roleplay, tem tools' },
-  { id: 'venice:z-ai-glm-5-3-flash', label: 'Venice GLM 5.3 Flash', provider: 'venice', venice_model: 'z-ai-glm-5-3-flash', price_in: 0.15, price_out: 0.50, ctx: 1000000, tools: true, uncensored: true, note: 'Rápido, 1M ctx' },
-  { id: 'venice:zai-org-glm-5-2', label: 'Venice GLM 5.2 🧠 reasoning', provider: 'venice', venice_model: 'zai-org-glm-5-2', price_in: 1.40, price_out: 4.40, ctx: 1000000, tools: true, uncensored: true, note: 'Reasoning max' },
-  { id: 'venice:olafangensan-glm-4.7-flash-heretic', label: 'Venice Heretic 4.7', provider: 'venice', venice_model: 'olafangensan-glm-4.7-flash-heretic', price_in: 0.07, price_out: 0.40, ctx: 200000, tools: true, uncensored: true, note: 'Barato' },
+  { id: 'venice:z-ai-glm-5-3-flash', label: 'Venice GLM 5.3 Flash', provider: 'venice', venice_model: 'z-ai-glm-5-3-flash', price_in: 0.15, price_out: 0.50, ctx: 1000000, tools: true, uncensored: true, note: 'Rápido, visão, tools, 1M ctx' },
+  { id: 'venice:zai-org-glm-5-2', label: 'Venice GLM 5.2 🧠 reasoning', provider: 'venice', venice_model: 'zai-org-glm-5-2', price_in: 1.40, price_out: 4.40, ctx: 1000000, tools: true, uncensored: true, note: 'Reasoning max, 1M ctx' },
+  { id: 'venice:olafangensan-glm-4.7-flash-heretic', label: 'Venice Heretic 4.7', provider: 'venice', venice_model: 'olafangensan-glm-4.7-flash-heretic', price_in: 0.07, price_out: 0.40, ctx: 200000, tools: true, uncensored: true, note: 'Barato, tools' },
+  { id: 'venice:deepseek-v4-1-flash-uncensored', label: 'DeepSeek V4.1 Flash UC 🔓 abliterated', provider: 'venice', venice_model: 'deepseek-v4-1-flash-uncensored', price_in: 0.33, price_out: 1.32, ctx: 1000000, tools: true, uncensored: true, note: 'MoE abliterated, visão, tools, 1M ctx' },
+  { id: 'venice:gemma-4-uncensored', label: 'Gemma 4 Uncensored 🔓', provider: 'venice', venice_model: 'gemma-4-uncensored', price_in: 0.16, price_out: 0.50, ctx: 256000, tools: true, uncensored: true, note: 'Barato, visão, tools, 256k ctx' },
 ];
 
 // Rotas padrão (in-memory; resets on cold start)
@@ -129,9 +128,24 @@ function buildSystemPrompt(userPersona, uncensored) {
   return userPersona || '';
 }
 
+// Symmetric fallback: when one provider fails, reroute to the other one's cheapest uncensored model.
+function fallbackCatalog(route) {
+  if (route.provider === 'openrouter') {
+    return getApiKey('venice') ? MODEL_CATALOG.find(m => m.id === 'venice:venice-uncensored-1-2') : null;
+  }
+  if (route.provider === 'venice') {
+    return getApiKey('openrouter') ? MODEL_CATALOG.find(m => m.id === 'cognitivecomputations/dolphin-mistral-24b-venice-edition') : null;
+  }
+  return null;
+}
+
 export async function* streamChat(mode, payload, { onToken, onWarning, signal } = {}) {
-  const route = resolveRoute(mode);
-  const catalog = MODEL_CATALOG.find(m => m.id === (ROUTES[mode] || ROUTES.chat).model);
+  // A model picked in the chat (already checked against the plan) wins over the mode's route.
+  const pickedId = payload.modelId && MODEL_CATALOG.some(m => m.id === payload.modelId) ? payload.modelId : (ROUTES[mode] || ROUTES.chat).model;
+  const catalog = MODEL_CATALOG.find(m => m.id === pickedId);
+  const route = catalog
+    ? { provider: catalog.provider, model: catalog.venice_model || catalog.id, maxCtx: catalog.ctx, tools: catalog.tools }
+    : resolveRoute(mode);
 
   const messages = trimHistory(payload.messages || [], route.maxCtx);
   const apiKey = getApiKey(route.provider);
@@ -155,7 +169,7 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
     max_tokens: payload.max_tokens ?? 4096,
   };
 
-  let lastErr = null;
+  let lastErr = null, emitted = false;
   for (let attempt = 0; attempt < 3; attempt++) {
     const ac = new AbortController();
     if (signal) signal.addEventListener('abort', () => ac.abort());
@@ -172,22 +186,21 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
         signal: ac.signal,
       });
 
-      if (res.status === 429 || res.status === 402) {
-        const veniceKey = getApiKey('venice');
-        if (veniceKey && route.provider !== 'venice') {
-          if (onWarning) onWarning({ type: 'rerouted', reason: `${res.status} — fallback para Venice`, from: mode, to: 'venice' });
-          const veniceCatalog = MODEL_CATALOG.find(m => m.id === 'venice:z-ai-glm-5-3-flash');
-          yield* streamWithProvider('venice', veniceCatalog.venice_model, veniceCatalog, messages, systemPrompt, payload, { onToken, onWarning, signal });
+      if ([401, 402, 403, 429].includes(res.status) || res.status >= 500) {
+        const fb = fallbackCatalog(route);
+        if (fb) {
+          if (onWarning) onWarning({ type: 'rerouted', reason: `${res.status} — fallback para ${fb.provider}`, from: mode, to: fb.provider });
+          yield* streamWithProvider(fb.provider, fb.venice_model || fb.id, fb, messages, systemPrompt, payload, { onToken, onWarning, signal });
           return;
         }
-        throw new Error(`Rate limit/créditos: ${res.status}`);
+        throw new Error(`Upstream ${res.status}`);
       }
       if (!res.ok) {
         const txt = await res.text();
         throw new Error(`Upstream ${res.status}: ${txt.slice(0, 200)}`);
       }
 
-      yield* readSSEStream(res, { onToken, signal: ac.signal });
+      yield* readSSEStream(res, { onToken: (t) => { emitted = true; onToken && onToken(t); }, signal: ac.signal });
       return;
     } catch (e) {
       if (e.name === 'AbortError' && signal?.aborted) throw e;
@@ -197,10 +210,17 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
         await new Promise(r => setTimeout(r, backoff));
         continue;
       }
-      throw e;
+      break;
     } finally {
       clearTimeout(timeout);
     }
+  }
+  // Upstream down or unreachable and nothing streamed yet: answer with the other provider instead of failing.
+  const fb = fallbackCatalog(route);
+  if (!emitted && fb) {
+    if (onWarning) onWarning({ type: 'rerouted', reason: String(lastErr?.message || 'upstream error') + ` — fallback para ${fb.provider}`, from: mode, to: fb.provider });
+    yield* streamWithProvider(fb.provider, fb.venice_model || fb.id, fb, messages, systemPrompt, payload, { onToken, onWarning, signal });
+    return;
   }
   throw lastErr;
 }

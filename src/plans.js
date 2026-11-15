@@ -1,0 +1,112 @@
+// Plans, models and the free daily token budget.
+// Free users get one model and FREE_DAILY_TOKENS per day (UTC); Pro models are listed but locked.
+// Usage is counted per visitor (IP, falling back to the client id header). It is stored in
+// Upstash Redis when UPSTASH_REDIS_REST_URL/TOKEN (or Vercel KV_REST_API_URL/TOKEN) are set;
+// otherwise in memory, which on Vercel Edge is per instance and resets — good for a demo, not a hard limit.
+
+export const FREE_MODEL = 'cognitivecomputations/dolphin-mistral-24b-venice-edition';
+export const FREE_DAILY_TOKENS = Number(process.env.FREE_DAILY_TOKENS) || 20000;
+
+import { MODEL_CATALOG } from './upstream.js';
+
+// What the chat shows: uncensored models only, from OpenRouter and Venice alike, all served
+// through our proxy (src/upstream.js), which adds the anti-refusal layer. If a provider can't
+// answer, the proxy reroutes to the other one instead of failing.
+// Prices verified live on 2026-11-15 (openrouter.ai/api/v1/models + venice.ai/models); they are
+// USD per million tokens and can drift — refresh them before changing tiers.
+const CATALOG = Object.fromEntries(MODEL_CATALOG.map(m => [m.id, m]));
+
+/** Rough cost of ~100 short exchanges (≈ 30k in + 30k out tokens), in USD. */
+export function costPer100(m) {
+  if (!m || !isFinite(m.price_in) || !isFinite(m.price_out)) return null;
+  return 0.03 * (m.price_in + m.price_out);
+}
+
+export const PUBLIC_MODELS_RAW = [
+  // ── free tier: what every visitor can pick (both providers, both uncensored) ──
+  { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', name: 'Dolphin 24B', short: 'Dolphin 24B', note: 'Uncensored. Fast. 128k context', tier: 'free' },
+  { id: 'venice:venice-uncensored-1-2', name: 'Venice Uncensored 1.2', short: 'Venice UC', note: 'Uncensored, vision and tools. 128k context', tier: 'free' },
+  // ── pro tier: listed and locked, cheapest first (sorted by estimated cost per 100 messages) ──
+  { id: 'venice:olafangensan-glm-4.7-flash-heretic', name: 'Heretic 4.7', short: 'Heretic 4.7', note: 'Abliterated GLM, fast, tools. 200k context', tier: 'pro' },
+  { id: 'venice:z-ai-glm-5-3-flash', name: 'GLM 5.3 Flash', short: 'GLM 5.3 Flash', note: 'Fast, vision, tools. 1M context', tier: 'pro' },
+  { id: 'venice:gemma-4-uncensored', name: 'Gemma 4 Uncensored', short: 'Gemma 4 UC', note: 'Very cheap, vision, tools. 256k context', tier: 'pro' },
+  { id: 'thedrummer/cydonia-24b-v4.1', name: 'Cydonia 24B', short: 'Cydonia 24B', note: 'Creative, no filter. 128k context', tier: 'pro' },
+  { id: 'thedrummer/unslopnemo-12b', name: 'Unslopnemo 12B', short: 'Unslopnemo', note: '1M context', tier: 'pro' },
+  { id: 'thedrummer/skyfall-36b-v2', name: 'Skyfall 36B', short: 'Skyfall 36B', note: 'Stories and roleplay. 32k context', tier: 'pro' },
+  { id: 'venice:deepseek-v4-1-flash-uncensored', name: 'DeepSeek V4.1 Flash UC', short: 'DeepSeek UC', note: 'Abliterated MoE, vision, tools. 1M context', tier: 'pro' },
+  { id: 'sao10k/l3.1-euryale-70b', name: 'Euryale 70B', short: 'Euryale 70B', note: 'Llama 3.1, sharp and unfiltered. 128k context', tier: 'pro' },
+  { id: 'venice:venice-uncensored-role-play', name: 'Uncensored RP', short: 'UC RP', note: 'Roleplay tuned. 128k context', tier: 'pro' },
+  { id: 'nousresearch/hermes-4-405b', name: 'Hermes 4 405B', short: 'Hermes 405B', note: 'Largest open model. 128k context', tier: 'pro' },
+  { id: 'venice:zai-org-glm-5-2', name: 'GLM 5.2', short: 'GLM 5.2', note: 'Reasoning max, tools. 1M context', tier: 'pro' },
+  { id: 'anthracite-org/magnum-v4-72b', name: 'Magnum v4 72B', short: 'Magnum 72B', note: 'Long-form writing. 32k context', tier: 'pro' },
+];
+
+export const PUBLIC_MODELS = PUBLIC_MODELS_RAW.map(raw => {
+  const m = CATALOG[raw.id];
+  return { ...raw, provider: m?.provider || null, price_in: m?.price_in ?? null, price_out: m?.price_out ?? null, ctx: m?.ctx ?? null, cost100: m ? costPer100(m) : null };
+});
+
+export function planOf(/* c */) {
+  // No accounts or billing yet: everyone is on the free plan. HERETIC_PLAN=pro (env) unlocks all
+  // models — used for local testing and as the switch when credits/billing arrive.
+  return process.env.HERETIC_PLAN === 'pro' ? 'pro' : 'free';
+}
+
+export function modelsFor(plan) {
+  return PUBLIC_MODELS.map(m => ({ ...m, locked: m.tier !== 'free' && plan !== 'pro' }));
+}
+
+export function canUse(plan, modelId) {
+  const m = PUBLIC_MODELS.find(x => x.id === modelId);
+  if (!m) return false;
+  return m.tier === 'free' || plan === 'pro';
+}
+
+/** Rough token estimate (≈ 4 characters per token), used for the free budget. */
+export function estimateTokens(text) {
+  return Math.ceil(String(text || '').length / 4);
+}
+
+export function visitorId(c) {
+  const fwd = c.req.header('x-forwarded-for') || '';
+  const ip = fwd.split(',')[0].trim() || c.req.header('x-real-ip') || '';
+  const cid = (c.req.header('x-heretic-client') || '').slice(0, 64);
+  return ip ? `ip:${ip}` : cid ? `cid:${cid}` : 'anon';
+}
+
+export const today = () => new Date().toISOString().slice(0, 10);
+
+// ── usage store ──
+const REST_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '';
+const REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '';
+const mem = new Map();
+const key = (id, day) => `heretic:usage:${day}:${id}`;
+
+async function redis(path) {
+  const res = await fetch(`${REST_URL}/${path}`, { headers: { Authorization: `Bearer ${REST_TOKEN}` } });
+  if (!res.ok) throw new Error(`usage store ${res.status}`);
+  return (await res.json()).result;
+}
+
+export async function getUsed(id, day = today()) {
+  if (REST_URL && REST_TOKEN) {
+    try { return Number(await redis(`get/${encodeURIComponent(key(id, day))}`)) || 0; } catch { /* fall back */ }
+  }
+  return mem.get(key(id, day)) || 0;
+}
+
+export async function addUsed(id, n, day = today()) {
+  const k = key(id, day);
+  if (REST_URL && REST_TOKEN) {
+    try {
+      const v = Number(await redis(`incrby/${encodeURIComponent(k)}/${Math.max(0, Math.round(n))}`));
+      redis(`expire/${encodeURIComponent(k)}/172800`).catch(() => {});
+      return v;
+    } catch { /* fall back */ }
+  }
+  const v = (mem.get(k) || 0) + Math.max(0, Math.round(n));
+  mem.set(k, v);
+  return v;
+}
+
+export const usageStore = () => (REST_URL && REST_TOKEN ? 'redis' : 'memory');
