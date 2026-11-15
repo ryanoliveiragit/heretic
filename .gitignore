@@ -35,3 +35,7 @@ heretic-design/
 # Archives/temp
 arc-ui.zip
 *.png
+
+# godmod3 (separate tool)
+godmod3/
+godmod3-skill/

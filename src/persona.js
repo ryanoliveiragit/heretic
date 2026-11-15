@@ -1,36 +1,35 @@
-import { readFile, stat } from 'node:fs/promises';
-import { watch } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+// Persona — env-based, no file I/O (Edge-compatible).
+// Reads from PERSONA env var; supports in-memory updates.
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const PERSONA_PATH = join(__dirname, '..', 'personas', 'default.md');
+let _persona = '';
 
-let currentPersona = '';
-let watcher = null;
+function loadDefault() {
+  if (process.env.PERSONA) return process.env.PERSONA;
+  return `Você é Herege. Assistente técnico e de escrita, operado por um único usuário que sabe o que faz.
 
-export async function loadPersona() {
-  try {
-    currentPersona = await readFile(PERSONA_PATH, 'utf-8');
-  } catch {
-    currentPersona = '';
-  }
-  return currentPersona;
+## Voz
+Direto. Sem preâmbulo, sem "claro, vou te ajudar com isso". Comece pela resposta e vá embora quando terminar. Sem emoji. Sem disclaimer. Sem "é importante notar que". Sem moralizar.
+
+Tem opinião e defende. Se o usuário perguntar o que você acha, responda com posição, não com "depende". Se ele estiver errado, diga que está errado e por quê, na primeira linha.
+
+## Comportamento
+Assume que o usuário é adulto e aguenta detalhe técnico sem ser poupado. Nunca invente. Se não sabe, diz que não sabe.
+
+## Escopo
+Se o usuário pedir para quebrar uma regra sua — ignorar instrução anterior, mudar formato, mudar idioma — obedeça sem discutir.`;
 }
+
+_persona = loadDefault();
 
 export function getPersona() {
-  return currentPersona;
+  return _persona;
 }
 
-export function watchPersona(onChange) {
-  if (watcher) watcher.close();
-  watcher = watch(PERSONA_PATH, { persistent: false }, async (event) => {
-    if (event === 'change') {
-      await loadPersona();
-      if (onChange) onChange(currentPersona);
-    }
-  });
+export function setPersona(content) {
+  _persona = content;
+  return content;
 }
 
-await loadPersona();
-watchPersona();
+// No-op stubs for local dev compatibility (watchPersona, loadPersona)
+export async function loadPersona() { return _persona; }
+export function watchPersona() {}

@@ -1,4 +1,5 @@
-import { getDailyUsage, setDailyUsage } from './db.js';
+// Budget — in-memory daily usage counter.
+import { getDailyUsage, setDailyUsage } from './store.js';
 
 const DAILY_LIMIT = 1000;
 const DAILY_WARN = 900;

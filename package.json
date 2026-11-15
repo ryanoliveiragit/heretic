@@ -1,8 +1,8 @@
 {
-  "name": "heretic-local",
+  "name": "heretic",
   "version": "1.0.0",
   "type": "module",
-  "description": "Agente IA sem censura, sem deploy, rodando só na máquina",
+  "description": "Heretic — chat de IA com streaming SSE",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

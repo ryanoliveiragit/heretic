@@ -1,0 +1,9 @@
+{
+  "outputDirectory": "public",
+  "buildCommand": null,
+  "functions": {
+    "api/[[...route]].js": {
+      "runtime": "@vercel/edge"
+    }
+  }
+}
