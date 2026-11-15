@@ -1,0 +1,16 @@
+{
+  "name": "heretic-local",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Agente IA sem censura, sem deploy, rodando só na máquina",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.12.0",
+    "hono": "^4.5.0",
+    "linkedom": "^0.18.5"
+  }
+}

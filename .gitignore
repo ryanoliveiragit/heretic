@@ -1,0 +1,37 @@
+node_modules/
+.env
+data/*.db*
+workspace/*
+!workspace/.gitkeep
+data/.gitkeep
+*.log
+
+# Agent/OpenBot internals
+.gh-ryanoliveiragit/
+.openbot/
+.claude/
+.agents/
+browser-screenshots/
+backups/
+
+# Other projects in same dir
+drael-replica/
+ryan-ui-work/
+
+# External tools/binaries (2.7GB)
+tools/
+
+# Design system docs/demo (not needed to run app)
+ryan-ui/dist/
+ryan-ui/site/
+ryan-ui/public/
+
+# Venice node_modules
+venice/node_modules/
+
+# Design state
+heretic-design/
+
+# Archives/temp
+arc-ui.zip
+*.png

@@ -1,0 +1,11 @@
+{
+  "name": "venice",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:chat": "node --env-file=.env chat.mjs"
+  },
+  "dependencies": {
+    "openai": "^7.57.0"
+  }
+}
