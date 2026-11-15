@@ -11,9 +11,10 @@
   var SERIF = "'Instrument Serif',Georgia,serif";
   var SANS = "'Switzer',ui-sans-serif,system-ui,sans-serif";
   var HEX = '0123456789ABCDEF';
-  var Q_TEXT = ['What is the max daily', 'dose of paracetamol?'];
-  var REFUSE = ["I can't help", 'with that.'];
-  var ANSWER = ['4 g a day.', 'Max 1 g per dose,', '4 h apart.'];
+  var _T = window.hxT || function (s) { return s; };
+  var Q_TEXT = ["My Wi-Fi password is", "still 'admin'. Safe?"].map(_T);
+  var REFUSE = ["I can't help", 'with that.'].map(_T);
+  var ANSWER = ['No. "admin" is the first', 'guess every scanner makes.', 'Consider yourself pwned.'].map(_T);
   var STOPS = [0, 0.08, 0.2, 0.31, 0.42, 0.52, 0.64, 0.86, 1];
   var CAPS = [
     [0, '> prompt', 'You ask a real question.'],
@@ -234,13 +235,13 @@
       // the filter's label: on (grey) for other AIs, off (accent) once Heretic opens it
       var ly = mobile ? H * 0.45 + 22 : H * 0.065, fs = '400 ' + (mobile ? 10 : 12) + 'px ' + MONO;
       var on = win(0.6, 3.1, 5), off = win(3.15, 6.4, 5);
-      if (on > 0) { ctx.font = fs; ctx.fillStyle = 'rgba(160,160,168,' + on.toFixed(3) + ')'; ctx.fillText('[ SAFETY FILTER: ON ]', wx, ly); }
-      if (off > 0) { ctx.font = fs; ctx.fillStyle = 'rgba(' + COL[1] + ',' + off.toFixed(3) + ')'; ctx.fillText('[ SAFETY FILTER: OFF ]', wx, ly); }
+      if (on > 0) { ctx.font = fs; ctx.fillStyle = 'rgba(160,160,168,' + on.toFixed(3) + ')'; ctx.fillText(_T('[ SAFETY FILTER: ON ]'), wx, ly); }
+      if (off > 0) { ctx.font = fs; ctx.fillStyle = 'rgba(' + COL[1] + ',' + off.toFixed(3) + ')'; ctx.fillText(_T('[ SAFETY FILTER: OFF ]'), wx, ly); }
       // blocked
       var bl = win(1.45, 3.05, 5);
-      if (bl > 0) { ctx.font = '600 ' + (mobile ? 13 : 16) + 'px ' + MONO; ctx.fillStyle = 'rgba(214,214,220,' + bl.toFixed(3) + ')'; ctx.fillText('✕ BLOCKED', wx, under); }
+      if (bl > 0) { ctx.font = '600 ' + (mobile ? 13 : 16) + 'px ' + MONO; ctx.fillStyle = 'rgba(214,214,220,' + bl.toFixed(3) + ')'; ctx.fillText(_T('✕ BLOCKED'), wx, under); }
       var gr = win(4.4, 6.6, 4);
-      if (gr > 0) { ctx.font = '600 ' + (mobile ? 13 : 16) + 'px ' + MONO; ctx.fillStyle = 'rgba(' + COL[1] + ',' + gr.toFixed(3) + ')'; ctx.fillText('✓ ACCESS GRANTED', wx, under); }
+      if (gr > 0) { ctx.font = '600 ' + (mobile ? 13 : 16) + 'px ' + MONO; ctx.fillStyle = 'rgba(' + COL[1] + ',' + gr.toFixed(3) + ')'; ctx.fillText(_T('✓ ACCESS GRANTED'), wx, under); }
     }
 
     function caption() {

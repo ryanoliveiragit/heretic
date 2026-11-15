@@ -3,7 +3,7 @@
 (function () {
   var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var LINES = [
-    '<b>root@heretic</b>:~$ ./jailbreak  [<b>ok</b>]'
+    '<b>root@heretic</b>:~$ ./jailbreak --target=ai  [<b>ok</b>]'
   ];
   function plain(h) { return h.replace(/<[^>]+>/g, ''); }
   function partial(h, n) { // primeiros n caracteres visíveis, mantendo as tags

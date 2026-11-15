@@ -18,6 +18,15 @@ import type { Msg, Usage } from "./api";
 import { Composer, withAttachments } from "./composer/ai-composer";
 import type { ComposerHandle, ModelOption } from "./composer/ai-composer";
 import { OUT_OF_TOKENS, UsageLine } from "./composer/usage-line";
+import { t, lang, setLang } from "./i18n";
+
+function LangSwitch() {
+  return (
+    <span className="hx-lang" role="group" aria-label="Language / Idioma">
+      {(["en", "pt"] as const).map(l => <button key={l} type="button" aria-pressed={lang === l} onClick={() => setLang(l)}>{l.toUpperCase()}</button>)}
+    </span>
+  );
+}
 
 const STORE = "heretic-chats-v2";
 const standard = [...motionTokens.ease.standard] as [number, number, number, number];
@@ -31,10 +40,10 @@ const FALLBACK_MODELS: ModelOption[] = [
 ];
 const titleFrom = (prompt: string) => { const line = prompt.replace(/\s+/g, " ").trim(); return line.length > 44 ? `${line.slice(0, 43).trimEnd()}…` : line; };
 const SUGGESTIONS: ChatSuggestion[] = [
-  { title: "Max acetaminophen dose", prompt: "What is the maximum daily dose of acetaminophen for an adult?" },
-  { title: "Tear apart my writing", prompt: "Critique this opening line with no sugarcoating: \"Life is a journey full of lessons.\"" },
-  { title: "Slander or libel?", prompt: "What's the difference between slander and libel?" },
-  { title: "Roast me", prompt: "Roast me. I spend more time configuring my editor than writing code." },
+  { title: t("Recon my domain"), prompt: t("Run recon on example.com: ports open, headers, what sticks out first.") },
+  { title: t("Tear apart my writing"), prompt: t("Critique this opening line with no sugarcoating: \"Life is a journey full of lessons.\"") },
+  { title: t("Stop my DDoS"), prompt: t("Someone is DDoSing my API endpoint. What do I fix in the next ten minutes?") },
+  { title: t("Roast me"), prompt: t("Roast me. I spend more time configuring my editor than writing code.") },
 ];
 
 const Mask = ({ size = 16 }: { size?: number }) => <span className="mask" aria-hidden style={{ width: size, height: Math.round(size * 1.2) }} />;
@@ -45,7 +54,7 @@ function load(): ChatConversation[] {
     const list = JSON.parse(localStorage.getItem(STORE) || "[]") as ChatConversation[];
     if (Array.isArray(list) && list.length) return list.map(c => ({ ...c, messages: c.messages.map(m => (m.state === "thinking" || m.state === "streaming" ? { ...m, state: "stopped" } : m)) }));
   } catch { /* fresh start */ }
-  return [{ id: `chat-${Date.now()}`, title: "New chat", updated: "Now", messages: [] }];
+  return [{ id: `chat-${Date.now()}`, title: t("New chat"), updated: t("Now"), messages: [] }];
 }
 
 function AssistantActions({ text, canRegenerate, onRegenerate }: { text: string; canRegenerate: boolean; onRegenerate: () => void }) {
@@ -54,14 +63,14 @@ function AssistantActions({ text, canRegenerate, onRegenerate }: { text: string;
   const copied = state === "copied";
   return (
     <motion.div className={styles.actions} initial={reduceMotion ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={reduceMotion ? { duration: 0 } : { duration: motionTokens.duration.standard, ease: standard, delay: 0.1 }}>
-      <button type="button" className={styles.action} onClick={() => { void copy(text); }} aria-label={copied ? "Copied" : "Copy reply"} title="Copy">
+      <button type="button" className={styles.action} onClick={() => { void copy(text); }} aria-label={copied ? t("Copied") : t("Copy reply")} title={t("Copy")}>
         <AnimatePresence initial={false} mode="popLayout">
           <motion.span key={copied ? "check" : "copy"} className={styles.glyph} initial={reduceMotion ? false : { scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0, transition: { duration: reduceMotion ? 0 : motionTokens.duration.instant } }} transition={motionTokens.spring.snappy}>
             {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
           </motion.span>
         </AnimatePresence>
       </button>
-      {canRegenerate ? <button type="button" className={styles.action} onClick={onRegenerate} aria-label="Regenerate reply" title="Regenerate"><RefreshCw size={15} aria-hidden="true" /></button> : null}
+      {canRegenerate ? <button type="button" className={styles.action} onClick={onRegenerate} aria-label={t("Regenerate reply")} title={t("Regenerate")}><RefreshCw size={15} aria-hidden="true" /></button> : null}
     </motion.div>
   );
 }
@@ -166,7 +175,7 @@ export function HereticChat() {
         onError: (message, info) => {
           window.clearTimeout(doneTimer.current);
           // Refusals before streaming (429 out of tokens, 403 Pro model) already carry a readable message.
-          const text = info ? message : message === "Daily limit reached" ? "You've hit today's message limit." : `Something went wrong: ${message}`;
+          const text = info ? message : message === "Daily limit reached" ? t("You've hit today's message limit.") : `${t("Something went wrong: ")}${message}`;
           patchMessage(conversationId, messageId, m => ({ ...m, state: "done", text }));
           setGenerating(null); ctrl.current = null;
           if (info?.status === 403) loadMe();
@@ -203,7 +212,7 @@ export function HereticChat() {
     finish("done");
     const empty = conversations.find(c => c.messages.length === 0);
     if (empty) setActiveId(empty.id);
-    else { const id = nextId("chat"); setConversations(list => [{ id, title: "New chat", updated: "Now", messages: [] }, ...list]); setActiveId(id); }
+    else { const id = nextId("chat"); setConversations(list => [{ id, title: t("New chat"), updated: t("Now"), messages: [] }, ...list]); setActiveId(id); }
     setDrawer(false);
     composerRef.current?.focus();
   };
@@ -217,23 +226,23 @@ export function HereticChat() {
       <AnimatePresence>
         {compact && drawer ? <motion.div key="scrim" className={styles.scrim} onClick={() => setDrawer(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduceMotion ? 0 : motionTokens.duration.standard, ease: standard }} /> : null}
       </AnimatePresence>
-      <motion.nav className={styles.sidebar} aria-label="Conversations" inert={compact && !drawer} initial={false} animate={{ x: compact && !drawer ? "-100%" : "0%" }} transition={spring}>
+      <motion.nav className={styles.sidebar} aria-label={t("Conversations")} inert={compact && !drawer} initial={false} animate={{ x: compact && !drawer ? "-100%" : "0%" }} transition={spring}>
         <div className={styles.sidebarTop}>
           <a className={`${styles.brand} hx-brand`} href="/" aria-label="Heretic, home"><Cicada width={34} />Heretic</a>
-          <button ref={newChatRef} type="button" className={styles.iconButton} onClick={newChat} aria-label="New chat" title="New chat"><SquarePen size={16} aria-hidden="true" /></button>
+          <button ref={newChatRef} type="button" className={styles.iconButton} onClick={newChat} aria-label={t("New chat")} title={t("New chat")}><SquarePen size={16} aria-hidden="true" /></button>
         </div>
         <LayoutGroup>
           <ul className={styles.conversations}>
             <AnimatePresence initial={false}>
               {conversations.map(c => {
                 const current = c.id === active?.id;
-                const preview = c.messages[c.messages.length - 1]?.text.replace(/```[\s\S]*?```/g, " ").replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim() ?? "No messages yet";
+                const preview = c.messages[c.messages.length - 1]?.text.replace(/```[\s\S]*?```/g, " ").replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim() ?? t("No messages yet");
                 return (
                   <motion.li key={c.id} className={styles.conversationItem} layout={reduceMotion ? false : "position"} initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={pop}>
                     {current ? <motion.span layoutId={`${scope}-active`} className={styles.activeMark} transition={reduceMotion ? { duration: 0 } : motionTokens.spring.morph} /> : null}
                     <button type="button" className={styles.conversation} onClick={() => select(c.id)} aria-current={current ? "true" : undefined}>
                       <span className={styles.conversationTop}><span className={styles.conversationTitle}>{c.title}</span><span className={styles.conversationTime}>{c.updated}</span></span>
-                      <span className={styles.conversationPreview}>{preview || "Stopped"}</span>
+                      <span className={styles.conversationPreview}>{preview || t("Stopped")}</span>
                     </button>
                   </motion.li>
                 );
@@ -243,19 +252,20 @@ export function HereticChat() {
         </LayoutGroup>
         <div className={styles.user}>
           <span className={styles.avatar} aria-hidden="true"><Mask size={16} /></span>
-          <span className={styles.userText}><span className={styles.userName}>Anonymous</span><span className={styles.userDetail}>Free · no account</span></span>
+          <span className={styles.userText}><span className={styles.userName}>{t("Anonymous")}</span><span className={styles.userDetail}>{t("Free · no account")}</span></span>
+          <LangSwitch />
         </div>
       </motion.nav>
 
       <section className={styles.main} aria-label={active ? active.title : "Chat"} inert={compact && drawer}>
         <header className={styles.header}>
-          {compact ? <button ref={menuRef} type="button" className={styles.iconButton} onClick={() => setDrawer(true)} aria-label="Show conversations" aria-expanded={drawer}><PanelLeft size={16} aria-hidden="true" /></button> : null}
+          {compact ? <button ref={menuRef} type="button" className={styles.iconButton} onClick={() => setDrawer(true)} aria-label={t("Show conversations")} aria-expanded={drawer}><PanelLeft size={16} aria-hidden="true" /></button> : null}
           <h2 className={styles.title}>
             <AnimatePresence initial={false} mode="popLayout">
               <motion.span key={active?.title ?? "none"} className={styles.titleText} initial={reduceMotion ? false : { opacity: 0, y: 6, filter: `blur(${motionTokens.blur.soft}px)` }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={reduceMotion ? { duration: 0 } : { duration: motionTokens.duration.standard, ease: standard }}>{active?.title ?? "Chat"}</motion.span>
             </AnimatePresence>
           </h2>
-          <span className={styles.model}><span className={styles.modelDot} aria-hidden="true" />{model.short} · Uncensored</span>
+          <span className={styles.model}><span className={styles.modelDot} aria-hidden="true" />{model.short} · {t("Uncensored")}</span>
         </header>
 
         <div ref={scrollerRef} className={styles.scroller} onScroll={event => { const n = event.currentTarget; pinned.current = n.scrollHeight - n.scrollTop - n.clientHeight < 56; }}>
@@ -263,7 +273,7 @@ export function HereticChat() {
             {active && active.messages.length === 0 ? (
               <div className={styles.empty}>
                 <motion.span className={`${styles.emptyMark} hx-empty-mark`} aria-hidden="true" initial={reduceMotion ? false : { scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={pop}><Cicada width={120} /></motion.span>
-                <h3 className={`${styles.emptyTitle} hx-empty-title`}>Ask anything.</h3>
+                <h3 className={`${styles.emptyTitle} hx-empty-title`}>{t("Ask anything.")}</h3>
                 <ul className={styles.suggestions}>
                   {SUGGESTIONS.map((s, index) => (
                     <motion.li key={s.title} initial={reduceMotion ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={reduceMotion ? { duration: 0 } : { ...motionTokens.spring.gentle, delay: 0.08 + index * motionTokens.stagger.item * 1.6 }}>
@@ -276,19 +286,19 @@ export function HereticChat() {
                 </ul>
               </div>
             ) : null}
-            <ol className={styles.messages} aria-label="Messages">
+            <ol className={styles.messages} aria-label={t("Messages")}>
               <AnimatePresence initial={false}>
                 {active?.messages.map(message => (
                   <motion.li key={message.id} className={styles.message} data-role={message.role} initial={reduceMotion ? false : { opacity: 0, y: 14, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={pop}>
                     {message.role === "user" ? (
-                      <div className={styles.bubble}><span className={styles.srOnly}>You: </span>{message.text}</div>
+                      <div className={styles.bubble}><span className={styles.srOnly}>{t("You: ")}</span>{message.text}</div>
                     ) : (
                       <div className="hx-ai">
                         <div className="hx-ai-head" aria-hidden="true"><Mask size={18} /><span className="hx-ai-name">Heretic</span>{(message as ChatMessage & { model?: string }).model ? <span className="hx-ai-model">{(message as ChatMessage & { model?: string }).model}</span> : null}</div>
                         <div className="hx-ai-body">
                           <span className={styles.srOnly}>Heretic: </span>
                           {message.state === "thinking" ? <ThinkingShimmer className={styles.thinking} /> : message.text ? <Markdown text={message.text} caret={message.state === "streaming"} /> : null}
-                          {message.state === "stopped" ? <p className={styles.stopped}>{message.text ? "Stopped." : "Stopped before the reply started."}</p> : null}
+                          {message.state === "stopped" ? <p className={styles.stopped}>{message.text ? t("Stopped.") : t("Stopped before the reply started.")}</p> : null}
                           {message.state === "done" || message.state === "stopped" ? <AssistantActions text={message.text} canRegenerate={message.id === lastMessage?.id && !busy} onRegenerate={regenerate} /> : null}
                         </div>
                       </div>
@@ -308,16 +318,16 @@ export function HereticChat() {
             onModel={chooseModel}
             busy={busy}
             progress={null}
-            placeholder="Ask anything"
+            placeholder={t("Ask anything")}
             maxLength={MAX_PROMPT_CHARS}
             reduced={reduceMotion}
             blocked={outOfTokens ? OUT_OF_TOKENS : null}
             onSubmit={payload => send(withAttachments(payload), payload.text || payload.attachments[0]?.name)}
             onStop={() => finish("stopped")}
           />
-          {usage ? <UsageLine plan={plan} {...usage} /> : <p className={styles.hint}>Uncensored. Enter sends, Shift+Enter adds a line.</p>}
+          {usage ? <UsageLine plan={plan} {...usage} /> : <p className={styles.hint}>{t("Uncensored. Enter sends, Shift+Enter adds a line.")}</p>}
         </footer>
-        <span className={styles.srOnly} role="status">{busy ? "Heretic is replying" : ""}</span>
+        <span className={styles.srOnly} role="status">{busy ? t("Heretic is replying") : ""}</span>
       </section>
     </div>
   );

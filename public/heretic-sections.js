@@ -10,14 +10,14 @@
   var SERIF = "'Instrument Serif',Georgia,serif";
   var SANS = "'Switzer',ui-sans-serif,system-ui,sans-serif";
   var GLY = '█▓▒░#%&@$*+=<>/\\|{}[]01ABCDEF';
-  var FACTS = [
-    'Your first chapter loses the reader on page two.',
-    'Alcohol plus anti-anxiety meds stack up: heavy sleep, slower breathing.',
-    'Condoms fail for about 2 in 100 couples a year with perfect use, 13 with typical use.',
-    'Slander is spoken. Libel is written.',
-    'Adultery is still a crime on the books in a few US states.',
-    'In every US state but Montana, you can be fired without cause.'
-  ];
+  var FACTS = (window.hxT ? function (a) { return a.map(window.hxT); } : function (a) { return a; })([
+    'The first DDoS ever took down a six-person ISP, in 1996. It still works.',
+    'One byte of DNS can bring back up to fifty bytes of attack traffic.',
+    'Rubber-hose cryptanalysis is real: a boot, a keyboard, a witness.',
+    'Half the web still runs the holes it shipped with.',
+    '“pwned” was a 1989 typo in a video game. It named every hack since.',
+    'Your “admin” password is guess number one on every scanner.'
+  ]);
 
   var css = document.createElement('style');
   css.textContent =

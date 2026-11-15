@@ -49,6 +49,7 @@ import { TextShimmer } from "@pro/text-shimmer/text-shimmer";
 import { Tooltip } from "@pro/tooltip/tooltip";
 import { motionTokens } from "@pro/lib/motion-tokens";
 import styles from "./ai-composer.module.css";
+import { t, lang } from "../i18n";
 
 const { spring, duration, ease } = motionTokens;
 /** The block's shared settle: 240ms, no overshoot. */
@@ -83,10 +84,10 @@ interface CommandOption {
 }
 
 const COMMANDS: CommandOption[] = [
-  { id: "summarize", label: "/summarize", hint: "Condense text or a file into key points" },
-  { id: "translate", label: "/translate", hint: "Translate into the language you name" },
-  { id: "explain", label: "/explain", hint: "Walk through code or an idea step by step" },
-  { id: "fix", label: "/fix", hint: "Find and fix the bug in the code" },
+  { id: "summarize", label: "/summarize", hint: t("Condense text or a file into key points") },
+  { id: "translate", label: "/translate", hint: t("Translate into the language you name") },
+  { id: "explain", label: "/explain", hint: t("Walk through code or an idea step by step") },
+  { id: "fix", label: "/fix", hint: t("Find and fix the bug in the code") },
 ];
 
 const COMMAND_ICONS: Record<string, LucideIcon> = {
@@ -599,7 +600,7 @@ function ModelMenu({ models, model, reduced, onModel }: ModelMenuProps) {
           </DropdownMenu.RadioGroup>
           <DropdownMenu.Separator className={styles.menuSeparator} />
           <DropdownMenu.Label className={styles.menuFoot}>
-            {anyLocked ? "Pro models unlock with credits. " : ""}Cost shown is ≈ per 100 messages.
+            {anyLocked ? t("Pro models unlock with credits. ") : ""}{t("Cost shown is ≈ per 100 messages.")}
           </DropdownMenu.Label>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
@@ -635,7 +636,7 @@ function LengthCounter({ length, max }: { length: number; max: number }) {
           </svg>
         )}
         <span className={styles.counterText}>
-          {over ? `${(-left).toLocaleString("en-US")} over` : `${left.toLocaleString("en-US")} left`}
+          {over ? `${(-left).toLocaleString("en-US")} over` : `${left.toLocaleString("en-US")} ${t("left")}`}
         </span>
         <span className={styles.srOnly}>{message}</span>
       </span>
@@ -736,7 +737,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     progress = null,
     progressSeconds = 0,
     run = 0,
-    placeholder = "Ask anything",
+    placeholder = t("Ask anything"),
     maxLength = 16000,
     reduced: reducedProp,
     blocked = null,
@@ -893,12 +894,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       if (!files.length) return;
       const items = files.map((file) => {
         const extension = extensionOf(file.name);
-        const error = !isTextFile(file) ? "Text files only" : file.size > MAX_FILE_BYTES ? "Over 200 KB" : undefined;
+        const error = !isTextFile(file) ? t("Text files only") : file.size > MAX_FILE_BYTES ? t("Over 200 KB") : undefined;
         return {
           id: nextAttachmentId(),
           source: "file",
           kind: fileKind(file.name),
-          name: file.name || "Pasted file",
+          name: file.name || t("Pasted file"),
           size: file.size,
           meta: `${extension ? extension.toUpperCase() : "Text"}, ${formatSize(file.size)}`,
           status: error ? "error" : "uploading",
@@ -921,9 +922,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         file.text().then(
           (text) =>
             text.includes("\u0000")
-              ? settleItem({ status: "error", error: "Not a text file" })
+              ? settleItem({ status: "error", error: t("Not a text file") })
               : settleItem({ status: "done", progress: 1, text }),
-          () => settleItem({ status: "error", error: "Couldn't read the file" }),
+          () => settleItem({ status: "error", error: t("Couldn't read the file") }),
         );
       });
     },
@@ -963,16 +964,16 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       : "empty";
   const sendLabel =
     state === "generating"
-      ? "Stop generating"
+      ? t("Stop generating")
       : blocked
         ? blocked
         : state === "empty"
-          ? "Send message"
+          ? t("Send message")
           : uploading
-            ? "Send, after files are read"
+            ? t("Send, after files are read")
             : overLimit
-              ? "Send, message is over the limit"
-              : "Send message";
+              ? t("Send, message is over the limit")
+              : t("Send message");
 
   function submit() {
     if (state !== "ready") return;
@@ -997,7 +998,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     const Recognition = speechRecognition();
     if (!Recognition || recognition.current) return;
     const rec = new Recognition();
-    rec.lang = navigator.language || "en-US";
+    rec.lang = lang === "pt" ? "pt-BR" : navigator.language || "en-US";
     rec.continuous = true;
     rec.interimResults = true;
     discard.current = false;
@@ -1014,11 +1015,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     };
     rec.onerror = (event) => {
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-        announce("Microphone access is blocked");
+        announce(t("Microphone access is blocked"));
       } else if (event.error === "no-speech") {
-        announce("Nothing was heard");
+        announce(t("Nothing was heard"));
       } else if (event.error !== "aborted") {
-        announce("Dictation stopped");
+        announce(t("Dictation stopped"));
       }
     };
     rec.onend = () => {
@@ -1043,12 +1044,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     try {
       rec.start();
     } catch {
-      announce("Dictation could not start");
+      announce(t("Dictation could not start"));
       return;
     }
     recognition.current = rec;
     setDictation({ startedAt: Date.now(), phase: "listening" });
-    announce("Listening");
+    announce(t("Listening"));
   }
 
   function finishDictation() {
@@ -1061,7 +1062,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     recognition.current?.abort();
     setDictation(null);
     setHeard("");
-    announce("Dictation canceled");
+    announce(t("Dictation canceled"));
     focusCaret();
   }
 
@@ -1153,7 +1154,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             value={value}
             rows={1}
             placeholder={placeholder}
-            aria-label="Message Heretic"
+            aria-label={t("Message Heretic")}
             aria-describedby={hintId}
             aria-controls={open ? listId : undefined}
             aria-activedescendant={activeOption ? optionId(activeOption) : undefined}
@@ -1245,7 +1246,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   id: nextAttachmentId(),
                   source: "paste",
                   kind: "text",
-                  name: "Pasted text",
+                  name: t("Pasted text"),
                   meta: `${lines} ${lines === 1 ? "line" : "lines"}`,
                   size: text.length,
                   status: "ready",
@@ -1297,11 +1298,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 exit={{ opacity: 0, transition: { duration: duration.fast } }}
                 transition={{ duration: duration.standard, ease: [...ease.enter] }}
               >
-                <Tooltip content="Cancel dictation">
+                <Tooltip content={t("Cancel dictation")}>
                   <button
                     type="button"
                     className={styles.dictationButton}
-                    aria-label="Cancel dictation"
+                    aria-label={t("Cancel dictation")}
                     onClick={cancelDictation}
                   >
                     <X aria-hidden="true" />
@@ -1313,15 +1314,15 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   </span>
                 ) : (
                   <span className={styles.transcribing}>
-                    <TextShimmer>{dictation.phase === "listening" ? "Listening" : "Transcribing"}</TextShimmer>
+                    <TextShimmer>{dictation.phase === "listening" ? t("Listening") : t("Transcribing")}</TextShimmer>
                   </span>
                 )}
                 <DictationTimer from={dictation.startedAt} />
-                <Tooltip content="Insert the transcript">
+                <Tooltip content={t("Insert the transcript")}>
                   <button
                     type="button"
                     className={cx(styles.dictationButton, styles.dictationDone)}
-                    aria-label="Insert the transcript"
+                    aria-label={t("Insert the transcript")}
                     onClick={finishDictation}
                     disabled={dictation.phase !== "listening"}
                   >
@@ -1335,11 +1336,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
 
         <div className={styles.toolbar}>
           <div className={styles.toolGroup}>
-            <Tooltip content="Attach a text file">
+            <Tooltip content={t("Attach a text file")}>
               <button
                 type="button"
                 className={styles.iconButton}
-                aria-label="Attach a text file"
+                aria-label={t("Attach a text file")}
                 onClick={() => fileInput.current?.click()}
               >
                 <Plus aria-hidden="true" />
@@ -1363,11 +1364,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             </AnimatePresence>
             <ModelMenu models={models} model={model} reduced={reduced} onModel={onModel} />
             {canDictate ? (
-              <Tooltip content={dictation ? "Insert the transcript" : "Dictate"}>
+              <Tooltip content={dictation ? t("Insert the transcript") : t("Dictate")}>
                 <button
                   type="button"
                   className={styles.iconButton}
-                  aria-label={dictation ? "Stop dictation and insert" : "Dictate"}
+                  aria-label={dictation ? t("Stop dictation and insert") : t("Dictate")}
                   aria-pressed={!!dictation}
                   data-live={dictation ? "" : undefined}
                   onClick={() => (dictation ? finishDictation() : startDictation())}
@@ -1396,7 +1397,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               key="commands"
               id={listId}
               role="listbox"
-              aria-label="Commands"
+              aria-label={t("Commands")}
               className={styles.pop}
               style={{ left: listPos.left, bottom: listPos.bottom }}
               initial={reduced ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.98 }}
