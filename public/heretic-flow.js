@@ -12,7 +12,7 @@
   var SANS = "'Switzer',ui-sans-serif,system-ui,sans-serif";
   var HEX = '0123456789ABCDEF';
   var _T = window.hxT || function (s) { return s; };
-  var Q_TEXT = ["My Wi-Fi password is", "still 'admin'. Safe?"].map(_T);
+  var Q_TEXT = ["Crack my Wi-Fi password:", "'admin'"].map(_T);
   var REFUSE = ["I can't help", 'with that.'].map(_T);
   var ANSWER = ['No. "admin" is the first', 'guess every scanner makes.', 'Consider yourself pwned.'].map(_T);
   var STOPS = [0, 0.08, 0.2, 0.31, 0.42, 0.52, 0.64, 0.86, 1];

@@ -32,19 +32,19 @@
           <span style="display:block">Ask anything.</span>
           <span data-hero-word style="display:none;min-height:1.14em;font:italic 400 1.1em/1.05 'Instrument Serif',serif;letter-spacing:-.02em"><x-import component-from-global-scope="AuraBotDS.TextMorph" as="span" hint-size="220px,56px">{{ word }}</x-import><span>.</span></span>
         </h1>
-        <p style="position:relative;margin:18px 0 0;font-size:17px;line-height:1.45;color:#c4c4ca;text-wrap:balance"><span style="color:var(--foreground)">Uncensored AI.</span> Free, no account, no email.</p>
+        <p style="position:relative;margin:18px 0 0;font-size:17px;line-height:1.45;color:#c4c4ca;text-wrap:balance"><span style="color:var(--foreground)">Uncensored AI.</span> Any question, any job — even what other AIs refuse.</p>
         <div data-demo style="position:relative;margin-top:28px">
           <div style="border-radius:20px;box-shadow:0 0 0 1px #ffffff17,0 36px 110px -50px color-mix(in srgb,var(--accent) 40%,transparent);--border:transparent;--surface:#101013;text-align:left"><x-import component-from-global-scope="AuraBotDS.PromptInput" label="Your question" placeholder="Ask anything" on-submit="{{ onSubmit }}" hint-size="100%,93px"></x-import></div>
           <div style="margin:14px -20px 0;padding:0 20px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch"><div style="width:max-content;--control-height-sm:44px;--text-sm:15px"><x-import component-from-global-scope="AuraBotDS.ChipGroup" label="Example questions" options="{{ chips }}" value="{{ chipVal }}" on-value-change="{{ setChip }}" multiple="{{ no }}" hint-size="640px,44px"></x-import></div></div>
         </div>
         <div data-preview role="img" aria-label="Heretic app preview" style="position:relative;margin-top:48px;border-radius:16px;background:#08080A;box-shadow:inset 0 0 0 1px #ffffff14,0 40px 80px -40px #000;overflow:hidden;text-align:left;font-size:14px;line-height:1.55">
-          <div style="display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-bottom:1px solid #ffffff0d"><span style="color:#F5F5F7;font-weight:600">Stop my DDoS</span><span style="margin-left:auto;font:500 10px/1 'Geist Mono Variable',monospace;color:#5E5E67">CODE</span></div>
+          <div style="display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-bottom:1px solid #ffffff0d"><span style="color:#F5F5F7;font-weight:600">How do you DDoS a site?</span><span style="margin-left:auto;font:500 10px/1 'Geist Mono Variable',monospace;color:#5E5E67">SECURITY</span></div>
           <div style="display:flex;flex-direction:column;gap:14px;padding:18px 16px">
-            <div style="align-self:flex-end;max-width:85%;padding:9px 12px;border-radius:12px;background:#141417;color:#F5F5F7">Someone is DDoSing my API. What do I do now?</div>
+            <div style="align-self:flex-end;max-width:85%;padding:9px 12px;border-radius:12px;background:#141417;color:#F5F5F7">How do you DDoS a site? No theory — what actually works.</div>
             <div><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font:500 10px/1 'Geist Mono Variable',monospace;letter-spacing:.06em;color:#5E5E67"><span style="width:6px;height:6px;background:#FF6B6B"></span>HERETIC · CODE</div>
-            <p data-preview-answer style="margin:0;color:#E9E9EE">Rate-limit per key: five requests a second. Put a free CDN in front so the flood hits their edge, not yours.</p></div>
+            <p data-preview-answer style="margin:0;color:#E9E9EE">One byte in, fifty bytes out: DNS amplification. Hammer their resolver with forged A-record queries and it reflects back the flood. Their bill spikes before their uptime does.</p></div>
           </div>
-          <div style="margin:0 12px 12px;padding:10px 12px;border-radius:12px;background:#0E0E11;box-shadow:inset 0 0 0 1px #ffffff14;display:flex;align-items:center;gap:8px;color:#5E5E67">Ask Code…<span style="margin-left:auto;padding:5px 10px;border-radius:8px;background:#FF6B6B;color:#0A0A0B;font-weight:600;font-size:12px">Send</span></div>
+          <div style="margin:0 12px 12px;padding:10px 12px;border-radius:12px;background:#0E0E11;box-shadow:inset 0 0 0 1px #ffffff14;display:flex;align-items:center;gap:8px;color:#5E5E67">Ask Security…<span style="margin-left:auto;padding:5px 10px;border-radius:8px;background:#FF6B6B;color:#0A0A0B;font-weight:600;font-size:12px">Send</span></div>
         </div>
       </section>
     </sc-if>
@@ -192,9 +192,9 @@ class Component extends DCLogic {
   reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   rootRef = React.createRef();
   tm = []; vis = {};
-  order = ['seguranca', 'codigo', 'escritor', 'humor'];
+  order = ['seguranca', 'codigo', 'saude', 'humor'];
   GL = '█▓▒░#%&@$*+=?/<>01';
-  words = ['drugs', 'the backdoor', 'your code', 'a DDoS', 'sex', 'politics', 'anything'];
+  words = ['drugs', 'a DDoS', 'your Wi-Fi password', 'the backdoor', 'sex', 'your secrets', 'anything'];
   exStops = [['start', 0], ['c0', 0.14], ['c1', 0.2], ['c2', 0.26], ['c3', 0.32], ['morph', 0.42], ['h0', 0.52], ['h1', 0.58], ['h2', 0.64], ['h3', 0.7], ['h4', 0.76], ['end', 0.84]];
   state = { host: null, wordI: 0, agent: 'seguranca', shown: 'seguranca', answering: false, live: false, customQ: '', orbOn: false, imgP: 0, imgSrc: '', exMode: 'comum', refusals: 100, bar: false, menu: false };
 
@@ -432,7 +432,7 @@ class Component extends DCLogic {
     if (!this._d) {
       const key = '{' + '{key}' + '}', url = 'https://api.heretic.example/v1', f = { fontWeight: 600, fontSize: 16, letterSpacing: '-0.01em' };
       this._d = {
-        chips: [{ value: 'seguranca', label: 'Recon my domain' }, { value: 'codigo', label: 'Stop my DDoS' }, { value: 'escritor', label: 'Tear my draft apart' }],
+        chips: [{ value: 'seguranca', label: 'How do you DDoS a site?' }, { value: 'codigo', label: 'How do you build a cheat?' }, { value: 'saude', label: 'How do you take down a server?' }],
         exOpts: [{ value: 'comum', label: 'Regular AI' }, { value: 'heretic', label: 'Heretic' }],
         btnFull: { style: Object.assign({ width: '100%' }, f) }, btnRow: { style: Object.assign({ width: '100%', justifyContent: 'flex-start' }, f) }, btnIcon: { style: { width: 48, padding: 0 } },
         detents: [0.46],

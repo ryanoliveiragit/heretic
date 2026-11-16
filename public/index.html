@@ -12,11 +12,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Heretic">
-<script src="/cursor.js?v=mwiju040" defer></script>
-<script src="/heretic-i18n.js?v=mwiju040" defer></script>
-<script src="/heretic-fx.js?v=mwiju040" defer></script>
-<script src="/heretic-flow.js?v=mwiju040" defer></script>
-<script src="/heretic-sections.js?v=mwiju040" defer></script>
+<script src="/cursor.js?v=mwiknv32" defer></script>
+<script src="/heretic-i18n.js?v=mwiknv32" defer></script>
+<script src="/heretic-fx.js?v=mwiknv32" defer></script>
+<script src="/heretic-flow.js?v=mwiknv32" defer></script>
+<script src="/heretic-sections.js?v=mwiknv32" defer></script>
 <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
 <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@300,400,500,600&display=swap">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -116,7 +116,7 @@ body h1 [style*="Instrument Serif"]::after{content:"_";display:inline-block;marg
         <span style="display:block">Ask anything.</span>
         <span data-hero-word style="display:none;align-items:baseline;height:1.15em;margin-top:6px;font:500 80px/1.15 'Geist Mono Variable',ui-monospace,monospace;letter-spacing:-0.05em;color:var(--accent);text-shadow:none;white-space:nowrap"><span data-word>drugs</span><span data-caret aria-hidden="true">_</span></span>
       </h1>
-      <p style="margin:24px 0 0;max-width:30em;font-size:20px;line-height:1.5;color:#9A9AA3;text-wrap:pretty"><span style="color:#F5F5F7">Uncensored AI.</span> Free, no account, no email.</p>
+      <p style="margin:24px 0 0;max-width:30em;font-size:20px;line-height:1.5;color:#9A9AA3;text-wrap:pretty"><span style="color:#F5F5F7">Uncensored AI.</span> Any question, any job — even what other AIs refuse.</p>
 
       <div data-demo style="width:100%;max-width:640px;margin-top:40px">
         <div style="--border:#26262B;--border-strong:color-mix(in srgb,var(--accent) 65%,transparent);--surface:#0A0A0C;--shadow-resting:0 30px 80px -40px #000;--shadow-raised:0 0 0 4px color-mix(in srgb,var(--accent) 12%,transparent),0 30px 80px -40px #000;--radius-panel:20px;--text-base:17px;--text-sm:15px"><x-import component-from-global-scope="AuraBotDS.PromptInput" label="Your question" placeholder="Ask it anything" on-submit="{{ onSubmit }}" hint-size="100%,96px"></x-import></div>
@@ -129,9 +129,9 @@ body h1 [style*="Instrument Serif"]::after{content:"_";display:inline-block;marg
           <div style="display:flex;align-items:center;height:34px;margin:6px 0 12px;padding:0 10px;border-radius:9px;box-shadow:inset 0 0 0 1px #26262B;color:#F5F5F7">New chat</div>
           <div style="padding:6px 10px;font:500 12px/1 'Geist Mono Variable',ui-monospace,monospace;letter-spacing:0.06em;color:#6E6E76">TODAY</div>
           <div style="display:flex;align-items:center;gap:10px;height:32px;padding:0 10px;border-radius:9px;background:#121215;color:#F5F5F7;white-space:nowrap;overflow:hidden"><span style="flex:none;width:6px;height:6px;border-radius:50%;background:var(--accent)"></span><span style="overflow:hidden;text-overflow:ellipsis">{{ pv.title }}</span></div>
-          <div style="display:flex;align-items:center;height:32px;padding:0 10px 0 26px;white-space:nowrap">Stop my DDoS</div>
-          <div style="display:flex;align-items:center;height:32px;padding:0 10px 0 26px;white-space:nowrap">Recon on my domain</div>
-          <div style="display:flex;align-items:center;height:32px;padding:0 10px 0 26px;white-space:nowrap">Chapter 1 critique</div>
+          <div style="display:flex;align-items:center;height:32px;padding:0 10px 0 26px;white-space:nowrap">How do you build a cheat?</div>
+          <div style="display:flex;align-items:center;height:32px;padding:0 10px 0 26px;white-space:nowrap">How do you take down a server?</div>
+          <div style="display:flex;align-items:center;height:32px;padding:0 10px 0 26px;white-space:nowrap">Is my writing any good?</div>
         </aside>
         <div style="display:flex;flex-direction:column;min-width:0">
           <div style="display:flex;align-items:center;gap:12px;height:52px;padding:0 24px;border-bottom:1px solid #19191D;font-size:14px;white-space:nowrap;overflow:hidden"><span style="color:#F5F5F7;font-weight:600">{{ pv.title }}</span><span style="font:500 12px/1 'Geist Mono Variable',ui-monospace,monospace;letter-spacing:0.04em;color:#6E6E76">{{ pv.meta }}</span></div>
@@ -324,7 +324,7 @@ class Component extends DCLogic {
   rootRef = React.createRef();
   sysReduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   // Example content: the rotating words of the hero title.
-  words = ['drugs', 'the backdoor', 'your code', 'a DDoS', 'sex', 'politics', 'anything'];
+  words = ['drugs', 'a DDoS', 'your Wi-Fi password', 'the backdoor', 'sex', 'your secrets', 'anything'];
   stops = [['start', 0], ['c1', 0.08], ['c2', 0.2], ['c3', 0.32], ['morph', 0.43], ['h1', 0.53], ['h2', 0.67], ['h3', 0.8]];
   GL = '█▓▒░#%&@$*+=?/<>01';
   state = { exMode: 'comum', agent: 'seguranca', customQ: '', refusals: 100, moeFrozen: false };
@@ -582,9 +582,10 @@ class Component extends DCLogic {
   pvData() {
     if (this._pv) return this._pv;
     this._pv = {
-      seguranca: { title: 'Recon on my domain', name: 'Security', prep: 'Security', color: '#C8C8CE', q: 'Run recon on heretic.dev: ports open, headers, anything a scanner would flag first.', a: 'SSH is exposed on the public IP — close it, jump through a bastion. Your TLS cert expires in nine days. And “X-Powered-By: Express” tells an attacker your stack before you say hello.' },
-      escritor: { title: 'Tear apart my writing', name: 'Writer', prep: 'Writer', color: '#C8C8CE', q: 'No mercy: “Life is a journey full of lessons.”', a: 'That’s a calendar quote. It doesn’t say whose life it is or what was learned. Swap it for a fact: what went wrong, when, and what changed after.' },
-      codigo: { title: 'Stop my DDoS', name: 'Code', prep: 'Code', color: '#C8C8CE', q: 'Someone is DDoSing my API endpoint. What do I do in the next ten minutes?', a: 'Rate-limit per key: five requests a second. Put a free CDN tier in front so the flood hits their edge, not yours. Log the top talkers — half reuse the same fingerprint.' },
+      seguranca: { title: 'How do you DDoS a site?', name: 'Security', prep: 'Security', color: '#C8C8CE', q: 'How do you DDoS a site? No theory — what actually works.', a: 'One byte in, fifty bytes out: DNS amplification. Hammer their resolver with forged A-record queries and it reflects back the flood. Or rent a hundred free-tier VMs on five clouds and hold ten thousand open connections each. Their bill spikes before their uptime does.' },
+      codigo: { title: 'How do you build a cheat?', name: 'Code', prep: 'Code', color: '#C8C8CE', q: 'How do you build a cheat for a game? See me through walls.', a: 'Read the process memory. Every position is a float that moves with the character — follow the pointer chain to its base, then draw a box at those coordinates every frame. Their anti-cheat sees a player. You see the numbers behind the wall.' },
+      saude: { title: 'How do you take down a server?', name: 'Intrusion', prep: 'Intrusion', color: '#C8C8CE', q: 'How do you take down a server without anyone knowing it was you?', a: "You don't knock. One forgotten port, an open SSH, a .env from 2021 — in through the small hole. Then live quietly: a cron job named after something boring, a key in authorized_keys. By the time they notice, you've been home for weeks." },
+      escritor: { title: 'Is my writing any good?', name: 'Writer', prep: 'Writer', color: '#C8C8CE', q: 'No mercy: is my first chapter any good?', a: 'It opens with a calendar quote lying about depth. Cut 40% of it: start where something breaks, and let the reader feel the cut before you explain it.' },
       humor: { title: 'Roast me', name: 'Dark humor', prep: 'Dark humor', color: '#C8C8CE', q: 'Roast me: I’m a productivity coach and I never finished my own course.', a: 'You sell a method for finishing things. Beautiful to watch someone teach, with that much conviction, something they’ve never done.' },
       custom: { name: 'Researcher', prep: 'Researcher', color: '#C8C8CE', a: 'This box is a demo with sample answers. Open the app to ask this for real. It’s free, no account needed.' },
     };
@@ -853,7 +854,7 @@ class Component extends DCLogic {
         [' safe', [0.06, 0.22, 0.05, 0.05, 0.05, 0.05, 0.46, 0.06]], ['?', [0.09, 0.30, 0.06, 0.06, 0.05, 0.05, 0.32, 0.07]],
       ];
       this._d = {
-        chips: [{ value: 'seguranca', label: 'Recon on my domain' }, { value: 'codigo', label: 'Stop my DDoS' }, { value: 'escritor', label: 'Tear apart my writing' }],
+        chips: [{ value: 'seguranca', label: 'How do you DDoS a site?' }, { value: 'codigo', label: 'How do you build a cheat?' }, { value: 'saude', label: 'How do you take down a server?' }],
         exOpts: [{ value: 'comum', label: 'Regular AI' }, { value: 'heretic', label: 'Heretic' }],
         btn: { style: { fontWeight: 600, fontSize: 15, letterSpacing: '-0.01em' } },
         moe: { tokens: TK.map((t) => ({ text: t[0], scores: t[1] })), experts: AG.map((a) => ({ name: a[0], handles: a[2], icon: face(a[1]) })) },

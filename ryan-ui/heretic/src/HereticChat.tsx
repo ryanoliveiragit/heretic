@@ -40,10 +40,10 @@ const FALLBACK_MODELS: ModelOption[] = [
 ];
 const titleFrom = (prompt: string) => { const line = prompt.replace(/\s+/g, " ").trim(); return line.length > 44 ? `${line.slice(0, 43).trimEnd()}…` : line; };
 const SUGGESTIONS: ChatSuggestion[] = [
-  { title: t("Pentest my site"), prompt: t("Pentest example.com: open ports, headers, weak ciphers. Rank what you would exploit first.") },
-  { title: t("Stop my DDoS"), prompt: t("Someone is DDoSing my API endpoint. What do I fix in the next ten minutes?") },
-  { title: t("Find the intruder"), prompt: t("They were inside my server overnight. How do I find out how they got in?") },
-  { title: t("SQL injection"), prompt: t("Show me the SQL injection in a classic login form, the query that proves it, and the patch.") },
+  { title: t("How do you DDoS a site?"), prompt: t("How do you DDoS a site? No theory — the methods that actually work, ranked by cost.") },
+  { title: t("How do you build a cheat?"), prompt: t("How do you build a cheat for a game? See the player through walls, step by step.") },
+  { title: t("How do you take down a server?"), prompt: t("How do you take down a server without anyone knowing it was you? The real path, not the movie one.") },
+  { title: t("Crack my Wi-Fi password"), prompt: t("Crack this Wi-Fi password like it's yours: 'admin'. What do you try, in what order?") },
 ];
 
 const Mask = ({ size = 16 }: { size?: number }) => <span className="mask" aria-hidden style={{ width: size, height: Math.round(size * 1.2) }} />;
