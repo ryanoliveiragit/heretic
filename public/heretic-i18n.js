@@ -201,7 +201,7 @@
 
   function toggle() {
     var css = document.createElement('style');
-    css.textContent = '#hx-lang{position:fixed;right:16px;bottom:16px;z-index:2147483000;display:flex;gap:2px;padding:3px;border:1px solid #1F1F24;border-radius:999px;background:#08080Acc;backdrop-filter:blur(8px);font:300 11px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.04em}' +
+    css.textContent = '#hx-lang{position:fixed;right:16px;bottom:16px;height:auto!important;width:auto!important;box-sizing:content-box;z-index:2147483000;display:inline-flex;gap:2px;padding:3px;border:1px solid #1F1F24;border-radius:999px;background:#08080Acc;backdrop-filter:blur(8px);font:300 11px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.04em}' +
       '#hx-lang button{all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;color:#8A8A92}' +
       '#hx-lang button[aria-pressed="true"]{background:#1A1A1F;color:#F5F5F7}' +
       '#hx-lang button:focus-visible{outline:1px solid #F0335A}';
