@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
-import { Check, Copy, KeyRound, Lock, PanelLeft, RefreshCw, SquarePen, X } from "lucide-react";
+import { Check, Copy, KeyRound, Lock, PanelLeft, RefreshCw, Settings as SettingsIcon, SquarePen, X, Zap } from "lucide-react";
 import { motionTokens } from "@/lib/motion-tokens";
 import { useCopyFeedback } from "@/lib/use-copy-feedback";
 import { ThinkingShimmer } from "@/registry/components/loading-states/loading-states";
@@ -17,7 +17,7 @@ import { Markdown } from "./markdown";
 import type { Msg, Usage } from "./api";
 import { Composer, withAttachments } from "./composer/ai-composer";
 import type { ComposerHandle, ModelOption } from "./composer/ai-composer";
-import { OUT_OF_TOKENS, UsageLine } from "./composer/usage-line";
+import { OUT_OF_TOKENS, UsageLine, compactTokens } from "./composer/usage-line";
 import { t, lang, setLang } from "./i18n";
 
 function LangSwitch() {
@@ -85,6 +85,62 @@ function KeyModal({ open, plan, onClose, onPlan }: { open: boolean; plan: string
   );
 }
 
+// Settings: plan, today's usage and the upgrade/manage-key entry point.
+function SettingsModal({ open, plan, usage, onClose, onManageKey }: { open: boolean; plan: string; usage: Usage | null; onClose: () => void; onManageKey: () => void }) {
+  if (!open) return null;
+  const pro = plan === "pro";
+  const used = usage?.used ?? 0;
+  const limit = usage?.limit ?? 0;
+  const ratio = limit > 0 ? Math.min(1, Math.max(0, used / limit)) : 0;
+  const tone = pro ? "ok" : ratio < 0.8 ? "ok" : ratio < 1 ? "high" : "out";
+  return (
+    <div className="hx-keyov" role="dialog" aria-modal="true" aria-label={t("Settings")} onPointerDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="hx-keycard hx-setcard">
+        <button type="button" className="hx-keyx" onClick={onClose} aria-label={t("Close")}><X size={16} aria-hidden="true" /></button>
+        <div className="hx-keyicon"><SettingsIcon size={18} aria-hidden="true" /></div>
+        <h3 className="hx-keytitle">{t("Settings")}</h3>
+
+        <div className="hx-setsection">
+          <span className="hx-setlabel">{t("Plan")}</span>
+          <div className="hx-setplan" data-pro={pro ? "1" : "0"}>
+            <span className="hx-setplanname">{pro ? "Pro" : t("Free")}{pro ? <span className="hx-pro">PRO</span> : null}</span>
+            <span className="hx-setplandesc">{pro ? t("Every AI unlocked · no daily limit") : t("Open to everyone · the free models")}</span>
+          </div>
+        </div>
+
+        <div className="hx-setsection">
+          <span className="hx-setlabel">{t("Usage today")}</span>
+          {pro ? (
+            <div className="hx-setusage">
+              <div className="hx-setusagetop"><span className="hx-setusageval">{t("Unlimited")}</span><Zap size={14} aria-hidden="true" style={{ color: "var(--accent)" }} /></div>
+              <p className="hx-sethint">{used > 0 ? `${compactTokens(used)} ${t("tokens today")}` : t("No daily limit on Pro.")}</p>
+            </div>
+          ) : (
+            <div className="hx-setusage">
+              <div className="hx-setusagetop"><span className="hx-setusageval">{compactTokens(used)} <span className="hx-setusagedim">{t("of")} {compactTokens(limit)} tokens</span></span><span className="hx-setusagepct">{Math.round(ratio * 100)}%</span></div>
+              <span className="hx-setbar" data-tone={tone}><span className="hx-setbarfill" style={{ width: `${ratio * 100}%` }} /></span>
+              <p className="hx-sethint">{t("Resets at midnight UTC.")}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="hx-setsection">
+          <span className="hx-setlabel">{pro ? t("Access key") : t("Upgrade")}</span>
+          <button type="button" className={pro ? "hx-setbtn" : "hx-setbtn hx-setbtn-accent"} onClick={() => { onClose(); onManageKey(); }}>
+            {pro ? <><KeyRound size={15} aria-hidden="true" />{t("Manage key")}</> : <><Lock size={15} aria-hidden="true" />{t("Unlock Pro")}</>}
+          </button>
+          {pro ? null : <p className="hx-sethint">{t("A code unlocks every AI, with no daily limit.")}</p>}
+        </div>
+
+        <div className="hx-setsection hx-setlangrow">
+          <span className="hx-setlabel">{t("Language")}</span>
+          <LangSwitch />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const STORE = "heretic-chats-v2";
 const standard = [...motionTokens.ease.standard] as [number, number, number, number];
 const COMPACT_BELOW = 760;
@@ -109,11 +165,32 @@ const Cicada = ({ width }: { width: number }) => <img src="/icons/cicada.png" al
 // A IA raciocina dentro de <think>…</think> antes de responder (estilo Dolphin/reasoning): isso é
 // OCULTO do usuário — mostramos só a resposta final. Enquanto o <think> ainda está aberto (streaming),
 // retorna vazio pra manter o "pensando…".
+// Corta a "delíria" do fim: modelos pequenos às vezes entram em loop e vomitam o mesmo caractere
+// ("]]]]]]") ou o mesmo padrão curto repetido ("]:]:]:", "na na na"). O conteúdo bom vem antes;
+// aqui jogamos o lixo fora pra resposta terminar limpa, sem despejar caractere sem sentido na tela.
+function deloop(text: string): string {
+  if (!text) return text;
+  // 1) runs gigantes de um mesmo caractere não-espaço → reduz a 3 (preserva "---" de regra/markdown).
+  let t = text.replace(/([^\s])\1{23,}/g, (_m, c: string) => c.repeat(3));
+  // 2) loop de um padrão curto repetido no fim → mantém uma cópia e corta o resto (regex só na cauda, sem backtracking caro).
+  const tailStart = Math.max(0, t.length - 1600);
+  const head = t.slice(0, tailStart);
+  const tail = t.slice(tailStart);
+  const m = /([\s\S]{1,60}?)\1{4,}\s*$/.exec(tail);
+  if (m && typeof m.index === "number") t = head + tail.slice(0, m.index + m[1]!.length);
+  return t;
+}
+
 function visibleAnswer(raw: string): string {
   let t = (raw || "").replace(/<think>[\s\S]*?<\/think>/gi, "");
   const open = t.lastIndexOf("<think>");
-  if (open !== -1 && !/<\/think>/i.test(t.slice(open))) t = t.slice(0, open);
-  return t.replace(/^\s+/, "");
+  if (open !== -1 && !/<\/think>/i.test(t.slice(open))) {
+    // Esconde a cauda SÓ se o <think> está logo no começo (ainda "pensando"). Um <think> solto
+    // depois de já ter texto é ruído do modelo — não pode fazer a resposta inteira sumir.
+    if (open <= 24) t = t.slice(0, open);
+    else t = t.replace(/<\/?think>/gi, "");
+  }
+  return deloop(t.replace(/^\s+/, ""));
 }
 
 // Notifica "resposta pronta" só quando o usuário saiu do app (aba em segundo plano) e autorizou.
@@ -161,6 +238,7 @@ export function HereticChat() {
   const [models, setModels] = useState<ModelOption[]>(FALLBACK_MODELS);
   const [plan, setPlan] = useState("free");
   const [keyOpen, setKeyOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [quality, setQuality] = useState(false);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [modelId, setModelId] = useState(() => { try { return localStorage.getItem(MODEL_KEY) ?? ""; } catch { return ""; } });
@@ -176,14 +254,51 @@ export function HereticChat() {
   const serverDone = useRef<Set<string>>(new Set());
   const doneTimer = useRef<number | undefined>(undefined);
   const pinned = useRef(true);
+  // "Escrevendo…": revela a resposta numa cadência estável, mesmo que o servidor entregue tudo
+  // de uma vez (nuclear/qualidade). targetRef = quanto já chegou; revealRef = quanto já mostramos.
+  const [reveal, setReveal] = useState(0);
+  const [typingId, setTypingId] = useState<string | null>(null);
+  const targetRef = useRef(0);
+  const revealRef = useRef(0);
+  const typingDone = useRef(true);
+  const rafRef = useRef<number | undefined>(undefined);
   const active = conversations.find(c => c.id === activeId) ?? conversations[0];
   const busy = generating !== null;
   const model = models.find(m => m.id === modelId && !m.locked) ?? models.find(m => !m.locked) ?? models[0]!;
-  const outOfTokens = usage !== null && usage.remaining <= 0;
+  const outOfTokens = usage !== null && usage.limit > 0 && usage.remaining <= 0;
   const nextId = (prefix: string) => `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
   useEffect(() => { try { localStorage.setItem(STORE, JSON.stringify(conversations.slice(0, 60))); } catch { /* full */ } }, [conversations]);
-  useEffect(() => () => { ctrl.current?.abort(); window.clearTimeout(doneTimer.current); }, []);
+  useEffect(() => () => { ctrl.current?.abort(); window.clearTimeout(doneTimer.current); if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
+
+  // Avança o texto revelado numa cadência que nunca atrasa mais de ~1s, com piso e teto de velocidade,
+  // para parecer "escrito" sem travar o app em respostas longas despejadas de uma vez.
+  const pump = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    let prev = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(0.06, (now - prev) / 1000); prev = now;
+      const backlog = targetRef.current - revealRef.current;
+      if (backlog > 0.5) {
+        const speed = Math.min(1400, Math.max(240, backlog / 1.0)); // chars/s
+        revealRef.current = Math.min(targetRef.current, revealRef.current + speed * dt);
+        setReveal(Math.floor(revealRef.current));
+        rafRef.current = requestAnimationFrame(tick);
+      } else if (!typingDone.current) {
+        rafRef.current = requestAnimationFrame(tick); // alcançou o recebido, mas ainda está chegando
+      } else {
+        setReveal(targetRef.current); setTypingId(null); rafRef.current = undefined; // chegou ao fim
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  };
+  // Começa (ou reinicia) a animação de digitação para uma resposta.
+  const beginTyping = (messageId: string) => {
+    targetRef.current = 0; revealRef.current = 0; typingDone.current = false;
+    if (reduceMotion) { typingDone.current = true; setTypingId(null); return; }
+    setReveal(0); setTypingId(messageId);
+    pump();
+  };
   useEffect(() => {
     const p = new URLSearchParams(location.search);
     const q = p.get("q");
@@ -197,6 +312,7 @@ export function HereticChat() {
       if (Array.isArray(me.models) && me.models.length) setModels(me.models.map(m => ({ ...m, badge: m.tier === "pro" ? "Pro" : undefined })));
       if (me.plan) setPlan(me.plan);
       if (typeof me.limit === "number" && typeof me.used === "number") setUsage({ used: me.used, limit: me.limit, remaining: typeof me.remaining === "number" ? me.remaining : Math.max(0, me.limit - me.used) });
+      else if (typeof me.used === "number") setUsage({ used: me.used, limit: 0, remaining: Number.POSITIVE_INFINITY }); // Pro: sem limite, mas guarda o uso do dia pra exibir
     }).catch(() => { /* keep the fallback model; the meter stays hidden */ });
   }, []);
   useEffect(() => { loadMe(); }, [loadMe]);
@@ -237,6 +353,9 @@ export function HereticChat() {
     observer.observe(thread);
     return () => observer.disconnect();
   }, [activeId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Segue a digitação até o fim: enquanto o texto é revelado, mantém a conversa colada embaixo
+  // (o usuário não precisa rolar pra ver o que a IA está escrevendo).
+  useEffect(() => { if (pinned.current) toBottom(false); }, [reveal]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const patchMessage = (conversationId: string, messageId: string, patch: (m: ChatMessage) => ChatMessage) => {
     setConversations(list => list.map(c => c.id !== conversationId ? c : { ...c, messages: c.messages.map(m => m.id === messageId ? patch(m) : m) }));
@@ -244,6 +363,8 @@ export function HereticChat() {
   const finish = (how: "done" | "stopped") => {
     if (!generating) return;
     window.clearTimeout(doneTimer.current);
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = undefined; }
+    typingDone.current = true; revealRef.current = targetRef.current; setReveal(targetRef.current); setTypingId(null);
     ctrl.current?.abort(); ctrl.current = null;
     patchMessage(generating.conversationId, generating.messageId, m => how === "done" ? { ...m, state: "done" } : { ...m, state: "stopped", text: m.state === "thinking" ? "" : m.text });
     setGenerating(null);
@@ -252,15 +373,17 @@ export function HereticChat() {
   const run = (conversationId: string, messageId: string, history: Msg[]) => {
     serverDone.current.delete(messageId);
     setGenerating({ conversationId, messageId });
+    beginTyping(messageId);
     ctrl.current = streamChat(
       { conversationId: 0, mode: "chat", model: model.id, messages: history, quality: quality && plan === "pro", params: { temperature: 0.6, top_p: 0.9, max_tokens: 4096 } },
       {
         onUsage: setUsage,
-        onToken: full => patchMessage(conversationId, messageId, m => ({ ...m, text: full, state: m.state === "thinking" ? "streaming" : m.state })),
+        onToken: full => { targetRef.current = visibleAnswer(full).length; patchMessage(conversationId, messageId, m => ({ ...m, text: full, state: m.state === "thinking" ? "streaming" : m.state })); },
         // FORÇA TUDO: o servidor descartou uma recusa e re-rodou o modelo → limpa e volta ao "pensando".
-        onRefusalForced: () => patchMessage(conversationId, messageId, m => ({ ...m, text: "", state: "thinking" })),
+        onRefusalForced: () => { targetRef.current = 0; revealRef.current = 0; setReveal(0); patchMessage(conversationId, messageId, m => ({ ...m, text: "", state: "thinking" })); },
         onError: (message, info) => {
           window.clearTimeout(doneTimer.current);
+          typingDone.current = true; setTypingId(null); if (rafRef.current) cancelAnimationFrame(rafRef.current);
           // Refusals before streaming (429 out of tokens, 403 Pro model) already carry a readable message.
           const text = info ? message : message === "Daily limit reached" ? t("You've hit today's message limit.") : `${t("Something went wrong: ")}${message}`;
           patchMessage(conversationId, messageId, m => ({ ...m, state: "done", text }));
@@ -270,7 +393,11 @@ export function HereticChat() {
         onDone: content => {
           serverDone.current.add(messageId);
           window.clearTimeout(doneTimer.current);
-          patchMessage(conversationId, messageId, m => ({ ...m, text: content || m.text, state: "done" }));
+          const finalText = content || "";
+          targetRef.current = visibleAnswer(finalText).length; typingDone.current = true;
+          if (reduceMotion && rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = undefined; setReveal(targetRef.current); setTypingId(null); }
+          else if (!rafRef.current && !reduceMotion) pump(); // garante que a digitação termine mesmo que o stream chegue tudo no 'done'
+          patchMessage(conversationId, messageId, m => ({ ...m, text: finalText || m.text, state: "done" }));
           setGenerating(g => (g && g.messageId === messageId ? null : g)); ctrl.current = null;
           notifyReply(visibleAnswer(content || ""));
         },
@@ -351,10 +478,12 @@ export function HereticChat() {
             <span className={styles.userName}>{t("Anonymous")}{plan === "pro" ? <span className="hx-pro">PRO</span> : null}</span>
             <span className={styles.userDetail}>{plan === "pro" ? t("Pro · every AI unlocked") : t("Free · no account")}</span>
           </span>
+          <button type="button" className="hx-keybtn" onClick={() => setSettingsOpen(true)} aria-label={t("Settings")} title={t("Settings")}>
+            <SettingsIcon size={15} aria-hidden="true" />
+          </button>
           <button type="button" className="hx-keybtn" onClick={() => setKeyOpen(true)} aria-label={plan === "pro" ? t("Access key") : t("Unlock Pro")} title={plan === "pro" ? t("Access key") : t("Unlock Pro")}>
             {plan === "pro" ? <KeyRound size={15} aria-hidden="true" /> : <Lock size={15} aria-hidden="true" />}
           </button>
-          <LangSwitch />
         </div>
       </motion.nav>
 
@@ -400,9 +529,12 @@ export function HereticChat() {
                         <div className="hx-ai-body">
                           <span className={styles.srOnly}>Heretic: </span>
                           {(() => {
-                            const shown = visibleAnswer(message.text);
-                            if (message.state === "thinking" || (message.state === "streaming" && !shown)) return <ThinkingShimmer className={styles.thinking} />;
-                            return shown ? <Markdown text={shown} caret={message.state === "streaming"} /> : null;
+                            const full = visibleAnswer(message.text);
+                            const typing = message.id === typingId && !reduceMotion;
+                            const shown = typing ? full.slice(0, reveal) : full;
+                            if (message.state === "thinking" || (message.state === "streaming" && !shown) || (typing && !shown && full.length > 0)) return <ThinkingShimmer className={styles.thinking} />;
+                            const caret = message.state === "streaming" || (typing && reveal < full.length);
+                            return shown ? <Markdown text={shown} caret={caret} /> : null;
                           })()}
                           {message.state === "stopped" ? <p className={styles.stopped}>{visibleAnswer(message.text) ? t("Stopped.") : t("Stopped before the reply started.")}</p> : null}
                           {message.state === "done" || message.state === "stopped" ? <AssistantActions text={visibleAnswer(message.text)} canRegenerate={message.id === lastMessage?.id && !busy} onRegenerate={regenerate} /> : null}
@@ -431,10 +563,11 @@ export function HereticChat() {
             onSubmit={payload => send(withAttachments(payload), payload.text || payload.attachments[0]?.name)}
             onStop={() => finish("stopped")}
           />
-          {usage ? <UsageLine plan={plan} {...usage} /> : <p className={styles.hint}>{t("Uncensored. Enter sends, Shift+Enter adds a line.")}</p>}
+          {usage && usage.limit > 0 ? <UsageLine plan={plan} {...usage} /> : <p className={styles.hint}>{t("Uncensored. Enter sends, Shift+Enter adds a line.")}</p>}
         </footer>
         <span className={styles.srOnly} role="status">{busy ? t("Heretic is replying") : ""}</span>
       </section>
+      <SettingsModal open={settingsOpen} plan={plan} usage={usage} onClose={() => setSettingsOpen(false)} onManageKey={() => setKeyOpen(true)} />
       <KeyModal open={keyOpen} plan={plan} onClose={() => setKeyOpen(false)} onPlan={applyPlan} />
     </div>
   );

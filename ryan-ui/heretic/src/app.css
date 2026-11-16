@@ -368,6 +368,33 @@ body, .composer textarea { font-weight: 300; }
 .hx-qtoggle[data-on="1"]{color:var(--accent-foreground);background:var(--accent);box-shadow:none}
 .hx-qtoggle:focus-visible{outline:1px solid var(--accent);outline-offset:1px}
 
+/* ── Configurações (uso / plano / upgrade) ── */
+.hx-setcard{max-width:420px}
+.hx-setsection{margin-top:22px}
+.hx-setsection:first-of-type{margin-top:20px}
+.hx-setlabel{display:block;margin-bottom:9px;font:300 10px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#8A8A92}
+.hx-setplan{padding:14px;border-radius:12px;background:#0C0C0F;border:1px solid #1F1F24}
+.hx-setplan[data-pro="1"]{border-color:var(--accent-subtle);box-shadow:inset 0 0 0 1px var(--accent-subtle)}
+.hx-setplanname{display:flex;align-items:center;font:500 16px/1 var(--font-body);color:#F5F5F7}
+.hx-setplandesc{display:block;margin-top:6px;font-size:13px;line-height:1.45;color:#9A9AA3}
+.hx-setusage{padding:14px;border-radius:12px;background:#0C0C0F;border:1px solid #1F1F24}
+.hx-setusagetop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.hx-setusageval{font:500 16px/1 var(--font-body);color:#F5F5F7}
+.hx-setusagedim{color:#8A8A92;font-weight:400;font-size:13px}
+.hx-setusagepct{font:400 12px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;color:#8A8A92}
+.hx-setbar{display:block;margin-top:11px;height:7px;border-radius:999px;background:#1A1A1F;overflow:hidden}
+.hx-setbarfill{display:block;height:100%;border-radius:inherit;background:var(--accent);transition:width .5s cubic-bezier(.34,1.56,.64,1)}
+.hx-setbar[data-tone="high"] .hx-setbarfill{background:var(--accent-strong)}
+.hx-setbar[data-tone="out"] .hx-setbarfill{background:#FF6B6B}
+.hx-sethint{margin:9px 0 0;font:300 12px/1.4 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;color:#6E6E76}
+.hx-setbtn{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;width:100%;justify-content:center;padding:11px 16px;border-radius:10px;box-shadow:inset 0 0 0 1px #3A3A40;color:#F5F5F7;font:500 14px/1 var(--font-body);cursor:pointer;transition:box-shadow .18s ease,transform .2s cubic-bezier(.34,1.56,.64,1)}
+.hx-setbtn:hover{box-shadow:inset 0 0 0 1px #6E6E76;transform:translateY(-1px)}
+.hx-setbtn-accent{background:var(--accent);color:var(--accent-foreground);box-shadow:none}
+.hx-setbtn-accent:hover{box-shadow:none;transform:translateY(-1px)}
+.hx-setlangrow{display:flex;align-items:center;justify-content:space-between}
+.hx-setlangrow .hx-setlabel{margin-bottom:0}
+.hx-setlangrow .hx-lang{margin-left:0}
+
 /* ── Diagramas Mermaid na conversa ── */
 .hx-mermaid{display:block;margin:14px 0;padding:16px;border-radius:14px;background:#08080A;border:1px solid #1F1F24;overflow-x:auto;text-align:center;animation:hxDiagIn .4s cubic-bezier(.22,.61,.36,1)}
 .hx-mermaid[data-loading]{color:#6E6E76;font:300 12px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;text-align:left;padding:14px 16px}

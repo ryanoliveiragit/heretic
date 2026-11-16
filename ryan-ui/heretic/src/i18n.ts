@@ -110,6 +110,17 @@ const PT: Record<string, string> = {
   "Language": "Idioma",
   "Uncensored": "Sem censura",
   "Pro": "Pro",
+  "Settings": "Configurações",
+  "Plan": "Plano",
+  "Usage today": "Uso de hoje",
+  "Unlimited": "Ilimitado",
+  "No daily limit on Pro.": "Sem limite diário no Pro.",
+  "Resets at midnight UTC.": "Zera à meia-noite UTC.",
+  "Upgrade": "Fazer upgrade",
+  "Manage key": "Gerenciar chave",
+  "Every AI unlocked · no daily limit": "Todas as IAs liberadas · sem limite diário",
+  "Open to everyone · the free models": "Aberto a todos · os modelos grátis",
+  "A code unlocks every AI, with no daily limit.": "Um código libera todas as IAs, sem limite diário.",
 };
 
 /** Translate a UI string; unknown strings stay in English. */
