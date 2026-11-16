@@ -505,16 +505,13 @@ interface ModelMenuProps {
   onModel: (id: string) => void;
 }
 
-const PROVIDER_LABEL: Record<string, string> = { openrouter: "OpenRouter", venice: "Venice" };
-/** "OpenRouter · ≈$0.033/100" — the tag that tells the user which model spends more. */
+/** "≈$0.033/100" — só o custo (o provedor de terceiros fica escondido; a marca é Heretic). */
 function modelMeta(option: ModelOption): string {
-  const parts: string[] = [];
-  if (option.provider && PROVIDER_LABEL[option.provider]) parts.push(PROVIDER_LABEL[option.provider]);
   if (typeof option.cost100 === "number" && isFinite(option.cost100)) {
     // Three decimals while costs sit below a dime, so cheap models stay distinguishable.
-    parts.push(`≈$${option.cost100 < 0.1 ? option.cost100.toFixed(3) : option.cost100.toFixed(2)}/100`);
+    return `≈$${option.cost100 < 0.1 ? option.cost100.toFixed(3) : option.cost100.toFixed(2)}/100`;
   }
-  return parts.join(" · ");
+  return "";
 }
 
 function ModelMenu({ models, model, reduced, onModel }: ModelMenuProps) {

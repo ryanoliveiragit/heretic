@@ -92,9 +92,9 @@ const MAX_PROMPT_CHARS = 16000;
 const MODEL_KEY = "heretic-model";
 /** Used until GET /api/me answers (or if it fails). */
 const FALLBACK_MODELS: ModelOption[] = [
-  { id: "venice:gemma-4-uncensored", name: "Gemma 4 Uncensored", short: "Gemma 4 UC", note: "Default. Best pt-BR, cheap, vision, tools. 256k context", tier: "free", locked: false, provider: "venice", cost100: 0.020 },
-  { id: "venice:venice-uncensored-1-2", name: "Venice Uncensored 1.2", short: "Venice UC", note: "Uncensored, vision and tools. 128k context", tier: "free", locked: false, provider: "venice", cost100: 0.033 },
-  { id: "cognitivecomputations/dolphin-mistral-24b-venice-edition", name: "Dolphin 24B", short: "Dolphin 24B", note: "Uncensored. Fast. 128k context", tier: "free", locked: false, provider: "openrouter", cost100: 0.033 },
+  { id: "venice:gemma-4-uncensored", name: "Heretic Core", short: "Heretic Core", note: "Default. Fast, great pt-BR, vision. 256k context", tier: "free", locked: false, provider: "venice", cost100: 0.020 },
+  { id: "venice:venice-uncensored-1-2", name: "Heretic Flash", short: "Heretic Flash", note: "Uncensored, vision and tools. 128k context", tier: "free", locked: false, provider: "venice", cost100: 0.033 },
+  { id: "cognitivecomputations/dolphin-mistral-24b-venice-edition", name: "Heretic Mini", short: "Heretic Mini", note: "Uncensored, fast. 128k context", tier: "free", locked: false, provider: "openrouter", cost100: 0.033 },
 ];
 const titleFrom = (prompt: string) => { const line = prompt.replace(/\s+/g, " ").trim(); return line.length > 44 ? `${line.slice(0, 43).trimEnd()}…` : line; };
 const SUGGESTIONS: ChatSuggestion[] = [
@@ -293,7 +293,9 @@ export function HereticChat() {
       <AnimatePresence>
         {compact && drawer ? <motion.div key="scrim" className={styles.scrim} onClick={() => setDrawer(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={spring} /> : null}
       </AnimatePresence>
-      <motion.nav className={styles.sidebar} aria-label={t("Conversations")} inert={compact && !drawer} initial={false} animate={{ x: compact && !drawer ? "-100%" : "0%" }} transition={spring}>
+      <motion.nav className={styles.sidebar} aria-label={t("Conversations")} inert={compact && !drawer} initial={false} animate={{ x: compact && !drawer ? "-100%" : "0%" }} transition={spring}
+        drag={compact && drawer && !reduceMotion ? "x" : false} dragDirectionLock dragConstraints={{ left: 0, right: 0 }} dragElastic={{ left: 0.5, right: 0 }} dragMomentum={false}
+        onDragEnd={(_e, info) => { if (info.offset.x < -60 || info.velocity.x < -400) setDrawer(false); }}>
         <div className={styles.sidebarTop}>
           <a className={`${styles.brand} hx-brand`} href="/" aria-label="Heretic, home"><Cicada width={34} />Heretic</a>
           <button ref={newChatRef} type="button" className={styles.iconButton} onClick={newChat} aria-label={t("New chat")} title={t("New chat")}><SquarePen size={16} aria-hidden="true" /></button>
@@ -369,7 +371,7 @@ export function HereticChat() {
                       <div className={styles.bubble}><span className={styles.srOnly}>{t("You: ")}</span>{message.text}</div>
                     ) : (
                       <div className="hx-ai">
-                        <div className="hx-ai-head" aria-hidden="true"><Mask size={18} /><span className="hx-ai-name">Heretic</span>{(message as ChatMessage & { model?: string }).model ? <span className="hx-ai-model">{(message as ChatMessage & { model?: string }).model}</span> : null}</div>
+                        <div className="hx-ai-head" aria-hidden="true"><Mask size={18} /><span className="hx-ai-name">Heretic</span>{(message as ChatMessage & { model?: string }).model ? <span className="hx-ai-model">{((message as ChatMessage & { model?: string }).model ?? "").replace(/^Heretic\s+/, "")}</span> : null}</div>
                         <div className="hx-ai-body">
                           <span className={styles.srOnly}>Heretic: </span>
                           {message.state === "thinking" ? <ThinkingShimmer className={styles.thinking} /> : message.text ? <Markdown text={message.text} caret={message.state === "streaming"} /> : null}
