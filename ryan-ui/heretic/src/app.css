@@ -12,7 +12,7 @@
   --font-body: "Switzer", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Switzer", ui-sans-serif, system-ui, sans-serif; --font-serif: "Switzer", ui-sans-serif, system-ui, sans-serif;
   --text-xs: 13px; --text-sm: 13px; --text-base: 15px;
-  --control-height-sm: 32px; --control-height-md: 40px; --control-height-lg: 48px; --radius-control: 12px;
+  --control-height-sm: 36px; --control-height-md: 40px; --control-height-lg: 48px; --radius-control: 12px;
 }
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
@@ -330,7 +330,7 @@ body, .composer textarea { font-weight: 300; }
 
 /* ── access key: Pro badge, unlock button, modal ── */
 .hx-pro{margin-left:7px;padding:1px 6px;border-radius:5px;background:var(--accent);color:var(--accent-foreground);font:600 9px/1.4 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.08em;vertical-align:1px}
-.hx-keybtn{all:unset;box-sizing:border-box;display:grid;place-items:center;width:30px;height:30px;border-radius:8px;color:#8A8A92;cursor:pointer;transition:color .18s ease,background .18s ease}
+.hx-keybtn{all:unset;box-sizing:border-box;display:grid;place-items:center;width:36px;height:36px;border-radius:8px;color:#8A8A92;cursor:pointer;transition:color .18s ease,background .18s ease}
 .hx-keybtn:hover{color:#F5F5F7;background:#141417}
 .hx-keybtn:focus-visible{outline:1px solid var(--accent)}
 .hx-keyov{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:20px;background:rgba(2,2,4,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:hxKeyIn .18s ease}

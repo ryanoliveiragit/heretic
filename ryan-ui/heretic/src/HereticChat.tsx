@@ -205,7 +205,9 @@ export function HereticChat() {
 
   const toBottom = (smooth: boolean) => { const s = scrollerRef.current; if (s) s.scrollTo({ top: s.scrollHeight, behavior: smooth && !reduceMotion ? "smooth" : "auto" }); };
   useLayoutEffect(() => { pinned.current = true; toBottom(false); }, [activeId]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { pinned.current = true; toBottom(true); }, [active?.messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Re-pin on a new message, but let the ResizeObserver do the actual scroll (instant) so a
+  // smooth scroll here isn't interrupted by it — that fight caused a stutter at each reply start.
+  useEffect(() => { pinned.current = true; toBottom(false); }, [active?.messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const thread = threadRef.current;
     if (!thread) return;
@@ -278,19 +280,21 @@ export function HereticChat() {
     composerRef.current?.focus();
   };
 
-  const spring: Transition = reduceMotion ? { duration: 0 } : motionTokens.spring.smooth;
+  // Drawer + scrim share one brisk spring so they open and settle together (no flash on close).
+  const spring: Transition = reduceMotion ? { duration: 0 } : motionTokens.spring.gentle;
   const pop: Transition = reduceMotion ? { duration: 0 } : motionTokens.spring.gentle;
   const lastMessage = active?.messages[active.messages.length - 1];
 
   return (
     <div ref={rootRef} className={`${styles.root} hx-chat`} data-compact={compact} data-drawer={drawer} onKeyDown={event => { if (event.key === "Escape" && drawer) { event.stopPropagation(); setDrawer(false); } }}>
       <AnimatePresence>
-        {compact && drawer ? <motion.div key="scrim" className={styles.scrim} onClick={() => setDrawer(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduceMotion ? 0 : motionTokens.duration.standard, ease: standard }} /> : null}
+        {compact && drawer ? <motion.div key="scrim" className={styles.scrim} onClick={() => setDrawer(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={spring} /> : null}
       </AnimatePresence>
       <motion.nav className={styles.sidebar} aria-label={t("Conversations")} inert={compact && !drawer} initial={false} animate={{ x: compact && !drawer ? "-100%" : "0%" }} transition={spring}>
         <div className={styles.sidebarTop}>
           <a className={`${styles.brand} hx-brand`} href="/" aria-label="Heretic, home"><Cicada width={34} />Heretic</a>
           <button ref={newChatRef} type="button" className={styles.iconButton} onClick={newChat} aria-label={t("New chat")} title={t("New chat")}><SquarePen size={16} aria-hidden="true" /></button>
+          {compact ? <button type="button" className={styles.iconButton} onClick={() => setDrawer(false)} aria-label={t("Close")} title={t("Close")}><X size={16} aria-hidden="true" /></button> : null}
         </div>
         <LayoutGroup>
           <ul className={styles.conversations}>
