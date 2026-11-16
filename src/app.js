@@ -79,6 +79,37 @@ app.get('/api/me', async (c) => {
   return c.json({ plan, used, limit, remaining: limit === null ? null : Math.max(0, limit - used), store: usageStore(), models: modelsFor(plan) });
 });
 
+// Geração de imagem (Venice). "Ferramenta" do chat: /imagem <prompt>. Sem censura (safe_mode off).
+// Cada imagem desconta um custo fixo do orçamento diário grátis; Pro é ilimitado.
+const IMAGE_TOKEN_COST = 1500;
+app.post('/api/image', async (c) => {
+  const plan = planOf(c), who = visitorId(c);
+  const limit = plan === 'free' ? FREE_DAILY_TOKENS : null;
+  const usedBefore = await getUsed(who);
+  if (limit !== null && usedBefore >= limit) return c.json({ error: 'daily_token_limit', used: usedBefore, limit }, 429);
+  let body = {};
+  try { body = await c.req.json(); } catch {}
+  const prompt = (body.prompt || '').toString().trim().slice(0, 1500);
+  if (!prompt) return c.json({ error: 'empty_prompt' }, 400);
+  const key = process.env.VENICE_API_KEY;
+  if (!key) return c.json({ error: 'no_provider' }, 500);
+  try {
+    const r = await fetch('https://api.venice.ai/api/v1/image/generate', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'venice-sd35', prompt, width: 1024, height: 1024, steps: 25, safe_mode: false, format: 'webp', hide_watermark: true }),
+    });
+    if (!r.ok) { const txt = await r.text().catch(() => ''); return c.json({ error: 'image_failed', detail: txt.slice(0, 200) }, 502); }
+    const data = await r.json();
+    const b64 = data && data.images && data.images[0];
+    if (!b64) return c.json({ error: 'no_image' }, 502);
+    const used = await addUsed(who, IMAGE_TOKEN_COST);
+    return c.json({ image: `data:image/webp;base64,${b64}`, used, limit, remaining: limit === null ? null : Math.max(0, limit - used) });
+  } catch (e) {
+    return c.json({ error: 'image_failed', detail: String(e && e.message || e).slice(0, 200) }, 502);
+  }
+});
+
 // Validate an access code (paste "Enter key" flow). Returns the plan it unlocks.
 app.post('/api/redeem', async (c) => {
   let code = '';

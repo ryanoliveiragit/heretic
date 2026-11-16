@@ -26,6 +26,8 @@ const PT: Record<string, string> = {
   "Copy": "Copiar",
   "Copied": "Copiado",
   "Copy reply": "Copiar resposta",
+  "Download": "Baixar",
+  "Download reply": "Baixar resposta",
   "Regenerate": "Refazer",
   "Regenerate reply": "Refazer resposta",
   "Conversations": "Conversas",
@@ -121,6 +123,11 @@ const PT: Record<string, string> = {
   "Every AI unlocked · no daily limit": "Todas as IAs liberadas · sem limite diário",
   "Open to everyone · the free models": "Aberto a todos · os modelos grátis",
   "A code unlocks every AI, with no daily limit.": "Um código libera todas as IAs, sem limite diário.",
+  "Image": "Imagem",
+  "Your image is ready.": "Sua imagem está pronta.",
+  "Couldn't generate the image. Try again.": "Não consegui gerar a imagem. Tente de novo.",
+  "Generate an image: /imagem a red neon cicada": "Gerar imagem: /imagem uma cigarra em neon vermelho",
+  "Generate an image of anything": "Gere uma imagem de qualquer coisa",
 };
 
 /** Translate a UI string; unknown strings stay in English. */

@@ -39,8 +39,19 @@ export function authHeaders(extra?: Record<string, string>): Record<string, stri
   return h;
 }
 
+export interface ImageResult { image: string; used?: number; limit?: number | null; remaining?: number | null }
+
 export const api = {
   me: () => fetch(`${API}/me`, { headers: authHeaders() }).then(j<Me>),
+  image: (prompt: string) =>
+    fetch(`${API}/image`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ prompt }),
+    }).then(async res => {
+      if (!res.ok) { const d = (await res.json().catch(() => ({}))) as { error?: string }; throw new Error(d.error || `${res.status}`); }
+      return res.json() as Promise<ImageResult>;
+    }),
   redeem: (code: string) =>
     fetch(`${API}/redeem`, {
       method: "POST",

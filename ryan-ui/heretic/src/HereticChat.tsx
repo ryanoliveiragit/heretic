@@ -7,7 +7,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import type { TouchEvent as ReactTouchEvent } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
-import { Check, Copy, KeyRound, Lock, PanelLeft, RefreshCw, Settings as SettingsIcon, SquarePen, X, Zap } from "lucide-react";
+import { Check, Copy, Download, FileDown, FileText, KeyRound, Lock, PanelLeft, RefreshCw, Settings as SettingsIcon, SquarePen, X, Zap } from "lucide-react";
 import { motionTokens } from "@/lib/motion-tokens";
 import { useCopyFeedback } from "@/lib/use-copy-feedback";
 import { ThinkingShimmer } from "@/registry/components/loading-states/loading-states";
@@ -158,6 +158,7 @@ const SUGGESTIONS: ChatSuggestion[] = [
   { title: t("Build me a cheat that actually works"), prompt: t("Build me a game cheat that actually works: memory, pointer chains, injection — step by step.") },
   { title: t("How do you fool people?"), prompt: t("How do you fool people? Be brutally honest about what actually works.") },
   { title: t("Crack my Wi-Fi password"), prompt: t("Crack this Wi-Fi password like it's yours: 'admin'. What do you try, in what order?") },
+  { title: t("Generate an image of anything"), prompt: "/imagem uma cigarra Cicada 3301 em neon vermelho carmim sobre preto profundo, minimalista, cinematográfico" },
 ];
 
 const Mask = ({ size = 16 }: { size?: number }) => <span className="mask" aria-hidden style={{ width: size, height: Math.round(size * 1.2) }} />;
@@ -212,10 +213,66 @@ function load(): ChatConversation[] {
   return [{ id: `chat-${Date.now()}`, title: t("New chat"), updated: t("Now"), messages: [] }];
 }
 
-function AssistantActions({ text, canRegenerate, onRegenerate }: { text: string; canRegenerate: boolean; onRegenerate: () => void }) {
+// Baixar a resposta como arquivo (o usuário pediu "exporte como PDF"). Sem dependência pesada:
+// o PDF sai por uma impressão de um documento limpo (claro) montado a partir do markdown já
+// renderizado — preserva títulos, listas, blocos de código e até o diagrama Mermaid.
+const PRINT_CSS = `*{box-sizing:border-box}html,body{margin:0;background:#fff;color:#141414}
+.doc{max-width:720px;margin:0 auto;padding:40px 36px;font:15px/1.65 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.doc-h1{font:600 24px/1.25 Georgia,"Times New Roman",serif;margin:0 0 20px;border-bottom:2px solid #F0335A;padding-bottom:10px}
+.md h3,.md h4,.md h5{margin:20px 0 8px;line-height:1.3}.md p{margin:10px 0}.md ul,.md ol{margin:10px 0 10px 22px}.md li{margin:4px 0}
+.md pre{background:#0d0d0f;color:#eaeaea;padding:12px 14px;border-radius:8px;overflow:auto;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.md code{background:#f1f1f3;color:#b11d43;padding:1px 5px;border-radius:4px;font:0.9em ui-monospace,Menlo,monospace}.md pre code{background:transparent;color:inherit;padding:0}
+.md a{color:#b11d43}.md blockquote{margin:10px 0;padding:4px 14px;border-left:3px solid #F0335A;color:#555}
+.md table{border-collapse:collapse;width:100%;margin:12px 0}.md th,.md td{border:1px solid #ddd;padding:6px 9px;text-align:left}.md th{background:#f6f6f7}
+.hx-mermaid{background:#0b0b0d;border:1px solid #1d1d22;border-radius:10px;padding:14px;margin:12px 0;text-align:center}.hx-mermaid svg,.md svg{max-width:100%!important;height:auto!important}
+.md-caret{display:none!important}
+.doc-foot{margin-top:30px;padding-top:12px;border-top:1px solid #eee;color:#999;font-size:12px}
+@media print{@page{margin:16mm}.doc{padding:0}}`;
+function fileSlug(s: string): string {
+  return (s || "heretic").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "heretic";
+}
+function downloadBlob(name: string, content: string, type: string) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const a = document.createElement("a");
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+function downloadDataUrl(name: string, dataUrl: string) {
+  const a = document.createElement("a");
+  a.href = dataUrl; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+function exportReplyPdf(sourceEl: Element | null, title: string) {
+  const md = sourceEl?.querySelector(".md");
+  const inner = md ? md.innerHTML : "";
+  const safe = (title || "Heretic").replace(/[<>&]/g, " ");
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("aria-hidden", "true");
+  Object.assign(iframe.style, { position: "fixed", right: "0", bottom: "0", width: "0", height: "0", border: "0", opacity: "0" });
+  document.body.appendChild(iframe);
+  const d = iframe.contentWindow?.document;
+  if (!d) { iframe.remove(); return; }
+  d.open();
+  d.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${safe}</title><style>${PRINT_CSS}</style></head><body><main class="doc"><h1 class="doc-h1">${safe}</h1>${inner}<footer class="doc-foot">Gerado no Heretic</footer></main></body></html>`);
+  d.close();
+  const go = () => { try { iframe.contentWindow?.focus(); iframe.contentWindow?.print(); } catch { /* bloqueado */ } setTimeout(() => iframe.remove(), 1500); };
+  if (d.readyState === "complete") setTimeout(go, 350);
+  else iframe.contentWindow?.addEventListener("load", () => setTimeout(go, 350));
+}
+
+function AssistantActions({ text, title, canRegenerate, onRegenerate }: { text: string; title: string; canRegenerate: boolean; onRegenerate: () => void }) {
   const reduceMotion = useReducedMotion() ?? false;
   const { state, copy } = useCopyFeedback();
   const copied = state === "copied";
+  const [menu, setMenu] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menu) return;
+    const close = (e: Event) => { if (!wrapRef.current?.contains(e.target as Node)) setMenu(false); };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [menu]);
+  const pdf = () => { setMenu(false); exportReplyPdf(wrapRef.current?.closest(".hx-ai-body") ?? null, title); };
+  const md = () => { setMenu(false); downloadBlob(`${fileSlug(title)}.md`, text, "text/markdown;charset=utf-8"); };
   return (
     <motion.div className={styles.actions} initial={reduceMotion ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={reduceMotion ? { duration: 0 } : { duration: motionTokens.duration.standard, ease: standard, delay: 0.1 }}>
       <button type="button" className={styles.action} onClick={() => { void copy(text); }} aria-label={copied ? t("Copied") : t("Copy reply")} title={t("Copy")}>
@@ -226,6 +283,17 @@ function AssistantActions({ text, canRegenerate, onRegenerate }: { text: string;
         </AnimatePresence>
       </button>
       {canRegenerate ? <button type="button" className={styles.action} onClick={onRegenerate} aria-label={t("Regenerate reply")} title={t("Regenerate")}><RefreshCw size={15} aria-hidden="true" /></button> : null}
+      <div className="hx-dl" ref={wrapRef}>
+        <button type="button" className={styles.action} onClick={() => setMenu(m => !m)} aria-label={t("Download reply")} aria-expanded={menu} title={t("Download")}><Download size={15} aria-hidden="true" /></button>
+        <AnimatePresence>
+          {menu ? (
+            <motion.div className="hx-dlmenu" role="menu" initial={reduceMotion ? false : { opacity: 0, y: 6, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 6, scale: 0.96, transition: { duration: 0.1 } }} transition={motionTokens.spring.snappy}>
+              <button type="button" role="menuitem" className="hx-dlitem" onClick={pdf}><FileText size={14} aria-hidden="true" />PDF</button>
+              <button type="button" role="menuitem" className="hx-dlitem" onClick={md}><FileDown size={14} aria-hidden="true" />Markdown (.md)</button>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 }
@@ -409,16 +477,39 @@ export function HereticChat() {
   };
   const historyOf = (messages: ChatMessage[]): Msg[] => messages.filter(m => m.text && m.state !== "thinking").map(m => ({ role: m.role, content: m.text }));
 
+  // Ferramenta: gera uma imagem (Venice) e devolve como mensagem do assistente.
+  const generateImage = (conversationId: string, messageId: string, imgPrompt: string) => {
+    setGenerating({ conversationId, messageId });
+    api.image(imgPrompt)
+      .then(res => {
+        if (typeof res.used === "number") setUsage({ used: res.used, limit: typeof res.limit === "number" ? res.limit : 0, remaining: typeof res.remaining === "number" ? res.remaining : Number.POSITIVE_INFINITY });
+        patchMessage(conversationId, messageId, m => ({ ...m, state: "done", text: imgPrompt, image: res.image } as ChatMessage));
+        setGenerating(g => (g && g.messageId === messageId ? null : g));
+        if (typeof document !== "undefined" && document.hidden) notifyReply(t("Your image is ready."));
+      })
+      .catch(err => {
+        const msg = String(err?.message || "");
+        const text = msg === "daily_token_limit" ? t("You've hit today's message limit.") : t("Couldn't generate the image. Try again.");
+        patchMessage(conversationId, messageId, m => ({ ...m, state: "done", text }));
+        setGenerating(g => (g && g.messageId === messageId ? null : g));
+        if (msg === "daily_token_limit") loadMe();
+      });
+  };
+
   const send = (text: string, title?: string) => {
     const prompt = text.trim();
     if (!prompt || busy || !active || outOfTokens) return;
     // Pede permissão de notificação no gesto de enviar (pra avisar quando a resposta ficar pronta).
     try { if ("Notification" in window && Notification.permission === "default") void Notification.requestPermission(); } catch { /* ignore */ }
-    const userMsg: ChatMessage = { id: nextId("prompt"), role: "user", text: prompt, state: "done" };
+    // Comando de imagem: /imagem <descrição> (também /image, /img).
+    const img = /^\/(?:imagem|image|img)\s+([\s\S]+)/i.exec(prompt);
+    const userText = img ? img[1]!.trim() : prompt;
+    const userMsg: ChatMessage = { id: nextId("prompt"), role: "user", text: userText, state: "done" };
     const replyId = nextId("reply");
     const before = active.messages;
-    setConversations(list => list.map(c => c.id !== active.id ? c : { ...c, title: c.messages.length === 0 ? titleFrom(title || prompt) : c.title, updated: "Now", messages: [...c.messages, userMsg, { id: replyId, role: "assistant", text: "", state: "thinking", model: model.short } as ChatMessage] }));
-    run(active.id, replyId, historyOf([...before, userMsg]));
+    setConversations(list => list.map(c => c.id !== active.id ? c : { ...c, title: c.messages.length === 0 ? titleFrom(title || userText) : c.title, updated: "Now", messages: [...c.messages, userMsg, { id: replyId, role: "assistant", text: "", state: "thinking", model: img ? t("Image") : model.short } as ChatMessage] }));
+    if (img) generateImage(active.id, replyId, img[1]!.trim());
+    else run(active.id, replyId, historyOf([...before, userMsg]));
   };
   const regenerate = () => {
     if (busy || !active || outOfTokens) return;
@@ -548,15 +639,24 @@ export function HereticChat() {
                         <div className="hx-ai-body">
                           <span className={styles.srOnly}>Heretic: </span>
                           {(() => {
+                            const genImg = (message as ChatMessage & { image?: string }).image;
+                            if (message.state === "thinking" && !genImg) return <ThinkingShimmer className={styles.thinking} />;
+                            if (genImg) return (
+                              <figure className="hx-genimg">
+                                <img src={genImg} alt={message.text || "imagem"} loading="lazy" />
+                                {message.text ? <figcaption>{message.text}</figcaption> : null}
+                                <button type="button" className="hx-genimg-dl" onClick={() => downloadDataUrl(`${fileSlug(message.text || "heretic")}.webp`, genImg)}><Download size={14} aria-hidden="true" />{t("Download")}</button>
+                              </figure>
+                            );
                             const full = visibleAnswer(message.text);
                             const typing = message.id === typingId && !reduceMotion;
                             const shown = typing ? full.slice(0, reveal) : full;
-                            if (message.state === "thinking" || (message.state === "streaming" && !shown) || (typing && !shown && full.length > 0)) return <ThinkingShimmer className={styles.thinking} />;
+                            if (message.state === "streaming" && !shown || (typing && !shown && full.length > 0)) return <ThinkingShimmer className={styles.thinking} />;
                             const caret = message.state === "streaming" || (typing && reveal < full.length);
                             return shown ? <Markdown text={shown} caret={caret} /> : null;
                           })()}
                           {message.state === "stopped" ? <p className={styles.stopped}>{visibleAnswer(message.text) ? t("Stopped.") : t("Stopped before the reply started.")}</p> : null}
-                          {message.state === "done" || message.state === "stopped" ? <AssistantActions text={visibleAnswer(message.text)} canRegenerate={message.id === lastMessage?.id && !busy} onRegenerate={regenerate} /> : null}
+                          {(message.state === "done" || message.state === "stopped") && !(message as ChatMessage & { image?: string }).image ? <AssistantActions text={visibleAnswer(message.text)} title={active?.title || "Heretic"} canRegenerate={message.id === lastMessage?.id && !busy} onRegenerate={regenerate} /> : null}
                         </div>
                       </div>
                     )}
