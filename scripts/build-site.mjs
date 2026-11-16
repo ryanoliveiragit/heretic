@@ -121,7 +121,9 @@ const redirect = (toMobile) => `<script>(function(){var m=matchMedia('(max-width
 
 // Botões da landing levam ao app; a pergunta digitada no topo abre o app com ela.
 const WIRE = `<script>(function(){
-var CTA=/^(try it free|start free|log in|get credits|ask it anything[ .—–-]*free|try it free, no signup)$/i;
+// CTAs do topo/preços levam ao chat. Casa EN e PT-BR (o i18n troca o texto depois), por isso os dois.
+var CTA=/^(try it free|start free|get credits|ask it anything[ .—–-]*free|try it free, no signup|teste gr[áa]tis|come[çc]ar gr[áa]tis( →)?|comprar cr[ée]ditos|pergunte qualquer coisa[ .—–-]*gr[áa]tis)$/i;
+var LOGIN=/^(log in|entrar)$/i;
 function label(el){return (el.getAttribute('aria-label')||el.textContent||'').replace(/\\s+/g,' ').trim();}
 function heroInput(){return document.querySelector('textarea[aria-label="Your question"],input[aria-label="Your question"],textarea[data-input]');}
 function goApp(q){location.href='/app/'+(q?('?q='+encodeURIComponent(q)):'');}
@@ -129,6 +131,7 @@ document.addEventListener('click',function(e){
   var path=e.composedPath?e.composedPath():[e.target];
   for(var i=0;i<path.length;i++){var el=path[i];if(!el||!el.tagName)continue;
     if(el.tagName==='BUTTON'||el.tagName==='A'){var t=label(el);
+      if(LOGIN.test(t)){e.preventDefault();e.stopPropagation();location.href='/app/?key=1';return;}
       if(CTA.test(t)){e.preventDefault();e.stopPropagation();goApp();return;}
       if(/^(send|send prompt)$/i.test(t)){var h=heroInput();if(h&&h.value.trim()){e.preventDefault();e.stopPropagation();goApp(h.value.trim());}return;}
       var grp=el.closest&&el.closest('[aria-label="Example questions"]');
