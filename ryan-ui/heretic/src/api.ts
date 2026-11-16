@@ -23,8 +23,36 @@ async function j<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// ── access key ── (free is public; a valid code unlocks Pro)
+const KEY_STORE = "heretic-key";
+export function getKey(): string {
+  try { return localStorage.getItem(KEY_STORE) || ""; } catch { return ""; }
+}
+export function setKey(code: string) {
+  try { if (code) localStorage.setItem(KEY_STORE, code); else localStorage.removeItem(KEY_STORE); } catch { /* private mode */ }
+}
+/** Headers to send on every API call, carrying the access key when set. */
+export function authHeaders(extra?: Record<string, string>): Record<string, string> {
+  const h: Record<string, string> = { ...(extra || {}) };
+  const k = getKey();
+  if (k) h["x-heretic-key"] = k;
+  return h;
+}
+
 export const api = {
-  me: () => fetch(`${API}/me`).then(j<Me>),
+  me: () => fetch(`${API}/me`, { headers: authHeaders() }).then(j<Me>),
+  redeem: (code: string) =>
+    fetch(`${API}/redeem`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ code }),
+    }).then(j<{ ok: boolean; plan: string }>),
+  checkout: () =>
+    fetch(`${API}/checkout`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({}),
+    }).then(j<{ ok: boolean; plan: string; code: string }>),
   health: () => fetch(`${API}/health`).then(j<Health>),
   models: () => fetch(`${API}/models`).then(j<ModelInfo[]>),
   routes: () => fetch(`${API}/routes`).then(j<Routes>),
@@ -99,7 +127,7 @@ export function streamChat(
     try {
       const res = await fetch(`${API}/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
         signal: ctrl.signal,
       });

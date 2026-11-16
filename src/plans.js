@@ -46,10 +46,59 @@ export const PUBLIC_MODELS = PUBLIC_MODELS_RAW.map(raw => {
   return { ...raw, provider: m?.provider || null, price_in: m?.price_in ?? null, price_out: m?.price_out ?? null, ctx: m?.ctx ?? null, cost100: m ? costPer100(m) : null };
 });
 
-export function planOf(/* c */) {
-  // No accounts or billing yet: everyone is on the free plan. HERETIC_PLAN=pro (env) unlocks all
-  // models — used for local testing and as the switch when credits/billing arrive.
-  return process.env.HERETIC_PLAN === 'pro' ? 'pro' : 'free';
+// ── access codes ──
+// Free is public (no code needed). A valid access code unlocks Pro (all models).
+// Two kinds of valid code, both checked without any database:
+//   1) fixed codes listed in ACCESS_CODES (comma-separated) — e.g. the owner's MAX code;
+//   2) signed codes "HRTC-PRO-<serial>-<sig>" issued by /api/checkout, where <sig> is derived
+//      from ACCESS_SECRET + serial, so they validate statelessly on any Edge instance.
+// This is the "por enquanto" flow; swap for Stripe + a real key store when billing lands.
+const ACCESS_SECRET = process.env.ACCESS_SECRET || 'heretic-dev-secret-2026';
+
+function codeSig(serial) {
+  let h1 = 0x811c9dc5 >>> 0, h2 = 0x01000193 >>> 0;
+  const s = `${ACCESS_SECRET}|${serial}`;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 16777619) >>> 0;
+    h2 = Math.imul(h2 ^ c, 2654435761) >>> 0;
+  }
+  return (h1.toString(36) + h2.toString(36)).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8).padEnd(8, '0');
+}
+
+/** Make a fresh signed Pro code (used by the buy/checkout stub). */
+export function issueCode() {
+  const serial = (Date.now().toString(36) + Math.random().toString(36).slice(2, 6)).toUpperCase().slice(-7);
+  return `HRTC-PRO-${serial}-${codeSig(serial)}`;
+}
+
+const fixedCodes = () => (process.env.ACCESS_CODES || '')
+  .split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+
+/** Plan granted by a code, or null if the code is invalid. */
+export function planForKey(key) {
+  if (!key) return null;
+  const k = String(key).trim().toUpperCase();
+  if (fixedCodes().includes(k)) return 'pro';
+  const m = k.match(/^HRTC-(?:PRO|MAX|STD)-([A-Z0-9]+)-([A-Z0-9]+)$/);
+  if (m && codeSig(m[1]) === m[2]) return 'pro';
+  return null;
+}
+
+/** Access key sent by the app: x-heretic-key header, else the heretic_key cookie. */
+export function keyFrom(c) {
+  const h = c.req.header('x-heretic-key');
+  if (h) return h;
+  const cookie = c.req.header('cookie') || '';
+  const m = cookie.match(/(?:^|;\s*)heretic_key=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+export function planOf(c) {
+  // HERETIC_PLAN=pro (env) forces Pro for everyone — local testing / global switch.
+  if (process.env.HERETIC_PLAN === 'pro') return 'pro';
+  // Otherwise: free by default, Pro when a valid access code is present.
+  return c && planForKey(keyFrom(c)) === 'pro' ? 'pro' : 'free';
 }
 
 export function modelsFor(plan) {

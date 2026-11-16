@@ -2,7 +2,8 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html,body{margin:0;padding:0;background:#1E1E22;overflow-x:hidden}body>*{max-width:100%}</style>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -20,7 +21,7 @@
   <script src="heretic-orbit.js"></script>
   <script src="heretic-hack.js"></script>
 </helmet>
-<div ref="{{ rootRef }}" data-hm style="position:relative;width:390px;height:{{ rootH }};overflow:hidden;background:#1E1E22;color:var(--foreground);font:400 16px/1.55 'Geist Variable','Inter Variable',sans-serif;--font-body:'Geist Variable','Inter Variable',sans-serif;--font-display:'Geist Variable','Inter Variable',sans-serif;--control-height-sm:32px;--control-height-md:40px;--control-height-lg:48px;--radius-control:12px">
+<div ref="{{ rootRef }}" data-hm style="position:relative;width:100%;max-width:100%;box-sizing:border-box;height:{{ rootH }};overflow:hidden;background:#1E1E22;color:var(--foreground);font:400 16px/1.55 'Geist Variable','Inter Variable',sans-serif;--font-body:'Geist Variable','Inter Variable',sans-serif;--font-display:'Geist Variable','Inter Variable',sans-serif;--control-height-sm:32px;--control-height-md:40px;--control-height-lg:48px;--radius-control:12px">
   <div data-scroller style="position:{{ scPos }};inset:0;overflow-x:hidden;overflow-y:{{ scOv }};scrollbar-width:none;-webkit-overflow-scrolling:touch">
 
     <sc-if value="{{ show.hero }}" hint-placeholder-val="{{ true }}">

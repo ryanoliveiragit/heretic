@@ -9,7 +9,7 @@ import { getPersona, setPersona } from './persona.js';
 import { streamChat, getRoutes, setRoute, MODEL_CATALOG } from './upstream.js';
 import { checkBudget, incrementUsage } from './budget.js';
 import { AGENTS, agentPrompt } from './agents.js';
-import { FREE_MODEL, FREE_DAILY_TOKENS, planOf, modelsFor, canUse, estimateTokens, visitorId, getUsed, addUsed, usageStore } from './plans.js';
+import { FREE_MODEL, FREE_DAILY_TOKENS, planOf, modelsFor, canUse, estimateTokens, visitorId, getUsed, addUsed, usageStore, planForKey, issueCode } from './plans.js';
 
 export const app = new Hono();
 
@@ -77,6 +77,22 @@ app.put('/api/persona', async (c) => {
 app.get('/api/me', async (c) => {
   const plan = planOf(c), used = await getUsed(visitorId(c)), limit = plan === 'free' ? FREE_DAILY_TOKENS : null;
   return c.json({ plan, used, limit, remaining: limit === null ? null : Math.max(0, limit - used), store: usageStore(), models: modelsFor(plan) });
+});
+
+// Validate an access code (paste "Enter key" flow). Returns the plan it unlocks.
+app.post('/api/redeem', async (c) => {
+  let code = '';
+  try { code = (await c.req.json()).code || ''; } catch {}
+  const plan = planForKey(code);
+  if (!plan) return c.json({ ok: false, error: 'invalid_code' }, 400);
+  return c.json({ ok: true, plan });
+});
+
+// Buy/checkout stub: issues a fresh signed Pro code. Swap for Stripe later;
+// for now it just returns a code the buyer can copy and paste into "Enter key".
+app.post('/api/checkout', async (c) => {
+  const code = issueCode();
+  return c.json({ ok: true, plan: 'pro', code });
 });
 
 app.post('/api/chat', async (c) => {

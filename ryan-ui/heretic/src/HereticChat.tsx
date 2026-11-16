@@ -6,13 +6,13 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
-import { Check, Copy, PanelLeft, RefreshCw, SquarePen } from "lucide-react";
+import { Check, Copy, KeyRound, Lock, PanelLeft, RefreshCw, SquarePen, X } from "lucide-react";
 import { motionTokens } from "@/lib/motion-tokens";
 import { useCopyFeedback } from "@/lib/use-copy-feedback";
 import { ThinkingShimmer } from "@/registry/components/loading-states/loading-states";
 import type { ChatConversation, ChatMessage, ChatSuggestion } from "@/registry/blocks/chat-app/chat-app-data";
 import styles from "@/registry/blocks/chat-app/chat-app.module.css";
-import { api, streamChat } from "./api";
+import { api, streamChat, getKey, setKey } from "./api";
 import { Markdown } from "./markdown";
 import type { Msg, Usage } from "./api";
 import { Composer, withAttachments } from "./composer/ai-composer";
@@ -25,6 +25,63 @@ function LangSwitch() {
     <span className="hx-lang" role="group" aria-label="Language / Idioma">
       {(["en", "pt"] as const).map(l => <button key={l} type="button" aria-pressed={lang === l} onClick={() => setLang(l)}>{l.toUpperCase()}</button>)}
     </span>
+  );
+}
+
+// Access-key modal: paste a code to unlock Pro, or "buy" (stub) to get one.
+function KeyModal({ open, plan, onClose, onPlan }: { open: boolean; plan: string; onClose: () => void; onPlan: (p: string) => void }) {
+  const [code, setCode] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [issued, setIssued] = useState("");
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { if (open) { setErr(""); setIssued(""); setCopied(false); setCode(getKey()); } }, [open]);
+  if (!open) return null;
+  const redeem = async () => {
+    const c = code.trim();
+    if (!c) return;
+    setBusy(true); setErr("");
+    try {
+      const r = await api.redeem(c);
+      setKey(c); onPlan(r.plan);
+      onClose();
+    } catch { setErr(t("That code isn't valid.")); }
+    finally { setBusy(false); }
+  };
+  const buy = async () => {
+    setBusy(true); setErr("");
+    try { const r = await api.checkout(); setIssued(r.code); setCode(r.code); }
+    catch { setErr(t("Could not get a code. Try again.")); }
+    finally { setBusy(false); }
+  };
+  const copy = async () => { try { await navigator.clipboard.writeText(issued); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* denied */ } };
+  const unlink = () => { setKey(""); onPlan("free"); onClose(); };
+  return (
+    <div className="hx-keyov" role="dialog" aria-modal="true" aria-label={t("Access key")} onPointerDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="hx-keycard">
+        <button type="button" className="hx-keyx" onClick={onClose} aria-label={t("Close")}><X size={16} aria-hidden="true" /></button>
+        <div className="hx-keyicon">{plan === "pro" ? <Check size={18} aria-hidden="true" /> : <Lock size={18} aria-hidden="true" />}</div>
+        <h3 className="hx-keytitle">{plan === "pro" ? t("Pro unlocked") : t("Unlock every model")}</h3>
+        <p className="hx-keysub">{plan === "pro" ? t("Your access key is active. All AIs are unlocked.") : t("Free is open to everyone. A code unlocks every AI, no daily limit.")}</p>
+        <label className="hx-keylabel" htmlFor="hx-code">{t("Access code")}</label>
+        <div className="hx-keyrow">
+          <input id="hx-code" className="hx-keyinput" value={code} onChange={e => setCode(e.target.value)} onKeyDown={e => { if (e.key === "Enter") redeem(); }} placeholder="HRTC-••••-••••-••••" autoComplete="off" spellCheck={false} />
+          <button type="button" className="hx-keygo" onClick={redeem} disabled={busy || !code.trim()}>{t("Enter")}</button>
+        </div>
+        {err ? <p className="hx-keyerr" role="alert">{err}</p> : null}
+        {issued ? (
+          <div className="hx-keyissued">
+            <span className="hx-keyissuedlabel">{t("Your code — copy and keep it")}</span>
+            <button type="button" className="hx-keycopy" onClick={copy}>{copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}<code>{issued}</code></button>
+          </div>
+        ) : null}
+        <div className="hx-keyfoot">
+          {plan === "pro"
+            ? <button type="button" className="hx-keylink" onClick={unlink}>{t("Sign out of Pro")}</button>
+            : <button type="button" className="hx-keybuy" onClick={buy} disabled={busy}><KeyRound size={14} aria-hidden="true" />{t("Get a code")}</button>}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -83,6 +140,7 @@ export function HereticChat() {
   const [generating, setGenerating] = useState<{ conversationId: string; messageId: string } | null>(null);
   const [models, setModels] = useState<ModelOption[]>(FALLBACK_MODELS);
   const [plan, setPlan] = useState("free");
+  const [keyOpen, setKeyOpen] = useState(false);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [modelId, setModelId] = useState(() => { try { return localStorage.getItem(MODEL_KEY) ?? ""; } catch { return ""; } });
   const [compact, setCompact] = useState(false);
@@ -106,8 +164,10 @@ export function HereticChat() {
   useEffect(() => { try { localStorage.setItem(STORE, JSON.stringify(conversations.slice(0, 60))); } catch { /* full */ } }, [conversations]);
   useEffect(() => () => { ctrl.current?.abort(); window.clearTimeout(doneTimer.current); }, []);
   useEffect(() => {
-    const q = new URLSearchParams(location.search).get("q");
+    const p = new URLSearchParams(location.search);
+    const q = p.get("q");
     if (q) { history.replaceState(null, "", location.pathname); composerRef.current?.fill(q); composerRef.current?.focus(); }
+    if (p.get("buy") === "1" || p.get("key") === "1") { history.replaceState(null, "", location.pathname); setKeyOpen(true); }
   }, []);
   // Plan, models (Pro ones arrive locked) and today's token usage.
   const loadMe = useCallback(() => {
@@ -118,6 +178,7 @@ export function HereticChat() {
     }).catch(() => { /* keep the fallback model; the meter stays hidden */ });
   }, []);
   useEffect(() => { loadMe(); }, [loadMe]);
+  const applyPlan = useCallback((p: string) => { setPlan(p); loadMe(); }, [loadMe]);
   const chooseModel = (id: string) => {
     const next = models.find(m => m.id === id);
     if (!next || next.locked) return;
@@ -252,7 +313,13 @@ export function HereticChat() {
         </LayoutGroup>
         <div className={styles.user}>
           <span className={styles.avatar} aria-hidden="true"><Mask size={16} /></span>
-          <span className={styles.userText}><span className={styles.userName}>{t("Anonymous")}</span><span className={styles.userDetail}>{t("Free · no account")}</span></span>
+          <span className={styles.userText}>
+            <span className={styles.userName}>{t("Anonymous")}{plan === "pro" ? <span className="hx-pro">PRO</span> : null}</span>
+            <span className={styles.userDetail}>{plan === "pro" ? t("Pro · every AI unlocked") : t("Free · no account")}</span>
+          </span>
+          <button type="button" className="hx-keybtn" onClick={() => setKeyOpen(true)} aria-label={plan === "pro" ? t("Access key") : t("Unlock Pro")} title={plan === "pro" ? t("Access key") : t("Unlock Pro")}>
+            {plan === "pro" ? <KeyRound size={15} aria-hidden="true" /> : <Lock size={15} aria-hidden="true" />}
+          </button>
           <LangSwitch />
         </div>
       </motion.nav>
@@ -329,6 +396,7 @@ export function HereticChat() {
         </footer>
         <span className={styles.srOnly} role="status">{busy ? t("Heretic is replying") : ""}</span>
       </section>
+      <KeyModal open={keyOpen} plan={plan} onClose={() => setKeyOpen(false)} onPlan={applyPlan} />
     </div>
   );
 }
