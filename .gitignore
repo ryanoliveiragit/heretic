@@ -39,3 +39,5 @@ arc-ui.zip
 # godmod3 (separate tool)
 godmod3/
 godmod3-skill/
+.vercel
+.env*

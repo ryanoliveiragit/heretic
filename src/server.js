@@ -27,6 +27,7 @@ const MIME = {
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml',
   '.woff2': 'font/woff2', '.woff': 'font/woff', '.ico': 'image/x-icon',
+  '.webmanifest': 'application/manifest+json', '.jsx': 'application/javascript; charset=utf-8',
 };
 
 async function serveStatic(c, relPath) {
@@ -38,11 +39,13 @@ async function serveStatic(c, relPath) {
   return new Response(data, { headers: { 'Content-Type': mime } });
 }
 
-// Static routes (local dev only)
-app.get('/', async (c) => serveStatic(c, 'index.html'));
-app.get('/assets/:file', async (c) => serveStatic(c, join('assets', c.req.param('file'))));
-app.get('/favicon.svg', async (c) => serveStatic(c, 'favicon.svg'));
-app.get('/favicon.ico', async (c) => serveStatic(c, 'favicon.ico'));
+// Static files (local dev only): landing em /, celular em /m.html, chat em /app/.
+app.get('*', async (c) => {
+  let rel = decodeURIComponent(new URL(c.req.url).pathname);
+  if (rel.startsWith('/api/')) return c.text('Not found', 404);
+  if (rel.endsWith('/')) rel += 'index.html';
+  return serveStatic(c, rel.replace(/^\/+/, ''));
+});
 
 const PORT = process.env.PORT || 4319;
 serve({ fetch: app.fetch, port: PORT, hostname: '0.0.0.0' }, (info) => {

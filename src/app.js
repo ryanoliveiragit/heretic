@@ -8,8 +8,13 @@ import { health, listProjects, createProject, deleteProject,
 import { getPersona, setPersona } from './persona.js';
 import { streamChat, getRoutes, setRoute, MODEL_CATALOG } from './upstream.js';
 import { checkBudget, incrementUsage } from './budget.js';
+import { AGENTS, agentPrompt } from './agents.js';
+import { FREE_MODEL, FREE_DAILY_TOKENS, planOf, modelsFor, canUse, estimateTokens, visitorId, getUsed, addUsed, usageStore } from './plans.js';
 
 export const app = new Hono();
+
+// ── Agents ──
+app.get('/api/agents', (c) => c.json(Object.entries(AGENTS).map(([id, a]) => ({ id, name: a.name }))));
 
 // ── Health ──
 app.get('/api/health', (c) => c.json(health()));
@@ -68,10 +73,22 @@ app.put('/api/persona', async (c) => {
 });
 
 // ── Chat (SSE streaming) ──
+// Who is asking: plan, today's token use and the models they can pick.
+app.get('/api/me', async (c) => {
+  const plan = planOf(c), used = await getUsed(visitorId(c)), limit = plan === 'free' ? FREE_DAILY_TOKENS : null;
+  return c.json({ plan, used, limit, remaining: limit === null ? null : Math.max(0, limit - used), store: usageStore(), models: modelsFor(plan) });
+});
+
 app.post('/api/chat', async (c) => {
   const body = await c.req.json();
   const mode = body.mode || 'chat';
   const convId = body.conversationId;
+  const plan = planOf(c), who = visitorId(c);
+  const modelId = body.model || FREE_MODEL;
+  if (!canUse(plan, modelId)) return c.json({ error: 'pro_model', message: 'This model is part of Pro.' }, 403);
+  const limit = plan === 'free' ? FREE_DAILY_TOKENS : null;
+  const usedBefore = await getUsed(who);
+  if (limit !== null && usedBefore >= limit) return c.json({ error: 'daily_token_limit', used: usedBefore, limit }, 429);
 
   const budget = checkBudget();
   if (budget.blocked) return c.json({ error: 'Daily limit reached' }, 429);
@@ -79,7 +96,8 @@ app.post('/api/chat', async (c) => {
   const userMsg = body.messages?.filter(m => m.role === 'user').pop();
   if (convId && userMsg) addMessage(convId, 'user', userMsg.content);
 
-  const systemPrompt = getPersona();
+  const agent = agentPrompt(body.agent);
+  const systemPrompt = agent ? `${getPersona()}\n\n${agent}` : getPersona();
   const params = {
     temperature: body.params?.temperature ?? 1,
     top_p: body.params?.top_p ?? 1,
@@ -98,6 +116,7 @@ app.post('/api/chat', async (c) => {
         for await (const token of streamChat(mode, {
           messages: body.messages || [],
           systemPrompt,
+          modelId,
           ...params,
         }, {
           onToken: (t) => {
@@ -110,6 +129,9 @@ app.post('/api/chat', async (c) => {
 
         if (convId && fullText) addMessage(convId, 'assistant', fullText);
         incrementUsage();
+        const spent = estimateTokens((body.messages || []).map(m => m.content).join('\n')) + estimateTokens(fullText);
+        const used = await addUsed(who, spent);
+        send('usage', { used, limit, remaining: limit === null ? null : Math.max(0, limit - used), spent });
         send('done', { content: fullText });
       } catch (e) {
         const msg = e.name === 'AbortError' ? 'Aborted by user' : e.message;

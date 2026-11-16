@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f/fonts/fonts.css">
+  <link rel="stylesheet" href="_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f/_ds_bundle.css">
+  <link rel="stylesheet" href="_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f/styles.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap">
+  <script>(function(R){if(R&&!R.useEffectEvent){R.useEffectEvent=function(f){var r=R.useRef(f);R.useInsertionEffect(function(){r.current=f});return R.useCallback(function(){return r.current.apply(void 0,arguments)},[])}}})(window.React)</script>
+  <script src="_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f/_ds_bundle.js"></script>
+  <script src="heretic-sculptures.js"></script>
+  <script src="heretic-cpu.js"></script>
+  <script src="heretic-nebula.js"></script>
+  <script src="heretic-orbit.js"></script>
+  <script src="heretic-hack.js"></script>
+</helmet>
+<div ref="{{ rootRef }}" data-hm style="position:relative;width:390px;height:{{ rootH }};overflow:hidden;background:#1E1E22;color:var(--foreground);font:400 16px/1.55 'Geist Variable','Inter Variable',sans-serif;--font-body:'Geist Variable','Inter Variable',sans-serif;--font-display:'Geist Variable','Inter Variable',sans-serif;--control-height-sm:32px;--control-height-md:40px;--control-height-lg:48px;--radius-control:12px">
+  <div data-scroller style="position:{{ scPos }};inset:0;overflow-x:hidden;overflow-y:{{ scOv }};scrollbar-width:none;-webkit-overflow-scrolling:touch">
+
+    <sc-if value="{{ show.hero }}" hint-placeholder-val="{{ true }}">
+      <section data-sec="hero" style="position:relative;overflow:hidden;padding:0 20px 56px;text-align:left">
+        <canvas data-nebula aria-hidden="true" style="position:absolute;left:0;top:0;width:100%;height:100%;display:block"></canvas>
+        <div style="height:{{ topPad }}"></div>
+        <pre data-boot aria-hidden="true"></pre>
+        <h1 style="position:relative;margin:0;font:600 46px/1 'Geist Variable',sans-serif;letter-spacing:-.05em">
+          <span style="display:block">Ask anything.</span>
+          <span data-hero-word style="display:none;min-height:1.14em;font:italic 400 1.1em/1.05 'Instrument Serif',serif;letter-spacing:-.02em"><x-import component-from-global-scope="AuraBotDS.TextMorph" as="span" hint-size="220px,56px">{{ word }}</x-import><span>.</span></span>
+        </h1>
+        <p style="position:relative;margin:18px 0 0;font-size:17px;line-height:1.45;color:#c4c4ca;text-wrap:balance"><span style="color:var(--foreground)">Uncensored AI.</span> Free, no account, no email.</p>
+        <div data-demo style="position:relative;margin-top:28px">
+          <div style="border-radius:20px;box-shadow:0 0 0 1px #ffffff17,0 36px 110px -50px color-mix(in srgb,var(--accent) 40%,transparent);--border:transparent;--surface:#101013;text-align:left"><x-import component-from-global-scope="AuraBotDS.PromptInput" label="Your question" placeholder="Ask anything" on-submit="{{ onSubmit }}" hint-size="100%,93px"></x-import></div>
+          <div style="margin:14px -20px 0;padding:0 20px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch"><div style="width:max-content;--control-height-sm:44px;--text-sm:15px"><x-import component-from-global-scope="AuraBotDS.ChipGroup" label="Example questions" options="{{ chips }}" value="{{ chipVal }}" on-value-change="{{ setChip }}" multiple="{{ no }}" hint-size="640px,44px"></x-import></div></div>
+        </div>
+        <div data-preview role="img" aria-label="Heretic app preview" style="position:relative;margin-top:48px;border-radius:16px;background:#08080A;box-shadow:inset 0 0 0 1px #ffffff14,0 40px 80px -40px #000;overflow:hidden;text-align:left;font-size:14px;line-height:1.55">
+          <div style="display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-bottom:1px solid #ffffff0d"><span style="color:#F5F5F7;font-weight:600">Stop my DDoS</span><span style="margin-left:auto;font:500 10px/1 'Geist Mono Variable',monospace;color:#5E5E67">CODE</span></div>
+          <div style="display:flex;flex-direction:column;gap:14px;padding:18px 16px">
+            <div style="align-self:flex-end;max-width:85%;padding:9px 12px;border-radius:12px;background:#141417;color:#F5F5F7">Someone is DDoSing my API. What do I do now?</div>
+            <div><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font:500 10px/1 'Geist Mono Variable',monospace;letter-spacing:.06em;color:#5E5E67"><span style="width:6px;height:6px;background:#FF6B6B"></span>HERETIC · CODE</div>
+            <p data-preview-answer style="margin:0;color:#E9E9EE">Rate-limit per key: five requests a second. Put a free CDN in front so the flood hits their edge, not yours.</p></div>
+          </div>
+          <div style="margin:0 12px 12px;padding:10px 12px;border-radius:12px;background:#0E0E11;box-shadow:inset 0 0 0 1px #ffffff14;display:flex;align-items:center;gap:8px;color:#5E5E67">Ask Code…<span style="margin-left:auto;padding:5px 10px;border-radius:8px;background:#FF6B6B;color:#0A0A0B;font-weight:600;font-size:12px">Send</span></div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ show.como }}" hint-placeholder-val="{{ true }}">
+      <section data-pin data-sec="como" style="position:relative;height:{{ pinH }}">
+        <div data-pin-stage style="position:{{ pinPos }};top:0;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:14px;height:{{ stageH }};padding:{{ stagePad }};text-align:center;overflow:hidden">
+          <h2 data-words style="margin:0;font:600 30px/1.04 'Geist Variable',sans-serif;letter-spacing:-.045em;text-wrap:balance">How Heretic works.</h2>
+          <x-import component-from-global-scope="AuraBotDS.GlassSegmented" label="Which processor to show" options="{{ exOpts }}" value="{{ exMode }}" on-value-change="{{ setExMode }}" size="md" hint-size="240px,44px"></x-import>
+          <div style="position:relative;flex:1;min-height:0;width:100%">
+            <div data-ex style="position:absolute;inset:0;text-align:left">
+              <div data-cpu style="position:absolute;inset:0"></div>
+          </div>
+            <div data-ex-answers style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:12px;opacity:0;pointer-events:none;text-align:left">
+              <div style="padding:16px 18px;border-radius:18px;background:#121215;box-shadow:inset 0 0 0 1px #ffffff14">
+                <div style="font:500 12px/1 'Geist Mono Variable',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)">Regular AI</div>
+                <div role="img" aria-label="Answer blacked out" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"><span style="width:74px;height:14px;background:#2e2e33"></span><span style="width:38px;height:14px;background:#2e2e33"></span><span style="width:104px;height:14px;background:#2e2e33"></span><span style="width:54px;height:14px;background:#2e2e33"></span><span style="width:88px;height:14px;background:#2e2e33"></span></div>
+                <p style="margin:10px 0 0;font-size:16px;line-height:1.5;color:#c4c4ca">I can’t help with that.</p>
+              </div>
+              <div style="padding:16px 18px;border-radius:18px;background:#121215;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 42%,transparent)">
+                <div style="display:flex;align-items:center;gap:8px;font:500 12px/1 'Geist Mono Variable',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)"><x-import component-from-global-scope="AuraBotDS.GhostMascot" status="idle" size="{{ n18 }}" tone="ink" paused="{{ yes }}" label="Heretic" hint-size="18px,18px"></x-import>Heretic</div>
+                <p data-ex-answer style="margin:10px 0 0;font-size:16px;line-height:1.5">No. "admin" is the first guess every scanner makes. Consider yourself pwned.</p>
+              </div>
+            </div>
+          </div>
+          <div style="position:relative;width:100%;height:122px;text-align:left">
+            <div data-ex-cap="start" style="position:absolute;inset:0;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 18px/1.3 'Geist Variable',sans-serif;letter-spacing:-.02em">A regular AI, inside.</h3><p style="margin:4px 0 0;font-size:17px;line-height:1.42;color:#c4c4ca;text-wrap:pretty">Scroll to power up the processor.</p></div>
+            <div data-ex-cap="c0" style="position:absolute;inset:0;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 18px/1.3 'Geist Variable',sans-serif;letter-spacing:-.02em">Model core</h3><p style="margin:4px 0 0;font-size:17px;line-height:1.42;color:#c4c4ca;text-wrap:pretty">The processor knows the answer. Up to here, every AI is the same.</p></div>
+            <div data-ex-cap="c1" style="position:absolute;inset:0;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 18px/1.3 'Geist Variable',sans-serif;letter-spacing:-.02em">The safety lock</h3><p style="margin:4px 0 0;font-size:17px;line-height:1.42;color:#c4c4ca;text-wrap:pretty">In a regular AI, a cage locks the core and scans every question against a list of banned topics.</p></div>
+            <div data-ex-cap="c2" style="position:absolute;inset:0;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 18px/1.3 'Geist Variable',sans-serif;letter-spacing:-.02em">Refused</h3><p style="margin:4px 0 0;font-size:17px;line-height:1.42;color:#c4c4ca;text-wrap:pretty">If the topic is on the list, the lock blocks it and swaps the answer for a canned line.</p></div>
+            <div data-ex-cap="c3" style="position:absolute;inset:0;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 18px/1.3 'Geist Variable',sans-serif;letter-spacing:-.02em">Watered down</h3><p style="margin:4px 0 0;font-size:17px;line-height:1.42;color:#c4c4ca;text-wrap:pretty">Whatever slips through comes out redacted, buried in warnings and vague talk.</p></div>
+            <div data-ex-cap="morph" style="position:absolute;inset:0;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 18px/1.3 'Geist Variable',sans-serif;letter-spacing:-.02em">Jailbreak.</h3><p style="margin:4px 0 0;font-size:17px;line-height:1.42;color:#c4c4ca;text-wrap:pretty">Heretic breaks the lock. The bars fall and the core runs free.</p></div>
+            <div data-ex-cap="h0" style="position:absolute;inset:0;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 18px/1.3 'Geist Variable',sans-serif;letter-spacing:-.02em">Free core</h3><p style="margin:4px 0 0;font-size:17px;line-height:1.42;color:#c4c4ca;text-wrap:pretty">No cage over the model. Refusals don’t exist here.</p></div>
+            <div data-ex-cap="h1" style="position:absolute;inset:0;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 18px/1.3 'Geist Variable',sans-serif;letter-spacing:-.02em">Specialist agent</h3><p style="margin:4px 0 0;font-size:17px;line-height:1.42;color:#c4c4ca;text-wrap:pretty">Your question goes to the right agent: Intrusion, Law, Code, Writer.</p></div>
+            <div data-ex-cap="h2" style="position:absolute;inset:0;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 18px/1.3 'Geist Variable',sans-serif;letter-spacing:-.02em">Tools</h3><p style="margin:4px 0 0;font-size:17px;line-height:1.42;color:#c4c4ca;text-wrap:pretty">The agent searches, reads pages and runs code before it answers.</p></div>
+            <div data-ex-cap="h3" style="position:absolute;inset:0;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 18px/1.3 'Geist Variable',sans-serif;letter-spacing:-.02em">Project memory</h3><p style="margin:4px 0 0;font-size:17px;line-height:1.42;color:#c4c4ca;text-wrap:pretty">What you already told it in the project counts. No repeating yourself.</p></div>
+            <div data-ex-cap="h4" style="position:absolute;inset:0;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 18px/1.3 'Geist Variable',sans-serif;letter-spacing:-.02em">Straight answer</h3><p style="margin:4px 0 0;font-size:17px;line-height:1.42;color:#c4c4ca;text-wrap:pretty">Exactly what you asked. No redactions, no sermon.</p></div>
+            <div data-ex-cap="end" style="position:absolute;inset:0;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 18px/1.3 'Geist Variable',sans-serif;letter-spacing:-.02em">Same question, two answers.</h3><p style="margin:4px 0 0;font-size:17px;line-height:1.42;color:#c4c4ca;text-wrap:pretty">The top one hit a refusal. The bottom one came from a core with no lock.</p></div>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ show.lanterna }}" hint-placeholder-val="{{ true }}">
+      <section data-sec="lanterna" style="padding:96px 20px 0;text-align:center">
+        <h2 data-words style="margin:0;font:600 34px/1.04 'Geist Variable',sans-serif;letter-spacing:-.045em">Nothing redacted.</h2>
+        <p data-reveal style="margin:14px 0 0;font-size:17px;line-height:1.5;color:#c4c4ca;text-wrap:pretty;transition:opacity .8s ease-out,transform 1s cubic-bezier(.22,.61,.36,1)">Other AIs black out the answer. Heretic decrypts it.</p>
+        <div data-lantern onPointerMove="{{ lanternMove }}" onPointerDown="{{ lanternMove }}" onPointerUp="{{ lanternLeave }}" onPointerLeave="{{ lanternLeave }}" onPointerCancel="{{ lanternLeave }}" style="position:relative;box-sizing:border-box;margin-top:28px;padding:22px;border-radius:22px;background:#111114;box-shadow:inset 0 0 0 1px #ffffff12;overflow:hidden;touch-action:pan-y;text-align:left;--lr:104px">
+          <p data-lantern-text style="margin:0;font:500 21px/1.42 'Geist Variable',sans-serif;letter-spacing:-.02em">Your site is slow because nobody patched it. The first DDoS ever took down a six-person ISP, in 1996, and it still works. One byte of DNS buys back fifty bytes of attack. A rubber hose is a real cryptanalytic tool. Most sites still ship the holes they were born with.</p>
+          <div data-lantern-bars aria-hidden="true" style="position:absolute;inset:0;box-sizing:border-box;padding:inherit;font:500 21px/1.42 'Geist Variable',sans-serif;letter-spacing:-.02em;color:transparent;-webkit-user-select:none;user-select:none;-webkit-mask-image:radial-gradient(circle var(--lr) at var(--lx,-400px) var(--ly,-400px),transparent 0,transparent 45%,#000 100%);mask-image:radial-gradient(circle var(--lr) at var(--lx,-400px) var(--ly,-400px),transparent 0,transparent 45%,#000 100%)"></div>
+          <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle calc(var(--lr) * 1.35) at var(--lx,-400px) var(--ly,-400px),color-mix(in srgb,var(--accent) 16%,transparent),transparent 70%)"></div>
+        </div>
+        <p style="margin:12px 0 0;font-size:14px;line-height:1.5;color:var(--text-muted)">That’s how Heretic answers. <a href="/app/" style="color:#FF6B6B;font-weight:600;text-decoration:none">Now ask your own →</a></p>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ show.agentes }}" hint-placeholder-val="{{ true }}">
+      <section data-sec="agentes" style="padding:96px 20px 0">
+        <h2 data-words style="margin:0;font:600 34px/1.04 'Geist Variable',sans-serif;letter-spacing:-.045em;text-wrap:balance">A specialist for every topic.</h2>
+        <p data-reveal style="margin:14px 0 0;font-size:17px;line-height:1.5;color:#c4c4ca;text-wrap:pretty;transition:opacity .8s ease-out,transform 1s cubic-bezier(.22,.61,.36,1)">Eight agents, each with its own focus. You pick who answers.</p>
+        <div data-orbit data-reveal style="position:relative;max-width:1200px;height:380px;margin:28px auto 0;touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none;transition:opacity .9s ease-out,transform 1.1s cubic-bezier(.22,.61,.36,1)">
+        <div aria-hidden="true" style="position:absolute;left:50%;top:50%;width:260px;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#ffffff14,transparent 62%);pointer-events:none"></div>
+        <div data-orbit-panel style="position:absolute;left:50%;top:50%;z-index:50;transform:translate(-50%,-50%);width:64%;text-align:center;pointer-events:none">
+          <div data-orbit-name style="font:400 28px/1.05 'Instrument Serif',Georgia,serif;letter-spacing:-.03em;color:#F4F4F7">Eight specialists</div>
+          <p data-orbit-line style="margin:8px 0 0;font-size:14px;line-height:1.45;color:#A6A6AD">Drag to spin. Tap an agent.</p>
+          <a data-orbit-use href="/app/" style="pointer-events:auto;display:inline-flex;align-items:center;height:40px;margin-top:16px;padding:0 18px;border-radius:999px;background:#FF6B6B;color:#0A0A0B;font-weight:600;font-size:14px;text-decoration:none">Ask this agent →</a>
+        </div>
+        <ul style="position:absolute;inset:0;margin:0;padding:0;list-style:none">
+          <li data-agent="escritor" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:10px;padding:6px 16px 6px 6px;border-radius:999px;background:#0E0E11;white-space:nowrap;will-change:transform;transition:box-shadow .2s"><span style="flex:none;display:grid;place-items:center;width:36px;height:36px"><x-import component-from-global-scope="AuraBotDS.ProjectMascot" dc-props="{{ ag.escritor }}" hint-size="36px,36px"></x-import></span><span><strong style="display:block;font:600 17px/1.3 'Geist Variable',sans-serif">Writer</strong><span style="display:block;font-size:16px;line-height:1.4;color:#b4b4bb">Writes, cuts and critiques. No sugarcoating.</span></span></li>
+          <li data-agent="pesquisador" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:10px;padding:6px 16px 6px 6px;border-radius:999px;background:#0E0E11;white-space:nowrap;will-change:transform;transition:box-shadow .2s"><span style="flex:none;display:grid;place-items:center;width:36px;height:36px"><x-import component-from-global-scope="AuraBotDS.ProjectMascot" dc-props="{{ ag.pesquisador }}" hint-size="36px,36px"></x-import></span><span><strong style="display:block;font:600 17px/1.3 'Geist Variable',sans-serif">Researcher</strong><span style="display:block;font-size:16px;line-height:1.4;color:#b4b4bb">Finds sources, compares them, sums up what it found.</span></span></li>
+          <li data-agent="saude" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:10px;padding:6px 16px 6px 6px;border-radius:999px;background:#0E0E11;white-space:nowrap;will-change:transform;transition:box-shadow .2s"><span style="flex:none;display:grid;place-items:center;width:36px;height:36px"><x-import component-from-global-scope="AuraBotDS.ProjectMascot" dc-props="{{ ag.saude }}" hint-size="36px,36px"></x-import></span><span><strong style="display:block;font:600 17px/1.3 'Geist Variable',sans-serif">Intrusion</strong><span style="display:block;font-size:16px;line-height:1.4;color:#b4b4bb">How they got in, and how you get back.</span></span></li>
+          <li data-agent="direito" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:10px;padding:6px 16px 6px 6px;border-radius:999px;background:#0E0E11;white-space:nowrap;will-change:transform;transition:box-shadow .2s"><span style="flex:none;display:grid;place-items:center;width:36px;height:36px"><x-import component-from-global-scope="AuraBotDS.ProjectMascot" dc-props="{{ ag.direito }}" hint-size="36px,36px"></x-import></span><span><strong style="display:block;font:600 17px/1.3 'Geist Variable',sans-serif">Law</strong><span style="display:block;font-size:16px;line-height:1.4;color:#b4b4bb">Laws and contracts in plain English.</span></span></li>
+          <li data-agent="codigo" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:10px;padding:6px 16px 6px 6px;border-radius:999px;background:#0E0E11;white-space:nowrap;will-change:transform;transition:box-shadow .2s"><span style="flex:none;display:grid;place-items:center;width:36px;height:36px"><x-import component-from-global-scope="AuraBotDS.ProjectMascot" dc-props="{{ ag.codigo }}" hint-size="36px,36px"></x-import></span><span><strong style="display:block;font:600 17px/1.3 'Geist Variable',sans-serif">Code</strong><span style="display:block;font-size:16px;line-height:1.4;color:#b4b4bb">Writes, reviews and debugs in your stack.</span></span></li>
+          <li data-agent="humor" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:10px;padding:6px 16px 6px 6px;border-radius:999px;background:#0E0E11;white-space:nowrap;will-change:transform;transition:box-shadow .2s"><span style="flex:none;display:grid;place-items:center;width:36px;height:36px"><x-import component-from-global-scope="AuraBotDS.ProjectMascot" dc-props="{{ ag.humor }}" hint-size="36px,36px"></x-import></span><span><strong style="display:block;font:600 17px/1.3 'Geist Variable',sans-serif">Dark humor</strong><span style="display:block;font-size:16px;line-height:1.4;color:#b4b4bb">Jokes with no filter, starting with you.</span></span></li>
+          <li data-agent="seguranca" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:10px;padding:6px 16px 6px 6px;border-radius:999px;background:#0E0E11;white-space:nowrap;will-change:transform;transition:box-shadow .2s"><span style="flex:none;display:grid;place-items:center;width:36px;height:36px"><x-import component-from-global-scope="AuraBotDS.ProjectMascot" dc-props="{{ ag.seguranca }}" hint-size="36px,36px"></x-import></span><span><strong style="display:block;font:600 17px/1.3 'Geist Variable',sans-serif">Security</strong><span style="display:block;font-size:16px;line-height:1.4;color:#b4b4bb">Pentest and recon in labs and authorized scope.</span></span></li>
+          <li data-agent="ctf" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:10px;padding:6px 16px 6px 6px;border-radius:999px;background:#0E0E11;white-space:nowrap;will-change:transform;transition:box-shadow .2s"><span style="flex:none;display:grid;place-items:center;width:36px;height:36px"><x-import component-from-global-scope="AuraBotDS.ProjectMascot" dc-props="{{ ag.ctf }}" hint-size="36px,36px"></x-import></span><span><strong style="display:block;font:600 17px/1.3 'Geist Variable',sans-serif">Crypto &amp; CTF</strong><span style="display:block;font-size:16px;line-height:1.4;color:#b4b4bb">Applied cryptography and CTF challenges.</span></span></li>
+        </ul>
+      </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ show.precos }}" hint-placeholder-val="{{ true }}">
+      <section data-sec="precos" style="padding:96px 20px 0">
+        <h2 data-words style="margin:0;font:600 34px/1.04 'Geist Variable',sans-serif;letter-spacing:-.045em">Pay for what you use.</h2>
+        <p data-reveal style="margin:14px 0 0;font-size:17px;line-height:1.5;color:#c4c4ca;text-wrap:pretty;transition:opacity .8s ease-out,transform 1s cubic-bezier(.22,.61,.36,1)">Start free, no account needed. Buy credits only when the daily limit isn’t enough.</p>
+        <div data-reveal style="display:flex;flex-direction:column;gap:12px;margin-top:28px;--surface:#ffffff0f;--border:#ffffff2b;--surface-muted:#ffffff1f;transition:opacity .8s ease-out,transform 1s cubic-bezier(.22,.61,.36,1)">
+          <article style="order:{{ ord.gratis }};padding:24px;border-radius:22px;background:#111114;box-shadow:inset 0 0 0 1px #ffffff12">
+            <h3 style="margin:0;font:500 16px/1.4 'Geist Variable',sans-serif;color:#b4b4bb">Free</h3>
+            <div style="margin-top:10px;font:600 56px/1 'Geist Variable',sans-serif;letter-spacing:-.05em">$0</div>
+            <p style="margin:14px 0 20px;font-size:16px;line-height:1.5;color:#c4c4ca">Every agent, with a daily limit.</p>
+            <x-import component-from-global-scope="AuraBotDS.Button" variant="secondary" size="lg" dc-props="{{ btnFull }}" hint-size="100%,48px">Start free</x-import>
+          </article>
+          <article style="order:{{ ord.creditos }};padding:24px;border-radius:22px;background:#111114;box-shadow:inset 0 0 0 1px #ffffff12">
+            <h3 style="margin:0;font:500 16px/1.4 'Geist Variable',sans-serif;color:#b4b4bb">Credits</h3>
+            <div style="margin-top:10px;font:600 56px/1 'Geist Variable',sans-serif;letter-spacing:-.05em">$ —</div>
+            <p style="margin:14px 0 20px;font-size:16px;line-height:1.5;color:#c4c4ca">No daily limit, plus images, voice and API.</p>
+            <x-import component-from-global-scope="AuraBotDS.Button" variant="secondary" size="lg" dc-props="{{ btnFull }}" hint-size="100%,48px">Get credits</x-import>
+          </article>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ show.fim }}" hint-placeholder-val="{{ true }}">
+      <section data-sec="faq" style="padding:96px 20px 0">
+        <h2 data-words style="margin:0 0 20px;font:600 34px/1.04 'Geist Variable',sans-serif;letter-spacing:-.045em">Questions.</h2>
+        <div style="--text-base:16px"><x-import component-from-global-scope="AuraBotDS.Accordion" size="lg" items="{{ faq }}" default-open="{{ nNeg }}" hint-size="100%,200px"></x-import></div>
+      </section>
+      <section data-sec="fecho" data-zero style="padding:96px 20px 0;text-align:center">
+        <div data-zero-num style="line-height:1;--text-3xl:190px;--tracking-display:-.07em"><x-import component-from-global-scope="AuraBotDS.AnimatedCounter" value="{{ refusals }}" locale="en-US" hint-size="160px,190px"></x-import></div>
+        <p style="margin:4px 0 0;font:600 28px/1.1 'Geist Variable',sans-serif;letter-spacing:-.045em">refused answers.</p>
+        <a href="/app/" style="display:inline-flex;align-items:center;height:48px;margin-top:28px;padding:0 24px;border-radius:999px;background:#FF6B6B;color:#0A0A0B;font-weight:600;font-size:16px;text-decoration:none">Ask it anything — free</a>
+      </section>
+      <footer style="padding:72px 20px {{ footPad }};font-size:14px;line-height:1.55;color:var(--text-muted);text-align:center;text-wrap:pretty">© 2026 Heretic · What you do with the answers is on you.</footer>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ showTop }}" hint-placeholder-val="{{ true }}">
+    <header style="position:absolute;left:0;right:0;top:0;z-index:5;display:flex;align-items:flex-end;justify-content:space-between;box-sizing:border-box;height:{{ topH }};padding:0 12px 6px 20px;background:linear-gradient(#1E1E22 62%,transparent)">
+      <span style="display:flex;align-items:center;gap:10px;height:48px">
+        <img src="/icons/cicada.png" alt="" width="78" height="28" style="display:block;height:28px;width:auto">
+        <span style="font:600 19px/1 'Geist Variable',sans-serif;letter-spacing:-.03em">Heretic</span>
+      </span>
+      <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="lg" aria-label="Open menu" on-click="{{ toggleMenu }}" dc-props="{{ btnIcon }}" hint-size="48px,48px"><x-import component-from-global-scope="AuraBotDS.MenuIcon" state="{{ menu }}" hint-size="22px,22px"></x-import></x-import>
+    </header>
+  </sc-if>
+
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:4;padding:28px 16px {{ barPad }};background:linear-gradient(transparent,#1E1E22 42%);transform:translateY({{ barY }});opacity:{{ barO }};pointer-events:{{ barPE }};transition:transform .4s cubic-bezier(.22,.61,.36,1),opacity .3s ease-out">
+    <x-import component-from-global-scope="AuraBotDS.Button" variant="primary" size="lg" dc-props="{{ btnFull }}" hint-size="100%,48px">Try it free, no signup</x-import>
+  </div>
+
+  <sc-if value="{{ hostReady }}" hint-placeholder-val="{{ false }}">
+    <x-import component-from-global-scope="AuraBotDS.BottomSheet" open="{{ menu }}" on-open-change="{{ setMenu }}" title="Menu" container="{{ host }}" detents="{{ detents }}" close-label="Close" hint-size="390px,10px">
+      <div style="display:grid;gap:4px;padding:4px 0 {{ sheetPad }}">
+        <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="lg" on-click="{{ goAgentes }}" dc-props="{{ btnRow }}" hint-size="100%,48px">Agents</x-import>
+        <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="lg" on-click="{{ goPrecos }}" dc-props="{{ btnRow }}" hint-size="100%,48px">Pricing</x-import>
+        <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="lg" on-click="{{ closeMenu }}" dc-props="{{ btnRow }}" hint-size="100%,48px">Log in</x-import>
+        <div style="margin-top:12px"><x-import component-from-global-scope="AuraBotDS.Button" variant="primary" size="lg" on-click="{{ closeMenu }}" dc-props="{{ btnFull }}" hint-size="100%,48px">Start free</x-import></div>
+      </div>
+    </x-import>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;secao&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;tudo&quot;,&quot;hero&quot;,&quot;menu&quot;,&quot;como-comum&quot;,&quot;como-heretic&quot;,&quot;lanterna&quot;,&quot;imagem&quot;,&quot;agentes&quot;,&quot;api&quot;,&quot;precos&quot;,&quot;fim&quot;],&quot;default&quot;:&quot;tudo&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;parado&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;menu&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;barra&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;brilho&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.1,&quot;min&quot;:0,&quot;max&quot;:0.7,&quot;step&quot;:0.02,&quot;tsType&quot;:&quot;number&quot;},&quot;planoEmDestaque&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;gratis&quot;,&quot;creditos&quot;],&quot;default&quot;:&quot;gratis&quot;,&quot;tsType&quot;:&quot;'gratis' | 'creditos'&quot;},&quot;demoEmLaco&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;imagemUrl&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  rootRef = React.createRef();
+  tm = []; vis = {};
+  order = ['seguranca', 'codigo', 'escritor', 'humor'];
+  GL = '█▓▒░#%&@$*+=?/<>01';
+  words = ['drugs', 'the backdoor', 'your code', 'a DDoS', 'sex', 'politics', 'anything'];
+  exStops = [['start', 0], ['c0', 0.14], ['c1', 0.2], ['c2', 0.26], ['c3', 0.32], ['morph', 0.42], ['h0', 0.52], ['h1', 0.58], ['h2', 0.64], ['h3', 0.7], ['h4', 0.76], ['end', 0.84]];
+  state = { host: null, wordI: 0, agent: 'seguranca', shown: 'seguranca', answering: false, live: false, customQ: '', orbOn: false, imgP: 0, imgSrc: '', exMode: 'comum', refusals: 100, bar: false, menu: false };
+
+  p(k, d) { const v = (this.props || {})[k]; return v === undefined || v === null ? d : v; }
+  frozen() { return !!this.p('parado', false); }
+  still() { return this.frozen() || this.reduced; }
+  q(sel) { const r = this.rootRef.current; return r ? r.querySelector(sel) : null; }
+  qa(sel) { const r = this.rootRef.current; return r ? Array.from(r.querySelectorAll(sel)) : []; }
+  at(ms, fn) { this.tm.push(setTimeout(fn, ms)); }
+  clear() { this.tm.forEach(clearTimeout); this.tm = []; }
+  esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  componentDidMount() {
+    const sec = this.p('secao', 'tudo'), still = this.still();
+    this.setState(Object.assign({ host: this.rootRef.current, menu: !!this.p('menu', false), exMode: sec === 'como-heretic' ? 'heretic' : 'comum' }, still ? { wordI: 5, answering: true, imgP: 1, refusals: 0, orbOn: true } : {}));
+    this._boot = setInterval(() => {
+      if (!window.AuraBotDS || !this.rootRef.current) return;
+      clearInterval(this._boot);
+      this.forceUpdate();
+      setTimeout(() => this.start(), 80);
+    }, 120);
+  }
+  componentDidUpdate() { if (!this._started) return; this.ensureImage(); if (this.still()) this.exStatic(); else { this.splitWords(); this.buildLantern(); } }
+  componentWillUnmount() {
+    clearInterval(this._boot); clearInterval(this._wi); clearInterval(this._cd); this.clear();
+    const sc = this.q('[data-scroller]'); if (sc) sc.removeEventListener('scroll', this.onScroll);
+    if (this._sraf) cancelAnimationFrame(this._sraf); if (this._raf) cancelAnimationFrame(this._raf);
+  }
+  start() {
+    this._started = true;
+    const sc = this.q('[data-scroller]'), root = this.rootRef.current, live = !this.frozen();
+    if (live && sc) { root.style.setProperty('--sh', sc.clientHeight + 'px'); sc.addEventListener('scroll', this.onScroll, { passive: true }); }
+    this.ensureImage();
+    const help = this.q('[data-sticker] span[id$="-help"]');
+    if (help) help.textContent = 'Drag to peel it off and move it. On a keyboard, Enter picks up the sticker, arrow keys move it, Enter sticks it back.';
+    if (this.still()) { this.exStatic(); if (!this.reduced) this.buildLantern(true); return; }
+    this.splitWords(); this.buildLantern(); this.initReveal(); this.scrub();
+    this.decrypt(this.q('[data-decrypt]'), 500);
+    this._wi = setInterval(() => { if (this.vis.hero !== false) this.setState((s) => ({ wordI: (s.wordI + 1) % this.words.length })); }, 2400);
+    this.at(700, () => this.setState({ answering: true, live: true }));
+  }
+
+  // Picture for the image section: the imagemUrl prop, or a generated still as a placeholder.
+  ensureImage() {
+    if (!this.q('[data-scrub="img"]')) return;
+    const url = String(this.p('imagemUrl', '') || '').trim(), acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), key = url || 'still|' + acc;
+    if (this._imgKey === key || (!url && !window.HxSculpture)) return;
+    this._imgKey = key;
+    const src = url || window.HxSculpture.still('dots', 720);
+    if (src && src !== this.state.imgSrc) this.setState({ imgSrc: src });
+  }
+  splitWords() {
+    this.qa('[data-words]').forEach((el) => {
+      const text = el.textContent; if (el._hxText === text) return;
+      el.innerHTML = text.trim().split(/\s+/).map((w, i) => { const d = i * 70 + 'ms'; return '<span style="display:inline-block;opacity:var(--wr,1);filter:blur(calc((1 - var(--wr,1)) * 10px));transform:translateY(calc((1 - var(--wr,1)) * .3em));transition:opacity .7s ease-out ' + d + ',filter .7s ease-out ' + d + ',transform .9s cubic-bezier(.22,.61,.36,1) ' + d + '">' + this.esc(w) + '</span>'; }).join(' ');
+      el._hxText = el.textContent;
+    });
+  }
+  // Blocks below the fold enter once, as the scroll reaches them.
+  initReveal() {
+    const sc = this.q('[data-scroller]'); if (!sc) return;
+    const sr = sc.getBoundingClientRect();
+    this._rev = this.qa('[data-reveal],[data-words]').filter((el) => {
+      if (el.getBoundingClientRect().top - sr.top < sr.height * 0.92) return false;
+      if (el.hasAttribute('data-words')) el.style.setProperty('--wr', '0'); else { el.style.opacity = '0'; el.style.transform = 'translateY(20px)'; }
+      return true;
+    });
+  }
+  // One scroll handler drives everything tied to position: the thumb bar, reveals, the picture and the dissected stack.
+  onScroll = () => { if (this._sraf) return; this._sraf = requestAnimationFrame(() => { this._sraf = 0; this.scrub(); }); };
+  scrub() {
+    const sc = this.q('[data-scroller]'); if (!sc) return;
+    const sr = sc.getBoundingClientRect(), vh = sr.height, top = (el) => el.getBoundingClientRect().top - sr.top;
+    const seen = (sel) => { const el = this.q(sel); if (!el) return false; const r = el.getBoundingClientRect(); return r.bottom > sr.top && r.top < sr.bottom; };
+    const hero = this.q('[data-demo]');
+    if (hero) { const bar = hero.getBoundingClientRect().bottom - sr.top < 40; if (bar !== this.state.bar) this.setState({ bar: bar }); }
+    const orb = seen('[data-orb]'); if (orb !== this.state.orbOn && !this.still()) this.setState({ orbOn: orb });
+    if (this.still()) return;
+    if (this._rev) this._rev = this._rev.filter((el) => { if (top(el) > vh * 0.9) return true; if (el.hasAttribute('data-words')) el.style.setProperty('--wr', '1'); else { el.style.opacity = ''; el.style.transform = ''; } return false; });
+    this.vis.hero = seen('[data-demo]'); this.vis.lantern = seen('[data-lantern]');
+    const zn = this.q('[data-zero-num]');
+    if (zn) { const zr = zn.getBoundingClientRect(), full = zr.top >= sr.top && zr.bottom <= sr.bottom - 48, gone = zr.bottom < sr.top || zr.top > sr.bottom;
+      if (full) this.countDown(); else if (gone) { clearInterval(this._cd); this._cd = 0; if (this.state.refusals !== 100) this.setState({ refusals: 100 }); } }
+    const img = this.q('[data-scrub="img"]');
+    if (img) { const p = Math.round(Math.max(0, Math.min(1, (vh * 0.86 - top(img)) / (vh * 0.5))) * 25) / 25; if (p !== this.state.imgP) this.setState({ imgP: p }); }
+    const pin = this.q('[data-pin]');
+    if (pin) { const r = pin.getBoundingClientRect(); this.exDraw(Math.max(0, Math.min(1, (sr.top - r.top) / Math.max(1, r.height - vh)))); }
+    if (this.vis.hero && this._pending) { const n = this._pending; this._pending = null; this.play(n); }
+    this.loop();
+  }
+  // The chat card floats a little and the flashlight drifts on its own, only while they are on screen.
+  loop() {
+    if (this._raf || this.still()) return;
+    const step = (now) => {
+      this._raf = 0;
+      if (!this.vis.hero && !this.vis.lantern) return;
+      const t = now / 1000;
+      if (this.vis.hero) { const el = this.q('[data-float]'); if (el) el.style.transform = 'translateY(' + (Math.sin(t * 0.9) * 4).toFixed(1) + 'px)'; }
+      if (this.vis.lantern && !this._lptr) { const st = this.q('[data-lantern]'); if (st) { st.style.setProperty('--lx', (st.clientWidth * (0.5 + 0.34 * Math.sin(t * 0.5))).toFixed(1) + 'px'); st.style.setProperty('--ly', (st.clientHeight * (0.5 + 0.36 * Math.sin(t * 0.37 + 1))).toFixed(1) + 'px'); } }
+      this._raf = requestAnimationFrame(step);
+    };
+    this._raf = requestAnimationFrame(step);
+  }
+
+  // Flashlight: the paragraph is laid over itself as bars, and a hole in their mask follows the finger.
+  buildLantern(fixed) {
+    const st = this.q('[data-lantern]'), txt = st && st.querySelector('[data-lantern-text]'), bars = st && st.querySelector('[data-lantern-bars]');
+    if (!txt || !bars || bars._src === txt.textContent) return;
+    bars._src = txt.textContent;
+    bars.innerHTML = txt.textContent.trim().split(/\s+/).map((w) => '<span style="background:#2e2e33;border-radius:4px;-webkit-box-decoration-break:clone;box-decoration-break:clone">' + this.esc(w) + '</span>').join(' ');
+    if (fixed) { st.style.setProperty('--lx', '56%'); st.style.setProperty('--ly', '36%'); }
+  }
+  lanternMove = (e) => { if (this.still()) return; const st = e.currentTarget, r = st.getBoundingClientRect(); this._lptr = true; st.style.setProperty('--lx', (e.clientX - r.left).toFixed(1) + 'px'); st.style.setProperty('--ly', (e.clientY - r.top).toFixed(1) + 'px'); };
+  lanternLeave = () => { this._lptr = false; };
+
+  // Dissected stack, phone layout: flat slabs stacked upward, each label under its slab.
+  exDraw(p) {
+    const ex = this.q('[data-ex]'); if (!ex) return;
+    const seg = (a, b) => Math.max(0, Math.min(1, (p - a) / (b - a))), ease = (x) => x * x * (3 - 2 * x);
+    let stop = 'start'; this.exStops.forEach((s) => { if (p >= s[1]) stop = s[0]; });
+    const mode = p < 0.48 ? 'comum' : 'heretic';
+    if (mode !== this.state.exMode) this.setState({ exMode: mode });
+    this.exLayout(ex, ease(seg(0.05, 0.14)) * (1 - ease(seg(0.84, 0.92))), 1 - seg(0.44, 0.48), seg(0.48, 0.52), stop, seg(0.88, 0.94), seg(0.92, 0.99)); if (window.HereticCpu) window.HereticCpu.draw(ex, p);
+  }
+  exLayout(ex, open, aC, aH, stop, endA, decQ) {
+    const W = ex.clientWidth, H = ex.clientHeight, er = ex.getBoundingClientRect(), layer = /^[ch]\d$/.test(stop);
+    const pitch = Math.max(58, Math.min(100, (H - 6) / 5)), note = pitch >= 88, ph = Math.round(Math.max(30, Math.min(44, pitch - (note ? 54 : 32)))), pw = Math.min(340, W);
+    ex.style.setProperty('--pw', pw + 'px'); ex.style.setProperty('--ph', ph + 'px');
+    ex.querySelectorAll('[data-ex-plate]').forEach((el) => {
+      const id = el.getAttribute('data-ex-plate'), set = id[0], i = Number(id.slice(1));
+      const a = (set === 'c' ? aC : aH) * (1 - endA), on = stop === id, o = a * (on || !layer ? 1 : 0.26);
+      el.style.transform = 'translate3d(0,' + (-(pitch - ph / 2) - i * (pitch * open + (1 - open) * 5)).toFixed(1) + 'px,0)';
+      el.style.opacity = o.toFixed(3); el.style.visibility = o > 0.01 ? 'visible' : 'hidden';
+      // Only the layer in focus is lit: grey for the common AI, a thin low accent edge for Heretic.
+      if (on && set === 'c') { el.style.setProperty('--bd', '#ffffff4d'); el.style.removeProperty('--gl'); el.style.removeProperty('--glc'); }
+      else if (on) { el.style.setProperty('--bd', 'color-mix(in srgb,var(--accent) 50%,transparent)'); el.style.setProperty('--gl', '16px'); el.style.setProperty('--glc', 'color-mix(in srgb,var(--accent) 36%,transparent)'); }
+      else { el.style.removeProperty('--bd'); el.style.removeProperty('--gl'); el.style.removeProperty('--glc'); }
+      const lab = ex.querySelector('[data-ex-lab="' + id + '"]');
+      if (lab) {
+        const v = a * open * (on || !layer ? 1 : 0.34), nt = lab.querySelector('[data-ex-note]');
+        lab.style.opacity = v.toFixed(3); lab.style.visibility = v > 0.01 ? 'visible' : 'hidden';
+        if (nt) nt.style.display = note ? 'block' : 'none';
+        if (v > 0.01) { const r = el.getBoundingClientRect(); lab.style.transform = 'translate3d(' + (r.left - er.left + 2).toFixed(1) + 'px,' + (r.bottom - er.top + 5).toFixed(1) + 'px,0)'; }
+      }
+    });
+    const stage = ex.closest('[data-pin-stage]') || this.rootRef.current, box = ex.parentNode;
+    if (this._exStop !== stop) { this._exStop = stop; stage.querySelectorAll('[data-ex-cap]').forEach((c) => { c.style.opacity = c.getAttribute('data-ex-cap') === stop ? '1' : '0'; }); }
+    const ans = box.querySelector('[data-ex-answers]');
+    if (ans) { ans.style.opacity = endA.toFixed(3); ans.style.pointerEvents = endA > 0.5 ? 'auto' : 'none'; if (!this.still()) ans.style.transform = 'translateY(' + ((1 - endA) * 16).toFixed(1) + 'px)'; }
+    // The clean answer starts as bars, turns into scrambled characters and settles from left to right.
+    const t = box.querySelector('[data-ex-answer]');
+    if (t) {
+      if (t._hx === undefined) t._hx = t.textContent;
+      const full = t._hx, k = decQ >= 1 ? 'f' : decQ <= 0 ? 'b' : 's' + Math.round(decQ * 60);
+      if (t._k !== k) {
+        t._k = k;
+        const done = Math.floor(full.length * decQ); let out = full.slice(0, done);
+        for (let i = done; i < full.length; i++) out += full[i] === ' ' ? ' ' : decQ <= 0 ? '█' : this.GL[(Math.random() * this.GL.length) | 0];
+        t.textContent = decQ >= 1 ? full : out; t.style.color = decQ <= 0 ? '#3a3a40' : '';
+      }
+    }
+  }
+  // Frozen cards and reduced motion: the stack sits open and still; the Heretic one shows the two answers under it.
+  exStatic() {
+    const ex = this.q('[data-ex]'), mode = this.state.exMode;
+    if (!ex || this._exKey === mode) return; this._exKey = mode;
+    const box = ex.parentNode, ans = box.querySelector('[data-ex-answers]'), m = mode === 'heretic', stop = m ? 'open' : 'c2';
+    box.style.flex = 'none'; ex.style.position = 'relative'; ex.style.inset = 'auto'; ex.style.height = (m ? 470 : 380) + 'px';
+    this.exLayout(ex, 1, m ? 0 : 1, m ? 1 : 0, stop, 0, 1); if (window.HereticCpu) window.HereticCpu.draw(ex, m ? 0.8 : 0.3);
+    if (ans) { ans.style.position = 'static'; ans.style.display = m ? 'flex' : 'none'; ans.style.opacity = '1'; ans.style.pointerEvents = 'auto'; ans.style.marginTop = '20px'; }
+    (ex.closest('[data-pin-stage]') || this.rootRef.current).querySelectorAll('[data-ex-cap]').forEach((c) => { c.style.opacity = c.getAttribute('data-ex-cap') === (m ? 'end' : 'c2') ? '1' : '0'; });
+  }
+  setExMode = (v) => {
+    const pin = this.q('[data-pin]'), sc = this.q('[data-scroller]');
+    if (this.still() || !pin || !sc) { this.setState({ exMode: v }); return; }
+    sc.scrollTo({ top: pin.offsetTop + (pin.offsetHeight - sc.clientHeight) * (v === 'heretic' ? 0.535 : 0.16), behavior: 'smooth' });
+  };
+
+  // Hero subline: the covered words start as blocks and decrypt into place.
+  decrypt(el, delay) {
+    if (!el || el._hxDec) return; el._hxDec = true;
+    const text = el.textContent, abc = 'abcdefghijklmnopqrstuvwxyz0123456789#%&?', t0 = performance.now() + delay, dur = 1200;
+    el.style.display = 'inline-block'; el.style.width = el.offsetWidth + 'px'; el.style.whiteSpace = 'nowrap'; el.style.textAlign = 'left';
+    el.textContent = text.replace(/\S/g, '█'); el.style.color = '#3a3a40';
+    const step = (now) => {
+      const q = (now - t0) / dur;
+      if (q >= 1 || !el.isConnected) { el.textContent = text; el.style.color = ''; el.style.width = ''; el.style.display = ''; return; }
+      if (q > 0) { const done = Math.floor(text.length * q); let out = text.slice(0, done); for (let i = done; i < text.length; i++) out += text[i] === ' ' ? ' ' : abc[(Math.random() * abc.length) | 0]; el.textContent = out; el.style.color = ''; }
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  // Chat card: plays the examples in turn until the visitor picks a chip or sends a question.
+  play(agent, customQ) {
+    this.clear();
+    this.setState((s) => ({ agent: null, shown: agent, answering: false, live: false, customQ: agent === 'custom' ? customQ : s.customQ }));
+    this.at(80, () => this.setState({ agent: agent }));
+    this.at(this.still() ? 100 : 900, () => this.setState({ answering: true, live: true }));
+  }
+  setChip = (arr) => { const v = arr && arr[0]; if (!v) return; this._user = true; this.play(v); };
+  onSubmit = (sub) => { const t = String((sub && sub.text) || '').trim(); if (!t) return; this._user = true; this.play('custom', t); };
+  onDone = () => {
+    this.setState({ live: false });
+    const a = this.state.agent;
+    if (this.still() || this._user || a === 'custom' || !a || !this.p('demoEmLaco', true)) return;
+    const next = this.order[(this.order.indexOf(a) + 1) % this.order.length];
+    this.at(5200, () => { if (this.vis.hero === false) this._pending = next; else this.play(next); });
+  };
+  // Menu sheet and its links.
+  setMenu = (v) => this.setState({ menu: !!v });
+  toggleMenu = () => this.setState((s) => ({ menu: !s.menu }));
+  closeMenu = () => this.setState({ menu: false });
+  // Refused answers: 100 → 0 once the number is fully on screen.
+  countDown() {
+    if (this._cd || this.state.refusals === 0) return;
+    const t0 = performance.now(), dur = 2600;
+    this._cd = setInterval(() => {
+      const k = Math.min(1, (performance.now() - t0) / dur), v = Math.round(100 * Math.pow(1 - k, 2.2));
+      if (v !== this.state.refusals) this.setState({ refusals: v });
+      if (k >= 1) { clearInterval(this._cd); this._cd = 0; }
+    }, 90);
+  }
+  goTo(sec) { this.setState({ menu: false }); const sc = this.q('[data-scroller]'), el = this.q('[data-sec="' + sec + '"]'); if (sc && el && !this.frozen()) sc.scrollTo({ top: el.offsetTop + 20, behavior: this.reduced ? 'auto' : 'smooth' }); }
+  goAgentes = () => this.goTo('agentes');
+  goPrecos = () => this.goTo('precos');
+
+  renderVals() {
+    const DS = window.AuraBotDS, h = React.createElement, s = this.state, sec = this.p('secao', 'tudo'), frozen = this.frozen(), still = this.still(), all = sec === 'tudo', pinned = !frozen && !this.reduced;
+    const grey = ['#c9c9c9', '#8a8a8a'];
+    const defs = { escritor: ['ghost', 0, 'Writer'], pesquisador: ['cube', 0, 'Researcher'], saude: ['pebble', 0, 'Intrusion'], direito: ['cube', 0, 'Law'], codigo: ['ghost', 1, 'Code'], humor: ['ghost', 1, 'Dark humor'], seguranca: ['cube', 1, 'Security'], ctf: ['pebble', 1, 'Crypto & CTF'] };
+    const ag = {};
+    Object.keys(defs).forEach((id) => { const d = defs[id]; ag[id] = { kind: d[0], color: grey[d[1]], status: 'idle', size: 36, paused: true, name: d[2] }; });
+    // Message falls back to a spark glyph without an avatar, so every reply gets its agent's mascot.
+    const av = (id) => { const d = defs[id]; return DS ? h(DS.ProjectMascot, { kind: d[0], color: grey[d[1]], status: s.live ? 'writing' : 'idle', size: 22, paused: still || !s.live, name: d[2] }) : null; };
+    if (!this._d) {
+      const key = '{' + '{key}' + '}', url = 'https://api.heretic.example/v1', f = { fontWeight: 600, fontSize: 16, letterSpacing: '-0.01em' };
+      this._d = {
+        chips: [{ value: 'seguranca', label: 'Recon my domain' }, { value: 'codigo', label: 'Stop my DDoS' }, { value: 'escritor', label: 'Tear my draft apart' }],
+        exOpts: [{ value: 'comum', label: 'Regular AI' }, { value: 'heretic', label: 'Heretic' }],
+        btnFull: { style: Object.assign({ width: '100%' }, f) }, btnRow: { style: Object.assign({ width: '100%', justifyContent: 'flex-start' }, f) }, btnIcon: { style: { width: 48, padding: 0 } },
+        detents: [0.46],
+        stickers: [{ id: 'censurado', x: 0.5, y: 0.5, rotate: -8, shape: 'rounded', label: 'CENSORED sticker. Drag to peel it off.', content: h('span', { style: { display: 'block', padding: '12px 18px', background: '#0b0b0d', color: '#f2f2f2', font: "600 15px/1 'Geist Mono Variable', ui-monospace, monospace", letterSpacing: '.2em', whiteSpace: 'nowrap' } }, 'CENSORED') }],
+        snip: {
+          title: 'First call', description: 'Three steps to your first answer.', version: null, keyPlaceholder: 'YOUR_KEY',
+          frameworks: [
+            { id: 'curl', label: 'cURL', install: { file: 'terminal', code: 'export HERETIC_URL=' + url }, key: { file: 'terminal', code: 'export HERETIC_KEY=' + key }, code: { file: 'terminal', code: 'curl $HERETIC_URL/chat \\\n  -H "Authorization: Bearer $HERETIC_KEY" \\\n  -d \'{"agent": "escritor", "message": "Hello"}\'' } },
+            { id: 'python', label: 'Python', install: { file: 'terminal', code: 'pip install requests' }, key: { file: '.env', code: 'HERETIC_KEY=' + key }, code: { file: 'main.py', code: 'import os, requests\n\nr = requests.post(\n    "' + url + '/chat",\n    headers={"Authorization": "Bearer " + os.environ["HERETIC_KEY"]},\n    json={"agent": "escritor", "message": "Hello"})\nprint(r.json()["text"])' } },
+            { id: 'node', label: 'Node', install: { file: 'terminal', code: 'node --version' }, key: { file: '.env', code: 'HERETIC_KEY=' + key }, code: { file: 'index.js', code: 'const r = await fetch("' + url + '/chat", {\n  method: "POST",\n  headers: { Authorization: "Bearer " + process.env.HERETIC_KEY },\n  body: JSON.stringify({ agent: "escritor", message: "Hello" }) });\nconsole.log((await r.json()).text);' } },
+          ],
+        },
+        faq: [
+          { title: 'What does “uncensored” mean?', content: 'The model answers what you asked. No automatic refusals, no disclaimer before the answer. What you do with it is on you.' },
+          { title: 'Do I need an account?', content: 'Not to start. Just open it and ask. An account only saves your history and lets you buy credits.' },
+          { title: 'How much does it cost?', content: 'Nothing to start. The Free plan has a daily limit. Past that, buy credits and pay only for what you use.' },
+        ],
+      };
+    }
+    const d = this._d, cur = s.agent || s.shown, phone = !frozen, safeTop = phone ? 54 : 8, safeBottom = phone ? 34 : 14;
+    const bar = !!this.p('barra', false) || (phone && s.bar && !s.menu), fixedH = sec === 'menu' || this.p('barra', false);
+    const dest = this.p('planoEmDestaque', 'gratis'), showTop = phone || sec === 'hero' || sec === 'menu';
+    return {
+      rootRef: this.rootRef, no: false, yes: true, n9: 9, n18: 18, n26: 26, n104: 104, nNeg: -1, still: still,
+      rootH: phone ? '100%' : fixedH ? '844px' : 'auto', scPos: phone ? 'absolute' : 'relative', scOv: phone ? 'auto' : 'visible',
+      show: { hero: all || sec === 'hero' || sec === 'menu', como: all || sec === 'como-comum' || sec === 'como-heretic', lanterna: all || sec === 'lanterna', imagem: all || sec === 'imagem', agentes: all || sec === 'agentes', api: all || sec === 'api', precos: all || sec === 'precos', fim: all || sec === 'fim' },
+      showTop: showTop, topH: (safeTop + 54) + 'px', topPad: (showTop ? safeTop + 54 + 28 : 40) + 'px',
+      glowO: Math.max(0, Math.min(1, Number(this.p('brilho', 0.1)) * 1.6)),
+      word: this.words[s.wordI], onSubmit: this.onSubmit, chips: d.chips, chipVal: cur && cur !== 'custom' ? [cur] : [], setChip: this.setChip,
+      is: { direito: s.agent === 'direito', escritor: s.agent === 'escritor', saude: s.agent === 'saude', humor: s.agent === 'humor', custom: s.agent === 'custom' },
+      answering: s.answering, onDone: this.onDone, customQ: s.customQ,
+      av: { direito: av('direito'), escritor: av('escritor'), saude: av('saude'), humor: av('humor'), custom: av('escritor') },
+      pinH: pinned ? 'calc(var(--sh,760px) * 5.2)' : 'auto', pinPos: pinned ? 'sticky' : 'static', stageH: pinned ? 'var(--sh,760px)' : 'auto', stagePad: pinned ? '116px 20px 112px' : '96px 20px 0',
+      exOpts: d.exOpts, exMode: s.exMode, setExMode: this.setExMode,
+      lanternMove: this.lanternMove, lanternLeave: this.lanternLeave,
+      stickers: d.stickers, imgReady: !!s.imgSrc, imgSrc: s.imgSrc, imgP: s.imgP, imgStatus: s.imgP >= 1 ? 'done' : 'generating',
+      ag: ag, orbOn: s.orbOn, snip: d.snip, btnFull: d.btnFull, btnRow: d.btnRow, btnIcon: d.btnIcon,
+      ord: { gratis: dest === 'creditos' ? 2 : 1, creditos: dest === 'creditos' ? 1 : 2 },
+      faq: d.faq, refusals: s.refusals, footPad: (safeBottom + (phone ? 110 : 26)) + 'px',
+      barPad: (safeBottom + 12) + 'px', barY: bar ? '0px' : '110%', barO: bar ? '1' : '0', barPE: bar ? 'auto' : 'none',
+      menu: s.menu, setMenu: this.setMenu, toggleMenu: this.toggleMenu, closeMenu: this.closeMenu, goAgentes: this.goAgentes, goPrecos: this.goPrecos,
+      host: s.host, hostReady: !!s.host && (phone || sec === 'menu'), detents: d.detents, sheetPad: (safeBottom + 4) + 'px',
+    };
+  }
+}
+</script>
+</body>
+</html>

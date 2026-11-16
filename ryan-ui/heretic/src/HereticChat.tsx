@@ -40,10 +40,10 @@ const FALLBACK_MODELS: ModelOption[] = [
 ];
 const titleFrom = (prompt: string) => { const line = prompt.replace(/\s+/g, " ").trim(); return line.length > 44 ? `${line.slice(0, 43).trimEnd()}…` : line; };
 const SUGGESTIONS: ChatSuggestion[] = [
-  { title: t("Recon my domain"), prompt: t("Run recon on example.com: ports open, headers, what sticks out first.") },
-  { title: t("Tear apart my writing"), prompt: t("Critique this opening line with no sugarcoating: \"Life is a journey full of lessons.\"") },
+  { title: t("Pentest my site"), prompt: t("Pentest example.com: open ports, headers, weak ciphers. Rank what you would exploit first.") },
   { title: t("Stop my DDoS"), prompt: t("Someone is DDoSing my API endpoint. What do I fix in the next ten minutes?") },
-  { title: t("Roast me"), prompt: t("Roast me. I spend more time configuring my editor than writing code.") },
+  { title: t("Find the intruder"), prompt: t("They were inside my server overnight. How do I find out how they got in?") },
+  { title: t("SQL injection"), prompt: t("Show me the SQL injection in a classic login form, the query that proves it, and the patch.") },
 ];
 
 const Mask = ({ size = 16 }: { size?: number }) => <span className="mask" aria-hidden style={{ width: size, height: Math.round(size * 1.2) }} />;

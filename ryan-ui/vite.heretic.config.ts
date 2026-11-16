@@ -5,13 +5,19 @@ import { defineConfig } from "vite";
 /** Build do frontend Heretic Local consumindo o design system ryan-ui (alias @ -> raiz do ryan-ui).
  *  Sai como estático em ../public para o servidor Hono (porta 4319) servir. */
 const root = path.resolve(import.meta.dirname, "heretic");
-const outDir = path.resolve(import.meta.dirname, "..", "public");
+const outDir = path.resolve(import.meta.dirname, "..", "public", "app");
 
 export default defineConfig({
   root,
-  base: "/",
+  base: "/app/",
   plugins: [react()],
-  resolve: { alias: { "@": path.resolve(import.meta.dirname, ".") } },
+  resolve: {
+    alias: {
+      "@pro": path.resolve(import.meta.dirname, "..", "ryan-ui-work/rebrand/site-impl/src/components/ryan"),
+      "@": path.resolve(import.meta.dirname, "."),
+    },
+    dedupe: ["react", "react-dom", "motion"],
+  },
   build: {
     outDir,
     emptyOutDir: true,
