@@ -4,6 +4,7 @@
 // and the reply driven by the server instead of canned text. The prompt box is the forked
 // ryan-ui Pro composer (./composer), with the model menu and the daily-token meter.
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import type { TouchEvent as ReactTouchEvent } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
 import { Check, Copy, KeyRound, Lock, PanelLeft, RefreshCw, Settings as SettingsIcon, SquarePen, X, Zap } from "lucide-react";
@@ -262,6 +263,8 @@ export function HereticChat() {
   const revealRef = useRef(0);
   const typingDone = useRef(true);
   const rafRef = useRef<number | undefined>(undefined);
+  // Gesto de borda: arrastar da esquerda pra direita (começando perto da borda) abre o menu.
+  const edgeSwipe = useRef({ x: 0, y: 0, active: false });
   const active = conversations.find(c => c.id === activeId) ?? conversations[0];
   const busy = generating !== null;
   const model = models.find(m => m.id === modelId && !m.locked) ?? models.find(m => !m.locked) ?? models[0]!;
@@ -424,6 +427,19 @@ export function HereticChat() {
     patchMessage(active.id, last.id, m => ({ ...m, text: "", state: "thinking" }));
     run(active.id, last.id, historyOf(active.messages.slice(0, -1)));
   };
+  // Abre o menu com um arrasto curto a partir da borda esquerda (sem bloquear toques nem o scroll).
+  const onEdgeTouchStart = (e: ReactTouchEvent<HTMLElement>) => {
+    if (!compact || drawer) return;
+    const touch = e.touches[0]; if (!touch) return;
+    edgeSwipe.current = { x: touch.clientX, y: touch.clientY, active: touch.clientX <= 30 };
+  };
+  const onEdgeTouchMove = (e: ReactTouchEvent<HTMLElement>) => {
+    if (!edgeSwipe.current.active || drawer) return;
+    const touch = e.touches[0]; if (!touch) return;
+    const dx = touch.clientX - edgeSwipe.current.x, dy = touch.clientY - edgeSwipe.current.y;
+    if (dx > 46 && Math.abs(dx) > Math.abs(dy) * 1.3) { edgeSwipe.current.active = false; setDrawer(true); }
+  };
+  const onEdgeTouchEnd = () => { edgeSwipe.current.active = false; };
   const select = (id: string) => { if (id !== activeId) finish("done"); setActiveId(id); setDrawer(false); };
   const newChat = () => {
     finish("done");
@@ -487,16 +503,19 @@ export function HereticChat() {
         </div>
       </motion.nav>
 
-      <section className={styles.main} aria-label={active ? active.title : "Chat"} inert={compact && drawer}>
-        <header className={styles.header}>
-          {compact ? <button ref={menuRef} type="button" className={styles.iconButton} onClick={() => setDrawer(true)} aria-label={t("Show conversations")} aria-expanded={drawer}><PanelLeft size={16} aria-hidden="true" /></button> : null}
-          <h2 className={styles.title}>
+      <section className={styles.main} aria-label={active ? active.title : "Chat"} inert={compact && drawer}
+        onTouchStart={onEdgeTouchStart} onTouchMove={onEdgeTouchMove} onTouchEnd={onEdgeTouchEnd}>
+        <header className={`${styles.header} hx-header`} data-compact={compact ? "1" : "0"}>
+          {compact ? <button ref={menuRef} type="button" className={styles.iconButton} onClick={() => setDrawer(true)} aria-label={t("Show conversations")} aria-expanded={drawer}><PanelLeft size={18} aria-hidden="true" /></button> : null}
+          <h2 className={`${styles.title} hx-title`}>
             <AnimatePresence initial={false} mode="popLayout">
               <motion.span key={active?.title ?? "none"} className={styles.titleText} initial={reduceMotion ? false : { opacity: 0, y: 6, filter: `blur(${motionTokens.blur.soft}px)` }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={reduceMotion ? { duration: 0 } : { duration: motionTokens.duration.standard, ease: standard }}>{active?.title ?? "Chat"}</motion.span>
             </AnimatePresence>
           </h2>
-          {plan === "pro" ? <button type="button" className="hx-qtoggle" data-on={quality ? "1" : "0"} onClick={() => setQuality(q => !q)} aria-pressed={quality} title={t("Quality mode: race 2 models, keep the best")}>{t("Quality")}</button> : null}
-          <span className={styles.model}><span className={styles.modelDot} aria-hidden="true" />{model.short} · {t("Uncensored")}</span>
+          {/* Desktop: Qualidade + legenda do modelo cabem no header. Mobile: header enxuto (menu + título + nova conversa); Qualidade fica junto do compositor e o modelo no seletor dele. */}
+          {!compact && plan === "pro" ? <button type="button" className="hx-qtoggle" data-on={quality ? "1" : "0"} onClick={() => setQuality(q => !q)} aria-pressed={quality} title={t("Quality mode: race 2 models, keep the best")}>{t("Quality")}</button> : null}
+          {!compact ? <span className={styles.model}><span className={styles.modelDot} aria-hidden="true" />{model.short} · {t("Uncensored")}</span> : null}
+          {compact ? <button type="button" className={styles.iconButton} onClick={newChat} aria-label={t("New chat")} title={t("New chat")}><SquarePen size={18} aria-hidden="true" /></button> : null}
         </header>
 
         <div ref={scrollerRef} className={styles.scroller} onScroll={event => { const n = event.currentTarget; pinned.current = n.scrollHeight - n.scrollTop - n.clientHeight < 56; }}>
@@ -549,6 +568,11 @@ export function HereticChat() {
         </div>
 
         <footer className={styles.composer}>
+          {compact && plan === "pro" ? (
+            <div className="hx-cbar">
+              <button type="button" className="hx-qtoggle" data-on={quality ? "1" : "0"} onClick={() => setQuality(q => !q)} aria-pressed={quality} title={t("Quality mode: race 2 models, keep the best")}>{t("Quality")}</button>
+            </div>
+          ) : null}
           <Composer
             ref={composerRef}
             models={models}

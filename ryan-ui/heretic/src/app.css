@@ -395,7 +395,26 @@ body, .composer textarea { font-weight: 300; }
 .hx-setlangrow .hx-setlabel{margin-bottom:0}
 .hx-setlangrow .hx-lang{margin-left:0}
 
-/* ── Diagramas Mermaid na conversa ── */
+/* ── Celular com cara de app (header, gesto, profundidade) ── */
+/* Header enxuto no mobile: [menu] · título centralizado · [nova conversa]. Sem o título cortado em "Com...". */
+.hx-chat .hx-header[data-compact="1"]{gap:4px}
+.hx-chat .hx-header[data-compact="1"] .hx-title{flex:1;min-width:0;text-align:center;font-size:17px;font-weight:600;letter-spacing:-.01em}
+.hx-chat .hx-header[data-compact="1"] .hx-title>span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+/* Toque confortável nos ícones do header no mobile (≥44px) */
+.hx-chat .hx-header[data-compact="1"] button{width:44px;height:44px}
+
+/* Barra do compositor: o toggle Qualidade (Pro) no mobile mora aqui, não no header. */
+.hx-cbar{display:flex;justify-content:flex-end;gap:8px;margin:0 2px 8px}
+
+/* Drawer com cara de painel flutuante: cantos arredondados, sombra de profundidade e alça lateral. */
+.hx-chat[data-compact="true"]>nav{border-top-right-radius:22px;border-bottom-right-radius:22px}
+.hx-chat[data-compact="true"][data-drawer="true"]>nav{box-shadow:26px 0 70px -24px rgba(0,0,0,.72),1px 0 0 0 #1F1F24}
+.hx-chat[data-compact="true"][data-drawer="true"]>nav::after{content:"";position:absolute;top:50%;right:7px;width:4px;height:38px;margin-top:-19px;border-radius:999px;background:#2A2A30;opacity:.9}
+
+/* Profundidade das bolhas/mensagens: separa o conteúdo do fundo (o "shadow do chat"). */
+.hx-chat li[data-role="user"]>div{box-shadow:0 1px 2px rgba(0,0,0,.35),0 10px 26px -18px rgba(0,0,0,.65)}
+
+/* Diagramas Mermaid na conversa ── */
 .hx-mermaid{display:block;margin:14px 0;padding:16px;border-radius:14px;background:#08080A;border:1px solid #1F1F24;overflow-x:auto;text-align:center;animation:hxDiagIn .4s cubic-bezier(.22,.61,.36,1)}
 .hx-mermaid[data-loading]{color:#6E6E76;font:300 12px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;text-align:left;padding:14px 16px}
 .hx-mermaid svg{max-width:100%;height:auto}
