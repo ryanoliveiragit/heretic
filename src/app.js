@@ -79,9 +79,18 @@ app.get('/api/me', async (c) => {
   return c.json({ plan, used, limit, remaining: limit === null ? null : Math.max(0, limit - used), store: usageStore(), models: modelsFor(plan) });
 });
 
-// Geração de imagem (Venice). "Ferramenta" do chat: /imagem <prompt>. Sem censura (safe_mode off).
-// Cada imagem desconta um custo fixo do orçamento diário grátis; Pro é ilimitado.
-const IMAGE_TOKEN_COST = 1500;
+// Geração de imagem. "Ferramenta" do chat: /imagem <prompt>. Sem censura.
+// Provedor "nosso" = Pollinations (Flux, 100% grátis, sem chave, independente da Venice).
+// Venice fica só como reserva se o Pollinations falhar. Desconta um custo pequeno do orçamento diário.
+const IMAGE_COST_FREEPROVIDER = 500;   // Pollinations é de graça pra nós → custo simbólico anti-abuso
+const IMAGE_COST_VENICE = 1500;        // reserva paga → custo maior
+// Codifica bytes -> base64 no runtime Edge (sem Buffer), em blocos pra não estourar a pilha.
+function bytesToBase64(bytes) {
+  let bin = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  return btoa(bin);
+}
 app.post('/api/image', async (c) => {
   const plan = planOf(c), who = visitorId(c);
   const limit = plan === 'free' ? FREE_DAILY_TOKENS : null;
@@ -91,23 +100,40 @@ app.post('/api/image', async (c) => {
   try { body = await c.req.json(); } catch {}
   const prompt = (body.prompt || '').toString().trim().slice(0, 1500);
   if (!prompt) return c.json({ error: 'empty_prompt' }, 400);
-  const key = process.env.VENICE_API_KEY;
-  if (!key) return c.json({ error: 'no_provider' }, 500);
+  const done = async (dataUrl, provider, cost) => {
+    const used = await addUsed(who, cost);
+    return c.json({ image: dataUrl, provider, used, limit, remaining: limit === null ? null : Math.max(0, limit - used) });
+  };
+  // 1) Pollinations (grátis, nosso provedor padrão)
   try {
-    const r = await fetch('https://api.venice.ai/api/v1/image/generate', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'venice-sd35', prompt, width: 1024, height: 1024, steps: 25, safe_mode: false, format: 'webp', hide_watermark: true }),
-    });
-    if (!r.ok) { const txt = await r.text().catch(() => ''); return c.json({ error: 'image_failed', detail: txt.slice(0, 200) }, 502); }
-    const data = await r.json();
-    const b64 = data && data.images && data.images[0];
-    if (!b64) return c.json({ error: 'no_image' }, 502);
-    const used = await addUsed(who, IMAGE_TOKEN_COST);
-    return c.json({ image: `data:image/webp;base64,${b64}`, used, limit, remaining: limit === null ? null : Math.max(0, limit - used) });
-  } catch (e) {
-    return c.json({ error: 'image_failed', detail: String(e && e.message || e).slice(0, 200) }, 502);
+    const seed = Math.floor(Math.random() * 1e6);
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&model=flux&seed=${seed}`;
+    const r = await fetch(url, { headers: { Accept: 'image/*' } });
+    if (r.ok) {
+      const bytes = new Uint8Array(await r.arrayBuffer());
+      if (bytes.length > 1000) {
+        const ct = r.headers.get('content-type') || 'image/jpeg';
+        return await done(`data:${ct};base64,${bytesToBase64(bytes)}`, 'pollinations', IMAGE_COST_FREEPROVIDER);
+      }
+    }
+  } catch { /* cai pra reserva */ }
+  // 2) Reserva: Venice (se tiver chave)
+  const key = process.env.VENICE_API_KEY;
+  if (key) {
+    try {
+      const r = await fetch('https://api.venice.ai/api/v1/image/generate', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'venice-sd35', prompt, width: 1024, height: 1024, steps: 25, safe_mode: false, format: 'webp', hide_watermark: true }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        const b64 = data && data.images && data.images[0];
+        if (b64) return await done(`data:image/webp;base64,${b64}`, 'venice', IMAGE_COST_VENICE);
+      }
+    } catch { /* falhou também */ }
   }
+  return c.json({ error: 'image_failed' }, 502);
 });
 
 // Validate an access code (paste "Enter key" flow). Returns the plan it unlocks.
