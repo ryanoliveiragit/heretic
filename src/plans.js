@@ -28,23 +28,14 @@ export function costPer100(m) {
 }
 
 export const PUBLIC_MODELS_RAW = [
-  // Nomes de marca Heretic — os modelos de terceiros ficam escondidos (só o id interno roteia).
-  // ── free tier: what every visitor can pick. Default = Heretic Rapid (smarter, same price). ──
+  // Catálogo ENXUTO — só os melhores custo-benefício (nomes de marca Heretic; ids de terceiros escondidos).
+  // Dono (16/11): cortado de 14 p/ 4 — "não adianta ter vários e ruins".
+  // ── free: 2 opções, ambas boas e baratas ──
   { id: 'venice:z-ai-glm-5-3-flash', name: 'Heretic Rapid', short: 'Heretic Rapid', note: 'Default. Smart, detailed, stable. Vision, tools. 1M context', tier: 'free' },
-  { id: 'venice:gemma-4-uncensored', name: 'Heretic Core', short: 'Heretic Core', note: 'Fast, great pt-BR, vision. 256k context', tier: 'free' },
-  { id: 'venice:venice-uncensored-1-2', name: 'Heretic Flash', short: 'Heretic Flash', note: 'Uncensored, vision and tools. 128k context', tier: 'free' },
-  { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', name: 'Heretic Mini', short: 'Heretic Mini', note: 'Uncensored, fast. 128k context', tier: 'free' },
-  // ── pro tier: listed and locked, cheapest first (sorted by estimated cost per 100 messages) ──
-  { id: 'venice:olafangensan-glm-4.7-flash-heretic', name: 'Heretic Swift', short: 'Heretic Swift', note: 'Fast, tools. 200k context', tier: 'pro' },
-  { id: 'thedrummer/cydonia-24b-v4.1', name: 'Heretic Edge', short: 'Heretic Edge', note: 'Creative, no filter. 128k context', tier: 'pro' },
-  { id: 'thedrummer/unslopnemo-12b', name: 'Heretic Nano', short: 'Heretic Nano', note: 'Light. 1M context', tier: 'pro' },
-  { id: 'thedrummer/skyfall-36b-v2', name: 'Heretic Saga', short: 'Heretic Saga', note: 'Stories and roleplay. 32k context', tier: 'pro' },
-  { id: 'venice:deepseek-v4-1-flash-uncensored', name: 'Heretic Deep', short: 'Heretic Deep', note: 'Reasoning MoE, vision, tools. 1M context', tier: 'pro' },
-  { id: 'sao10k/l3.1-euryale-70b', name: 'Heretic 70', short: 'Heretic 70', note: 'Sharp and unfiltered. 128k context', tier: 'pro' },
-  { id: 'venice:venice-uncensored-role-play', name: 'Heretic Roleplay', short: 'Heretic RP', note: 'Roleplay tuned. 128k context', tier: 'pro' },
-  { id: 'nousresearch/hermes-4-405b', name: 'Heretic Titan', short: 'Heretic Titan', note: 'Largest model. 128k context', tier: 'pro' },
-  { id: 'venice:zai-org-glm-5-2', name: 'Heretic Reason', short: 'Heretic Reason', note: 'Max reasoning, tools. 1M context', tier: 'pro' },
-  { id: 'anthracite-org/magnum-v4-72b', name: 'Heretic Prime', short: 'Heretic Prime', note: 'Long-form writing. 32k context', tier: 'pro' },
+  { id: 'venice:olafangensan-glm-4.7-flash-heretic', name: 'Heretic Swift', short: 'Heretic Swift', note: 'Fastest and cheapest. Tools. 200k context', tier: 'free' },
+  // ── pro: 2 degraus de potência, cada um com um papel claro ──
+  { id: 'venice:deepseek-v4-1-flash-uncensored', name: 'Heretic Deep', short: 'Heretic Deep', note: 'Reasoning for hard problems. Vision, tools. 1M context', tier: 'pro' },
+  { id: 'nousresearch/hermes-4-405b', name: 'Heretic Titan', short: 'Heretic Titan', note: 'Largest model, max capability. 128k context', tier: 'pro' },
 ];
 
 export const PUBLIC_MODELS = PUBLIC_MODELS_RAW.map(raw => {

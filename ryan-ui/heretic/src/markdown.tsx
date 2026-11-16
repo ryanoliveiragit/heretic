@@ -2,6 +2,7 @@
 // Blocks: ``` code fences, # headings, - / * / 1. lists, > quotes, --- rules, paragraphs.
 // Inline: **bold**, *italic*, `code`, [text](https://link).
 import type { ReactNode } from "react";
+import { Mermaid } from "./mermaid";
 
 function inline(text: string, key = "i"): ReactNode[] {
   const out: ReactNode[] = [];
@@ -37,9 +38,13 @@ export function Markdown({ text, caret }: { text: string; caret?: boolean }) {
     if (fence) {
       flush();
       const body: string[] = []; i++;
-      while (i < lines.length && !/^\s*```/.test((lines[i] ?? ""))) body.push((lines[i++] ?? ""));
-      i++;
-      blocks.push(<pre key={`c${b++}`} className="md-pre" data-lang={fence[1] || undefined}><code>{body.join("\n")}</code></pre>);
+      let closed = false;
+      while (i < lines.length) { if (/^\s*```/.test((lines[i] ?? ""))) { closed = true; break; } body.push((lines[i++] ?? "")); }
+      if (closed) i++;
+      const lang = (fence[1] || "").toLowerCase();
+      // Diagrama só quando o bloco fechou (evita renderizar Mermaid incompleto durante o streaming).
+      if (lang === "mermaid" && closed) blocks.push(<Mermaid key={`m${b++}`} code={body.join("\n")} />);
+      else blocks.push(<pre key={`c${b++}`} className="md-pre" data-lang={fence[1] || undefined}><code>{body.join("\n")}</code></pre>);
       continue;
     }
     const h = /^(#{1,4})\s+(.*)$/.exec(line);

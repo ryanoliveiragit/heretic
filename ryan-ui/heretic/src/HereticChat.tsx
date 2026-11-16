@@ -93,8 +93,7 @@ const MODEL_KEY = "heretic-model";
 /** Used until GET /api/me answers (or if it fails). */
 const FALLBACK_MODELS: ModelOption[] = [
   { id: "venice:z-ai-glm-5-3-flash", name: "Heretic Rapid", short: "Heretic Rapid", note: "Default. Smart, detailed, stable. Vision, tools. 1M context", tier: "free", locked: false, provider: "venice", cost100: 0.020 },
-  { id: "venice:gemma-4-uncensored", name: "Heretic Core", short: "Heretic Core", note: "Fast, great pt-BR, vision. 256k context", tier: "free", locked: false, provider: "venice", cost100: 0.020 },
-  { id: "venice:venice-uncensored-1-2", name: "Heretic Flash", short: "Heretic Flash", note: "Uncensored, vision and tools. 128k context", tier: "free", locked: false, provider: "venice", cost100: 0.033 },
+  { id: "venice:olafangensan-glm-4.7-flash-heretic", name: "Heretic Swift", short: "Heretic Swift", note: "Fastest and cheapest. Tools. 200k context", tier: "free", locked: false, provider: "venice", cost100: 0.014 },
 ];
 const titleFrom = (prompt: string) => { const line = prompt.replace(/\s+/g, " ").trim(); return line.length > 44 ? `${line.slice(0, 43).trimEnd()}…` : line; };
 const SUGGESTIONS: ChatSuggestion[] = [
@@ -106,6 +105,16 @@ const SUGGESTIONS: ChatSuggestion[] = [
 
 const Mask = ({ size = 16 }: { size?: number }) => <span className="mask" aria-hidden style={{ width: size, height: Math.round(size * 1.2) }} />;
 const Cicada = ({ width }: { width: number }) => <img src="/icons/cicada.png" alt="" width={width} style={{ display: "block", height: "auto" }} />;
+
+// A IA raciocina dentro de <think>…</think> antes de responder (estilo Dolphin/reasoning): isso é
+// OCULTO do usuário — mostramos só a resposta final. Enquanto o <think> ainda está aberto (streaming),
+// retorna vazio pra manter o "pensando…".
+function visibleAnswer(raw: string): string {
+  let t = (raw || "").replace(/<think>[\s\S]*?<\/think>/gi, "");
+  const open = t.lastIndexOf("<think>");
+  if (open !== -1 && !/<\/think>/i.test(t.slice(open))) t = t.slice(0, open);
+  return t.replace(/^\s+/, "");
+}
 
 // Notifica "resposta pronta" só quando o usuário saiu do app (aba em segundo plano) e autorizou.
 function notifyReply(text: string) {
@@ -261,7 +270,7 @@ export function HereticChat() {
           window.clearTimeout(doneTimer.current);
           patchMessage(conversationId, messageId, m => ({ ...m, text: content || m.text, state: "done" }));
           setGenerating(g => (g && g.messageId === messageId ? null : g)); ctrl.current = null;
-          notifyReply(content || "");
+          notifyReply(visibleAnswer(content || ""));
         },
       },
     );
@@ -319,7 +328,8 @@ export function HereticChat() {
             <AnimatePresence initial={false}>
               {conversations.map(c => {
                 const current = c.id === active?.id;
-                const preview = c.messages[c.messages.length - 1]?.text.replace(/```[\s\S]*?```/g, " ").replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim() ?? t("No messages yet");
+                const lastMsg = c.messages[c.messages.length - 1];
+                const preview = (lastMsg ? visibleAnswer(lastMsg.text) : "").replace(/```[\s\S]*?```/g, " ").replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim() || t("No messages yet");
                 return (
                   <motion.li key={c.id} className={styles.conversationItem} layout={reduceMotion ? false : "position"} initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={pop}>
                     {current ? <motion.span layoutId={`${scope}-active`} className={styles.activeMark} transition={reduceMotion ? { duration: 0 } : motionTokens.spring.morph} /> : null}
@@ -387,9 +397,13 @@ export function HereticChat() {
                         <div className="hx-ai-head" aria-hidden="true"><Mask size={18} /><span className="hx-ai-name">Heretic</span>{(message as ChatMessage & { model?: string }).model ? <span className="hx-ai-model">{((message as ChatMessage & { model?: string }).model ?? "").replace(/^Heretic\s+/, "")}</span> : null}</div>
                         <div className="hx-ai-body">
                           <span className={styles.srOnly}>Heretic: </span>
-                          {message.state === "thinking" ? <ThinkingShimmer className={styles.thinking} /> : message.text ? <Markdown text={message.text} caret={message.state === "streaming"} /> : null}
-                          {message.state === "stopped" ? <p className={styles.stopped}>{message.text ? t("Stopped.") : t("Stopped before the reply started.")}</p> : null}
-                          {message.state === "done" || message.state === "stopped" ? <AssistantActions text={message.text} canRegenerate={message.id === lastMessage?.id && !busy} onRegenerate={regenerate} /> : null}
+                          {(() => {
+                            const shown = visibleAnswer(message.text);
+                            if (message.state === "thinking" || (message.state === "streaming" && !shown)) return <ThinkingShimmer className={styles.thinking} />;
+                            return shown ? <Markdown text={shown} caret={message.state === "streaming"} /> : null;
+                          })()}
+                          {message.state === "stopped" ? <p className={styles.stopped}>{visibleAnswer(message.text) ? t("Stopped.") : t("Stopped before the reply started.")}</p> : null}
+                          {message.state === "done" || message.state === "stopped" ? <AssistantActions text={visibleAnswer(message.text)} canRegenerate={message.id === lastMessage?.id && !busy} onRegenerate={regenerate} /> : null}
                         </div>
                       </div>
                     )}
