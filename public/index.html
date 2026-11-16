@@ -12,11 +12,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Heretic">
-<script src="/cursor.js?v=mwjaoi05" defer></script>
-<script src="/heretic-i18n.js?v=mwjaoi05" defer></script>
-<script src="/heretic-fx.js?v=mwjaoi05" defer></script>
-<script src="/heretic-flow.js?v=mwjaoi05" defer></script>
-<script src="/heretic-sections.js?v=mwjaoi05" defer></script>
+<script src="/cursor.js?v=mwjasfod" defer></script>
+<script src="/heretic-i18n.js?v=mwjasfod" defer></script>
+<script src="/heretic-fx.js?v=mwjasfod" defer></script>
+<script src="/heretic-flow.js?v=mwjasfod" defer></script>
+<script src="/heretic-sections.js?v=mwjasfod" defer></script>
 <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
 <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@300,400,500,600&display=swap">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -106,8 +106,8 @@ body h1 [style*="Instrument Serif"]::after{content:"_";display:inline-block;marg
         <a href="#especialistas" style="padding:8px 14px;font-size:15px;color:#B4B4BB;text-decoration:none;transition:color .2s ease-out" style-hover="color:#F5F5F7">Experts</a>
         <a href="#precos" style="padding:8px 14px;font-size:15px;color:#B4B4BB;text-decoration:none;transition:color .2s ease-out" style-hover="color:#F5F5F7">Pricing</a>
       </nav>
-      <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="sm" dc-props="{{ btn }}" on-click="{{ goLogin }}" hint-size="72px,36px">Log in</x-import>
-      <span style="display:inline-flex;--surface:transparent;--border:#3A3A40;--surface-muted:#FFFFFF0D"><x-import component-from-global-scope="AuraBotDS.Button" variant="secondary" size="md" dc-props="{{ btn }}" on-click="{{ goPrompt }}" hint-size="120px,44px">Try it free</x-import></span>
+      <a href="/app/?key=1" aria-label="Log in" style="text-decoration:none;display:inline-flex"><x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="sm" dc-props="{{ btn }}" on-click="{{ goLogin }}" hint-size="72px,36px">Log in</x-import></a>
+      <a href="/app/" aria-label="Try it free" style="text-decoration:none"><span style="display:inline-flex;--surface:transparent;--border:#3A3A40;--surface-muted:#FFFFFF0D"><x-import component-from-global-scope="AuraBotDS.Button" variant="secondary" size="md" dc-props="{{ btn }}" on-click="{{ goPrompt }}" hint-size="120px,44px">Try it free</x-import></span></a>
     </header>
 
     <section id="topo" data-screen-label="Top" style="position:relative;z-index:2;box-sizing:border-box;max-width:1280px;margin:0 auto;padding:112px 40px 0">
