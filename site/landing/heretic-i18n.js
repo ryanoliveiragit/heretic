@@ -113,7 +113,7 @@
     'every model, including the largest': 'todos os modelos, inclusive os maiores',
     'Quality mode and images': 'Modo Qualidade e imagens',
     'Subscribe →': 'Assinar →',
-    'Our own servers — end-to-end privacy': 'Servidores próprios — privacidade de ponta a ponta',
+    'Our own always-on server — end-to-end privacy': 'Servidor próprio sempre ligado — privacidade de ponta a ponta',
     'every agent': 'todos os agentes',
     'daily limit': 'limite diário',
     'uncensored answers': 'respostas sem censura',

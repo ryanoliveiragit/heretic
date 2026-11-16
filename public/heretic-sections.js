@@ -142,17 +142,17 @@
       '<ul><li>no daily limit</li><li>every model, including the largest</li><li>Quality mode and images</li></ul>' +
       '<a class="pri" href="/app/?key=1">Subscribe →</a></article>';
     wrap.appendChild(el);
-    // Meta pública da comunidade: financiar servidores próprios (privacidade de ponta a ponta).
-    // Atualize RAISED conforme as assinaturas Pro entram (número honesto, não inventar).
-    var RAISED = 0, GOAL = 4000, pct = Math.max(0, Math.min(100, Math.round(RAISED / GOAL * 100)));
+    // Meta pública MENSAL: financiar o servidor próprio sempre-ligado (serverless/GPU 24/7 ≈ R$900/mês),
+    // o que destrava a privacidade de ponta a ponta. Atualize RAISED conforme a receita Pro do mês (honesto).
+    var RAISED = 0, GOAL = 900, pct = Math.max(0, Math.min(100, Math.round(RAISED / GOAL * 100)));
     var goal = document.createElement('div');
     goal.setAttribute('data-goal', '');
     goal.style.cssText = 'margin-top:20px;padding:22px 26px;border-radius:18px;background:#08080A;box-shadow:inset 0 0 0 1px #1F1F24';
     goal.innerHTML =
-      '<div style="display:flex;justify-content:space-between;align-items:baseline;font:300 13px/1 ' + MONO + ';color:#6E6E76"><span>// community goal</span><span style="color:#C8C8CE">R$' + RAISED + ' / R$' + GOAL + '</span></div>' +
-      '<div style="margin-top:14px;font:400 23px/1.2 ' + SERIF + ';color:#F2F2F5">Our own servers — end-to-end privacy</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;font:300 13px/1 ' + MONO + ';color:#6E6E76"><span>// community goal / month</span><span style="color:#C8C8CE">R$' + RAISED + ' / R$' + GOAL + '</span></div>' +
+      '<div style="margin-top:14px;font:400 23px/1.2 ' + SERIF + ';color:#F2F2F5">Our own always-on server — end-to-end privacy</div>' +
       '<div style="margin-top:14px;height:8px;border-radius:999px;background:#17171B;overflow:hidden"><i style="display:block;height:100%;width:' + pct + '%;border-radius:999px;background:var(--accent,#F0335A);transition:width .6s cubic-bezier(.34,1.56,.64,1)"></i></div>' +
-      '<div style="margin-top:10px;font:300 14px/1.5 ' + SANS + ';color:#9A9AA3"><span style="color:var(--accent,#F0335A)">' + pct + '%</span> — Pro helps move the AI off third-party servers and onto ours. Be a founding member.</div>';
+      '<div style="margin-top:10px;font:300 14px/1.5 ' + SANS + ';color:#9A9AA3"><span style="color:var(--accent,#F0335A)">' + pct + '%</span> — Pro keeps our own server running 24/7, so nothing goes through third parties. Be a founding member.</div>';
     wrap.appendChild(goal);
     return wrap;
   }
