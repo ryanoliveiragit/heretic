@@ -129,18 +129,32 @@
 
   // ---------- plans ----------
   function buildPlans() {
+    var wrap = document.createElement('div');
     var el = document.createElement('div');
     el.setAttribute('data-plans', '');
     el.innerHTML =
-      '<article class="hi"><header><span>// free</span><b>[recommended]</b></header>' +
-      '<div class="price">$0</div><div class="per">No account. No email. Start in one click.</div>' +
+      '<article><header><span>// free</span><b>[no account]</b></header>' +
+      '<div class="price">R$0</div><div class="per">No account. No email. Start in one click.</div>' +
       '<ul><li>every agent</li><li>daily limit</li><li>uncensored answers</li></ul>' +
-      '<a class="pri" href="/app/">Start free →</a></article>' +
-      '<article><header><span>// credits</span><b>[pay as you go]</b></header>' +
-      '<div class="price">Credits</div><div class="per">Buy only when the daily limit isn’t enough.</div>' +
-      '<ul><li>no daily limit</li><li>images and voice</li><li>API access</li></ul>' +
-      '<a class="sec" href="/app/">Get credits →</a></article>';
-    return el;
+      '<a class="sec" href="/app/">Start free →</a></article>' +
+      '<article class="hi"><header><span>// pro</span><b>[no limits]</b></header>' +
+      '<div class="price">R$49<small>,99</small></div><div class="per">per month · or R$129,90/3mo · R$399,90/year (−33%)</div>' +
+      '<ul><li>no daily limit</li><li>every model, including the largest</li><li>Quality mode and images</li></ul>' +
+      '<a class="pri" href="/app/?key=1">Subscribe →</a></article>';
+    wrap.appendChild(el);
+    // Meta pública da comunidade: financiar servidores próprios (privacidade de ponta a ponta).
+    // Atualize RAISED conforme as assinaturas Pro entram (número honesto, não inventar).
+    var RAISED = 0, GOAL = 4000, pct = Math.max(0, Math.min(100, Math.round(RAISED / GOAL * 100)));
+    var goal = document.createElement('div');
+    goal.setAttribute('data-goal', '');
+    goal.style.cssText = 'margin-top:20px;padding:22px 26px;border-radius:18px;background:#08080A;box-shadow:inset 0 0 0 1px #1F1F24';
+    goal.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;font:300 13px/1 ' + MONO + ';color:#6E6E76"><span>// community goal</span><span style="color:#C8C8CE">R$' + RAISED + ' / R$' + GOAL + '</span></div>' +
+      '<div style="margin-top:14px;font:400 23px/1.2 ' + SERIF + ';color:#F2F2F5">Our own servers — end-to-end privacy</div>' +
+      '<div style="margin-top:14px;height:8px;border-radius:999px;background:#17171B;overflow:hidden"><i style="display:block;height:100%;width:' + pct + '%;border-radius:999px;background:var(--accent,#F0335A);transition:width .6s cubic-bezier(.34,1.56,.64,1)"></i></div>' +
+      '<div style="margin-top:10px;font:300 14px/1.5 ' + SANS + ';color:#9A9AA3"><span style="color:var(--accent,#F0335A)">' + pct + '%</span> — Pro helps move the AI off third-party servers and onto ours. Be a founding member.</div>';
+    wrap.appendChild(goal);
+    return wrap;
   }
 
   // ---------- refused answers: "100" shakes, breaks into particles and re-forms as "0" ----------
