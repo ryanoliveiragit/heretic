@@ -104,6 +104,8 @@
     '// free': '// grátis',
     '[recommended]': '[recomendado]',
     'No account. No email. Start in one click.': 'Sem conta. Sem e-mail. Comece com um clique.',
+    'No account, no email.': 'Sem conta, sem e-mail.',
+    'Your chats stay on your device — we don’t store or log them.': 'Suas conversas ficam no seu aparelho — a gente não guarda nem registra.',
     'every agent': 'todos os agentes',
     'daily limit': 'limite diário',
     'uncensored answers': 'respostas sem censura',
