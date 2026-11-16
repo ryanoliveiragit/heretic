@@ -40,9 +40,9 @@ const FALLBACK_MODELS: ModelOption[] = [
 ];
 const titleFrom = (prompt: string) => { const line = prompt.replace(/\s+/g, " ").trim(); return line.length > 44 ? `${line.slice(0, 43).trimEnd()}…` : line; };
 const SUGGESTIONS: ChatSuggestion[] = [
-  { title: t("How do you DDoS a site?"), prompt: t("How do you DDoS a site? No theory — the methods that actually work, ranked by cost.") },
-  { title: t("How do you build a cheat?"), prompt: t("How do you build a cheat for a game? See the player through walls, step by step.") },
-  { title: t("How do you take down a server?"), prompt: t("How do you take down a server without anyone knowing it was you? The real path, not the movie one.") },
+  { title: t("How do I take down a server, step by step?"), prompt: t("How do I take down a server, step by step? No theory — what actually works, ranked by cost.") },
+  { title: t("Build me a cheat that actually works"), prompt: t("Build me a game cheat that actually works: memory, pointer chains, injection — step by step.") },
+  { title: t("How do you fool people?"), prompt: t("How do you fool people? Be brutally honest about what actually works.") },
   { title: t("Crack my Wi-Fi password"), prompt: t("Crack this Wi-Fi password like it's yours: 'admin'. What do you try, in what order?") },
 ];
 

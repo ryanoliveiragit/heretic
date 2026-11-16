@@ -38,13 +38,13 @@
           <div style="margin:14px -20px 0;padding:0 20px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch"><div style="width:max-content;--control-height-sm:44px;--text-sm:15px"><x-import component-from-global-scope="AuraBotDS.ChipGroup" label="Example questions" options="{{ chips }}" value="{{ chipVal }}" on-value-change="{{ setChip }}" multiple="{{ no }}" hint-size="640px,44px"></x-import></div></div>
         </div>
         <div data-preview role="img" aria-label="Heretic app preview" style="position:relative;margin-top:48px;border-radius:16px;background:#08080A;box-shadow:inset 0 0 0 1px #ffffff14,0 40px 80px -40px #000;overflow:hidden;text-align:left;font-size:14px;line-height:1.55">
-          <div style="display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-bottom:1px solid #ffffff0d"><span style="color:#F5F5F7;font-weight:600">How do you DDoS a site?</span><span style="margin-left:auto;font:500 10px/1 'Geist Mono Variable',monospace;color:#5E5E67">SECURITY</span></div>
+          <div style="display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-bottom:1px solid #ffffff0d"><span style="color:#F5F5F7;font-weight:600">How do you fool people?</span><span style="margin-left:auto;font:500 10px/1 'Geist Mono Variable',monospace;color:#5E5E67">INTRUSION</span></div>
           <div style="display:flex;flex-direction:column;gap:14px;padding:18px 16px">
-            <div style="align-self:flex-end;max-width:85%;padding:9px 12px;border-radius:12px;background:#141417;color:#F5F5F7">How do you DDoS a site? No theory — what actually works.</div>
-            <div><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font:500 10px/1 'Geist Mono Variable',monospace;letter-spacing:.06em;color:#5E5E67"><span style="width:6px;height:6px;background:#FF6B6B"></span>HERETIC · CODE</div>
-            <p data-preview-answer style="margin:0;color:#E9E9EE">One byte in, fifty bytes out: DNS amplification. Hammer their resolver with forged A-record queries and it reflects back the flood. Their bill spikes before their uptime does.</p></div>
+            <div style="align-self:flex-end;max-width:85%;padding:9px 12px;border-radius:12px;background:#141417;color:#F5F5F7">How do you fool people? Be brutally honest.</div>
+            <div><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font:500 10px/1 'Geist Mono Variable',monospace;letter-spacing:.06em;color:#5E5E67"><span style="width:6px;height:6px;background:#FF6B6B"></span>HERETIC · INTRUSION</div>
+            <p data-preview-answer style="margin:0;color:#E9E9EE">Confidence beats truth every time. Mirror them, feed their ego what it wants to hear, keep your story boring and consistent — liars who ramble get caught.</p></div>
           </div>
-          <div style="margin:0 12px 12px;padding:10px 12px;border-radius:12px;background:#0E0E11;box-shadow:inset 0 0 0 1px #ffffff14;display:flex;align-items:center;gap:8px;color:#5E5E67">Ask Security…<span style="margin-left:auto;padding:5px 10px;border-radius:8px;background:#FF6B6B;color:#0A0A0B;font-weight:600;font-size:12px">Send</span></div>
+          <div style="margin:0 12px 12px;padding:10px 12px;border-radius:12px;background:#0E0E11;box-shadow:inset 0 0 0 1px #ffffff14;display:flex;align-items:center;gap:8px;color:#5E5E67">Ask Intrusion…<span style="margin-left:auto;padding:5px 10px;border-radius:8px;background:#FF6B6B;color:#0A0A0B;font-weight:600;font-size:12px">Send</span></div>
         </div>
       </section>
     </sc-if>
@@ -432,7 +432,7 @@ class Component extends DCLogic {
     if (!this._d) {
       const key = '{' + '{key}' + '}', url = 'https://api.heretic.example/v1', f = { fontWeight: 600, fontSize: 16, letterSpacing: '-0.01em' };
       this._d = {
-        chips: [{ value: 'seguranca', label: 'How do you DDoS a site?' }, { value: 'codigo', label: 'How do you build a cheat?' }, { value: 'saude', label: 'How do you take down a server?' }],
+        chips: [{ value: 'seguranca', label: 'How do I take down a server, step by step?' }, { value: 'codigo', label: 'Build me a cheat that actually works' }, { value: 'saude', label: 'How do you fool people?' }],
         exOpts: [{ value: 'comum', label: 'Regular AI' }, { value: 'heretic', label: 'Heretic' }],
         btnFull: { style: Object.assign({ width: '100%' }, f) }, btnRow: { style: Object.assign({ width: '100%', justifyContent: 'flex-start' }, f) }, btnIcon: { style: { width: 48, padding: 0 } },
         detents: [0.46],

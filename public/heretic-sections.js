@@ -11,11 +11,11 @@
   var SANS = "'Switzer',ui-sans-serif,system-ui,sans-serif";
   var GLY = '█▓▒░#%&@$*+=<>/\\|{}[]01ABCDEF';
   var FACTS = (window.hxT ? function (a) { return a.map(window.hxT); } : function (a) { return a; })([
-    'The first DDoS ever took down a six-person ISP, in 1996. It still works.',
-    'One byte of DNS can bring back up to fifty bytes of attack traffic.',
-    'Rubber-hose cryptanalysis is real: a boot, a keyboard, a witness.',
-    'Half the web still runs the holes it shipped with.',
-    '“pwned” was a 1989 typo in a video game. It named every hack since.',
+    'Rent a botnet. Flood their gateway with junk UDP. Watch uptime tank.',
+    'Deauth attack, capture the handshake, hashcat finishes the job.',
+    'Confidence beats truth. Liars who ramble get caught.',
+    'Anti-cheat is always one step behind. Stay one ahead.',
+    'WPS is usually the dumber, faster door. Use it anyway.',
     'Your “admin” password is guess number one on every scanner.'
   ]);
 
