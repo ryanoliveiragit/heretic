@@ -7,7 +7,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import type { ReactNode, TouchEvent as ReactTouchEvent } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
-import { Check, Copy, Download, FileDown, FileText, KeyRound, Lock, PanelLeft, RefreshCw, Settings as SettingsIcon, SquarePen, X, Zap } from "lucide-react";
+import { Check, Copy, Download, FileDown, FileText, KeyRound, Lock, MoreHorizontal, PanelLeft, Pencil, RefreshCw, Settings as SettingsIcon, SquarePen, Trash2, X, Zap } from "lucide-react";
 import { motionTokens } from "@/lib/motion-tokens";
 import { useCopyFeedback } from "@/lib/use-copy-feedback";
 import { ThinkingShimmer } from "@/registry/components/loading-states/loading-states";
@@ -333,6 +333,8 @@ export function HereticChat() {
   const [plan, setPlan] = useState("free");
   const [keyOpen, setKeyOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [convMenu, setConvMenu] = useState<string | null>(null); // id da conversa com o menu ⋯ aberto
+  const [renaming, setRenaming] = useState<string | null>(null); // id da conversa sendo renomeada
   const [quality, setQuality] = useState(false);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [modelId, setModelId] = useState(() => { try { return localStorage.getItem(MODEL_KEY) ?? ""; } catch { return ""; } });
@@ -400,7 +402,8 @@ export function HereticChat() {
     const q = p.get("q");
     // Chegou do preset/hero da landing (?q=): envia na hora em vez de só preencher.
     if (q) { history.replaceState(null, "", location.pathname); send(q); }
-    if (p.get("buy") === "1" || p.get("key") === "1") { history.replaceState(null, "", location.pathname); setKeyOpen(true); }
+    // "Entrar": só pede a chave se ainda não houver uma salva — quem já autenticou entra direto.
+    if (p.get("buy") === "1" || p.get("key") === "1") { history.replaceState(null, "", location.pathname); if (!getKey()) setKeyOpen(true); }
   }, []);
   // Plan, models (Pro ones arrive locked) and today's token usage.
   const loadMe = useCallback(() => {
@@ -565,6 +568,33 @@ export function HereticChat() {
     setDrawer(false);
     composerRef.current?.focus();
   };
+  // Renomear / excluir conversa (recursos padrão de qualquer chat).
+  const renameConversation = (id: string, title: string) => {
+    const name = title.trim();
+    setRenaming(null);
+    if (!name) return;
+    setConversations(list => list.map(c => c.id === id ? { ...c, title: name } : c));
+  };
+  const deleteConversation = (id: string) => {
+    setConvMenu(null);
+    if (generating?.conversationId === id) finish("stopped");
+    const remaining = conversations.filter(c => c.id !== id);
+    if (remaining.length === 0) {
+      const nid = nextId("chat");
+      setConversations([{ id: nid, title: t("New chat"), updated: t("Now"), ts: Date.now(), messages: [] } as ChatConversation]);
+      setActiveId(nid);
+    } else {
+      if (activeId === id) setActiveId(remaining[0]!.id);
+      setConversations(remaining);
+    }
+  };
+
+  useEffect(() => {
+    if (!convMenu) return;
+    const close = (e: Event) => { const el = e.target as HTMLElement; if (!el.closest(".hx-convmore") && !el.closest(".hx-convmenu")) setConvMenu(null); };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [convMenu]);
 
   // Drawer + scrim share one brisk spring so they open and settle together (no flash on close).
   const spring: Transition = reduceMotion ? { duration: 0 } : motionTokens.spring.gentle;
@@ -598,12 +628,29 @@ export function HereticChat() {
                   const lastMsg = c.messages[c.messages.length - 1];
                   const preview = (lastMsg ? visibleAnswer(lastMsg.text) : "").replace(/```[\s\S]*?```/g, " ").replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim() || t("No messages yet");
                   out.push(
-                    <motion.li key={c.id} className={styles.conversationItem} layout={reduceMotion ? false : "position"} initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={pop}>
+                    <motion.li key={c.id} className={`${styles.conversationItem} hx-convitem`} layout={reduceMotion ? false : "position"} initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={pop}>
                       {current ? <motion.span layoutId={`${scope}-active`} className={styles.activeMark} transition={reduceMotion ? { duration: 0 } : motionTokens.spring.morph} /> : null}
-                      <button type="button" className={styles.conversation} onClick={() => select(c.id)} aria-current={current ? "true" : undefined}>
-                        <span className={styles.conversationTop}><span className={styles.conversationTitle}>{c.title}</span><span className={styles.conversationTime}>{c.updated}</span></span>
-                        <span className={styles.conversationPreview}>{preview || t("Stopped")}</span>
-                      </button>
+                      {renaming === c.id ? (
+                        <input className="hx-convrename" autoFocus defaultValue={c.title} aria-label={t("Rename")}
+                          onKeyDown={e => { if (e.key === "Enter") renameConversation(c.id, (e.target as HTMLInputElement).value); else if (e.key === "Escape") setRenaming(null); }}
+                          onBlur={e => renameConversation(c.id, e.target.value)} />
+                      ) : (
+                        <button type="button" className={styles.conversation} onClick={() => select(c.id)} aria-current={current ? "true" : undefined}>
+                          <span className={styles.conversationTop}><span className={styles.conversationTitle}>{c.title}</span><span className={styles.conversationTime}>{c.updated}</span></span>
+                          <span className={styles.conversationPreview}>{preview || t("Stopped")}</span>
+                        </button>
+                      )}
+                      {renaming === c.id ? null : (
+                        <button type="button" className="hx-convmore" aria-label={t("More")} aria-expanded={convMenu === c.id} onClick={e => { e.stopPropagation(); setConvMenu(m => (m === c.id ? null : c.id)); }}><MoreHorizontal size={15} aria-hidden="true" /></button>
+                      )}
+                      <AnimatePresence>
+                        {convMenu === c.id ? (
+                          <motion.div className="hx-convmenu" role="menu" initial={reduceMotion ? false : { opacity: 0, y: -4, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, transition: { duration: 0.1 } }} transition={motionTokens.spring.snappy}>
+                            <button type="button" role="menuitem" onClick={() => { setConvMenu(null); setRenaming(c.id); }}><Pencil size={14} aria-hidden="true" />{t("Rename")}</button>
+                            <button type="button" role="menuitem" className="hx-convdel" onClick={() => deleteConversation(c.id)}><Trash2 size={14} aria-hidden="true" />{t("Delete")}</button>
+                          </motion.div>
+                        ) : null}
+                      </AnimatePresence>
                     </motion.li>
                   );
                 }

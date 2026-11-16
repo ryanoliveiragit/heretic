@@ -453,6 +453,19 @@ body, .composer textarea { font-weight: 300; }
 .hx-convlabel{display:block;margin:14px 2px 2px;font:400 10px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:#6E6E76}
 .hx-convgroup{list-style:none;margin:16px 2px 4px;padding:0 4px;font:400 10px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:#6E6E76}
 .hx-convgroup:first-child{margin-top:4px}
+/* Menu da conversa: renomear / excluir (⋯ no hover). */
+.hx-convitem{position:relative}
+.hx-convmore{all:unset;position:absolute;top:8px;right:6px;display:grid;place-items:center;width:26px;height:26px;border-radius:7px;color:#85858D;cursor:pointer;opacity:0;transition:opacity .15s ease,background .15s ease,color .15s ease}
+.hx-convitem:hover .hx-convmore,.hx-convmore[aria-expanded="true"]{opacity:1;background:#17171B}
+.hx-convmore:hover{background:#222228;color:#F5F5F7}
+@media (hover:none){.hx-convmore{opacity:1}}
+.hx-convmenu{position:absolute;top:34px;right:6px;z-index:50;display:flex;flex-direction:column;min-width:152px;padding:5px;border-radius:11px;background:#0C0C0F;border:1px solid #26262C;box-shadow:0 18px 44px -18px #000;transform-origin:top right}
+.hx-convmenu button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;color:#E6E6EA;font:500 13px/1 var(--font-body);cursor:pointer}
+.hx-convmenu button:hover{background:#17171B}
+.hx-convmenu button svg{color:#9A9AA3}
+.hx-convmenu .hx-convdel,.hx-convmenu .hx-convdel svg{color:#FF6B6B}
+.hx-convmenu .hx-convdel:hover{background:#2A1416}
+.hx-convrename{box-sizing:border-box;width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--accent);background:#0C0C0F;color:#F5F5F7;font:500 14px/1.2 var(--font-body);outline:none}
 .hx-header[data-compact="0"] .hx-title{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:23px;letter-spacing:0}
 .hx-modelpill{padding:5px 11px!important;border-radius:999px;box-shadow:inset 0 0 0 1px #1F1F24;background:#0C0C0F;color:#B4B4BB!important;font-size:12px!important}
 /* Pílula Cmd+K no compositor (igual ao mockup) — dica de teclado, some no mobile. */
