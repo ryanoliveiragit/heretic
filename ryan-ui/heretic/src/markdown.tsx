@@ -42,9 +42,14 @@ export function Markdown({ text, caret }: { text: string; caret?: boolean }) {
       while (i < lines.length) { if (/^\s*```/.test((lines[i] ?? ""))) { closed = true; break; } body.push((lines[i++] ?? "")); }
       if (closed) i++;
       const lang = (fence[1] || "").toLowerCase();
+      const bodyText = body.join("\n");
+      // Detecta Mermaid pelo CONTEÚDO também: se o modelo esquece a tag ```mermaid e manda só
+      // ```+flowchart, ainda desenhamos o diagrama em vez de mostrar o código cru.
+      const looksMermaid = /^\s*(?:flowchart|graph)\s+(?:TB|TD|BT|RL|LR)\b/i.test(bodyText)
+        || /^\s*(?:sequenceDiagram|mindmap|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|journey|gitGraph|timeline|quadrantChart|pie\b)/i.test(bodyText);
       // Diagrama só quando o bloco fechou (evita renderizar Mermaid incompleto durante o streaming).
-      if (lang === "mermaid" && closed) blocks.push(<Mermaid key={`m${b++}`} code={body.join("\n")} />);
-      else blocks.push(<pre key={`c${b++}`} className="md-pre" data-lang={fence[1] || undefined}><code>{body.join("\n")}</code></pre>);
+      if ((lang === "mermaid" || looksMermaid) && closed) blocks.push(<Mermaid key={`m${b++}`} code={bodyText} />);
+      else blocks.push(<pre key={`c${b++}`} className="md-pre" data-lang={fence[1] || undefined}><code>{bodyText}</code></pre>);
       continue;
     }
     const h = /^(#{1,4})\s+(.*)$/.exec(line);

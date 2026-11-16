@@ -161,7 +161,7 @@ const SUGGESTIONS: ChatSuggestion[] = [
 ];
 
 const Mask = ({ size = 16 }: { size?: number }) => <span className="mask" aria-hidden style={{ width: size, height: Math.round(size * 1.2) }} />;
-const Cicada = ({ width }: { width: number }) => <img src="/icons/cicada.png" alt="" width={width} style={{ display: "block", height: "auto" }} />;
+const Cicada = ({ width }: { width: number }) => <img src="/icons/cicada.svg" alt="" width={width} style={{ display: "block", height: "auto" }} />;
 
 // A IA raciocina dentro de <think>…</think> antes de responder (estilo Dolphin/reasoning): isso é
 // OCULTO do usuário — mostramos só a resposta final. Enquanto o <think> ainda está aberto (streaming),
@@ -200,7 +200,7 @@ function notifyReply(text: string) {
     if (typeof document === "undefined" || !document.hidden) return;
     if (!("Notification" in window) || Notification.permission !== "granted") return;
     const body = text.replace(/```[\s\S]*?```/g, " ").replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim().slice(0, 140);
-    new Notification("Heretic respondeu", { body: body || "Sua resposta está pronta.", icon: "/icons/icon-192.png", tag: "heretic-reply" });
+    new Notification("Heretic respondeu", { body: body || "Sua resposta está pronta.", icon: "/icons/icon.svg", tag: "heretic-reply" });
   } catch { /* bloqueado / sem suporte */ }
 }
 

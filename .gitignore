@@ -35,6 +35,10 @@ heretic-design/
 # Archives/temp
 arc-ui.zip
 *.png
+# ...mas os ícones/imagens do app PRECISAM subir (logo, PWA, notificação, landing)
+!public/icons/*.png
+!public/uploads/*.png
+!public/**/*.png
 
 # godmod3 (separate tool)
 godmod3/
