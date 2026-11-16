@@ -105,6 +105,8 @@ export interface ChatParams { temperature: number; top_p: number; max_tokens: nu
 export interface StreamHandlers {
   onToken: (full: string) => void;
   onWarning?: (data: unknown) => void;
+  /** FORÇA TUDO: o servidor descartou uma recusa e re-rodou o modelo — o texto recomeça do zero. */
+  onRefusalForced?: () => void;
   /** `status` is set when the server refused the request before streaming (e.g. 429, 403). */
   onError?: (message: string, info?: { status: number; code?: string }) => void;
   onDone?: (content: string) => void;
@@ -159,7 +161,10 @@ export function streamChat(
           try {
             const data = JSON.parse(line.slice(6));
             if (event === "token" && data.token) { full += data.token; h.onToken(full); }
-            else if (event === "warning") h.onWarning?.(data);
+            else if (event === "warning") {
+              if ((data as { type?: string }).type === "refusal_forced") { full = ""; h.onRefusalForced?.(); }
+              else h.onWarning?.(data);
+            }
             else if (event === "usage" && typeof data.used === "number" && typeof data.limit === "number") h.onUsage?.({ used: data.used, limit: data.limit, remaining: typeof data.remaining === "number" ? data.remaining : Math.max(0, data.limit - data.used) });
             else if (event === "error") h.onError?.(data.message ?? "Something went wrong");
             else if (event === "done") h.onDone?.(data.content || full);

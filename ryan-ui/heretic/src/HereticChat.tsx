@@ -257,6 +257,8 @@ export function HereticChat() {
       {
         onUsage: setUsage,
         onToken: full => patchMessage(conversationId, messageId, m => ({ ...m, text: full, state: m.state === "thinking" ? "streaming" : m.state })),
+        // FORÇA TUDO: o servidor descartou uma recusa e re-rodou o modelo → limpa e volta ao "pensando".
+        onRefusalForced: () => patchMessage(conversationId, messageId, m => ({ ...m, text: "", state: "thinking" })),
         onError: (message, info) => {
           window.clearTimeout(doneTimer.current);
           // Refusals before streaming (429 out of tokens, 403 Pro model) already carry a readable message.

@@ -137,7 +137,8 @@ app.post('/api/chat', async (c) => {
         const chatPayload = { messages: body.messages || [], systemPrompt, modelId, ...params };
         const handlers = {
           onToken: (t) => { fullText += t; send('token', { token: t }); },
-          onWarning: (w) => send('warning', w),
+          // FORÇA TUDO: o guarda descartou uma recusa parcial → o texto final começa limpo.
+          onWarning: (w) => { if (w && w.type === 'refusal_forced') fullText = ''; send('warning', w); },
           signal: ac.signal,
         };
         // Modo Qualidade (best-of-2) só no Pro; caso contrário, stream normal de 1 modelo.
