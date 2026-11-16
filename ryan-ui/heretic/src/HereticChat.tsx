@@ -4,7 +4,7 @@
 // and the reply driven by the server instead of canned text. The prompt box is the forked
 // ryan-ui Pro composer (./composer), with the model menu and the daily-token meter.
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import type { TouchEvent as ReactTouchEvent } from "react";
+import type { ReactNode, TouchEvent as ReactTouchEvent } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
 import { Check, Copy, Download, FileDown, FileText, KeyRound, Lock, PanelLeft, RefreshCw, Settings as SettingsIcon, SquarePen, X, Zap } from "lucide-react";
@@ -210,12 +210,28 @@ function notifyReply(text: string) {
   } catch { /* bloqueado / sem suporte */ }
 }
 
+// Agrupa as conversas por recência (Hoje / Ontem / Últimos 7 dias / Antigas), como no mockup.
+const DAY_MS = 86400000;
+const convTs = (c: ChatConversation): number => (c as ChatConversation & { ts?: number }).ts || 0;
+function groupKey(ts: number): string {
+  if (!ts) return "earlier";
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  const today = start.getTime();
+  if (ts >= today) return "today";
+  if (ts >= today - DAY_MS) return "yesterday";
+  if (ts >= today - 7 * DAY_MS) return "7d";
+  return "earlier";
+}
+function groupLabel(key: string): string {
+  return key === "today" ? t("Today") : key === "yesterday" ? t("Yesterday") : key === "7d" ? t("Last 7 days") : t("Earlier");
+}
+
 function load(): ChatConversation[] {
   try {
     const list = JSON.parse(localStorage.getItem(STORE) || "[]") as ChatConversation[];
-    if (Array.isArray(list) && list.length) return list.map(c => ({ ...c, messages: c.messages.map(m => (m.state === "thinking" || m.state === "streaming" ? { ...m, state: "stopped" } : m)) }));
+    if (Array.isArray(list) && list.length) return list.map((c, i) => ({ ...c, ts: (c as ChatConversation & { ts?: number }).ts || Date.now() - i * 1000, messages: c.messages.map(m => (m.state === "thinking" || m.state === "streaming" ? { ...m, state: "stopped" } : m)) } as ChatConversation));
   } catch { /* fresh start */ }
-  return [{ id: `chat-${Date.now()}`, title: t("New chat"), updated: t("Now"), messages: [] }];
+  return [{ id: `chat-${Date.now()}`, title: t("New chat"), updated: t("Now"), ts: Date.now(), messages: [] } as ChatConversation];
 }
 
 // Baixar a resposta como arquivo (o usuário pediu "exporte como PDF"). Sem dependência pesada:
@@ -512,7 +528,7 @@ export function HereticChat() {
     const userMsg: ChatMessage = { id: nextId("prompt"), role: "user", text: userText, state: "done" };
     const replyId = nextId("reply");
     const before = active.messages;
-    setConversations(list => list.map(c => c.id !== active.id ? c : { ...c, title: c.messages.length === 0 ? titleFrom(title || userText) : c.title, updated: "Now", messages: [...c.messages, userMsg, { id: replyId, role: "assistant", text: "", state: "thinking", model: img ? t("Image") : model.short } as ChatMessage] }));
+    setConversations(list => list.map(c => c.id !== active.id ? c : { ...c, title: c.messages.length === 0 ? titleFrom(title || userText) : c.title, updated: "Now", ts: Date.now(), messages: [...c.messages, userMsg, { id: replyId, role: "assistant", text: "", state: "thinking", model: img ? t("Image") : model.short } as ChatMessage] } as ChatConversation));
     if (img) generateImage(active.id, replyId, img[1]!.trim());
     else run(active.id, replyId, historyOf([...before, userMsg]));
   };
@@ -541,7 +557,7 @@ export function HereticChat() {
     finish("done");
     const empty = conversations.find(c => c.messages.length === 0);
     if (empty) setActiveId(empty.id);
-    else { const id = nextId("chat"); setConversations(list => [{ id, title: t("New chat"), updated: t("Now"), messages: [] }, ...list]); setActiveId(id); }
+    else { const id = nextId("chat"); setConversations(list => [{ id, title: t("New chat"), updated: t("Now"), ts: Date.now(), messages: [] } as ChatConversation, ...list]); setActiveId(id); }
     setDrawer(false);
     composerRef.current?.focus();
   };
@@ -564,24 +580,31 @@ export function HereticChat() {
           {compact ? <button type="button" className={styles.iconButton} onClick={() => setDrawer(false)} aria-label={t("Close")} title={t("Close")}><X size={16} aria-hidden="true" /></button> : null}
         </div>
         <button ref={newChatRef} type="button" className="hx-newchat" onClick={newChat}><SquarePen size={15} aria-hidden="true" />{t("New chat")}</button>
-        <span className="hx-convlabel">{t("Conversations")}</span>
         <LayoutGroup>
           <ul className={styles.conversations}>
             <AnimatePresence initial={false}>
-              {conversations.map(c => {
-                const current = c.id === active?.id;
-                const lastMsg = c.messages[c.messages.length - 1];
-                const preview = (lastMsg ? visibleAnswer(lastMsg.text) : "").replace(/```[\s\S]*?```/g, " ").replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim() || t("No messages yet");
-                return (
-                  <motion.li key={c.id} className={styles.conversationItem} layout={reduceMotion ? false : "position"} initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={pop}>
-                    {current ? <motion.span layoutId={`${scope}-active`} className={styles.activeMark} transition={reduceMotion ? { duration: 0 } : motionTokens.spring.morph} /> : null}
-                    <button type="button" className={styles.conversation} onClick={() => select(c.id)} aria-current={current ? "true" : undefined}>
-                      <span className={styles.conversationTop}><span className={styles.conversationTitle}>{c.title}</span><span className={styles.conversationTime}>{c.updated}</span></span>
-                      <span className={styles.conversationPreview}>{preview || t("Stopped")}</span>
-                    </button>
-                  </motion.li>
-                );
-              })}
+              {(() => {
+                const sorted = [...conversations].sort((a, b) => convTs(b) - convTs(a));
+                const out: ReactNode[] = [];
+                let lastKey = "";
+                for (const c of sorted) {
+                  const key = groupKey(convTs(c));
+                  if (key !== lastKey) { lastKey = key; out.push(<li key={`grp-${key}`} className="hx-convgroup" aria-hidden="true">{groupLabel(key)}</li>); }
+                  const current = c.id === active?.id;
+                  const lastMsg = c.messages[c.messages.length - 1];
+                  const preview = (lastMsg ? visibleAnswer(lastMsg.text) : "").replace(/```[\s\S]*?```/g, " ").replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim() || t("No messages yet");
+                  out.push(
+                    <motion.li key={c.id} className={styles.conversationItem} layout={reduceMotion ? false : "position"} initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={pop}>
+                      {current ? <motion.span layoutId={`${scope}-active`} className={styles.activeMark} transition={reduceMotion ? { duration: 0 } : motionTokens.spring.morph} /> : null}
+                      <button type="button" className={styles.conversation} onClick={() => select(c.id)} aria-current={current ? "true" : undefined}>
+                        <span className={styles.conversationTop}><span className={styles.conversationTitle}>{c.title}</span><span className={styles.conversationTime}>{c.updated}</span></span>
+                        <span className={styles.conversationPreview}>{preview || t("Stopped")}</span>
+                      </button>
+                    </motion.li>
+                  );
+                }
+                return out;
+              })()}
             </AnimatePresence>
           </ul>
         </LayoutGroup>
