@@ -459,7 +459,7 @@ body, .composer textarea { font-weight: 300; }
 .hx-mermaid[data-loading]::before{content:none}
 
 /* Diagramas Mermaid na conversa ── */
-.hx-mermaid{display:block;margin:14px 0;padding:16px;border-radius:14px;background:#08080A;border:1px solid #1F1F24;overflow-x:auto;text-align:center;animation:hxDiagIn .4s cubic-bezier(.22,.61,.36,1)}
+.hx-mermaid{display:block;margin:14px 0;padding:16px;border-radius:14px;background-color:#08080A;background-image:radial-gradient(#ffffff0d 1px,transparent 1px);background-size:15px 15px;background-position:-1px -1px;border:1px solid #1F1F24;overflow-x:auto;text-align:center;animation:hxDiagIn .4s cubic-bezier(.22,.61,.36,1)}
 .hx-mermaid[data-loading]{color:#6E6E76;font:300 12px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;text-align:left;padding:14px 16px}
 .hx-mermaid svg{max-width:100%;height:auto}
 @keyframes hxDiagIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
