@@ -4,7 +4,10 @@
 // Upstash Redis when UPSTASH_REDIS_REST_URL/TOKEN (or Vercel KV_REST_API_URL/TOKEN) are set;
 // otherwise in memory, which on Vercel Edge is per instance and resets — good for a demo, not a hard limit.
 
-export const FREE_MODEL = 'cognitivecomputations/dolphin-mistral-24b-venice-edition';
+// Padrão grátis = Gemma 4 Uncensored (Venice): Google Gemma rende melhor em pt-BR e em seguir
+// instrução, é mais barato que os antigos grátis e roda na Venice (chave ativa). O Venice UC 1.2
+// e o Dolphin seguem como opções grátis.
+export const FREE_MODEL = 'venice:gemma-4-uncensored';
 export const FREE_DAILY_TOKENS = Number(process.env.FREE_DAILY_TOKENS) || 20000;
 
 import { MODEL_CATALOG } from './upstream.js';
@@ -23,13 +26,13 @@ export function costPer100(m) {
 }
 
 export const PUBLIC_MODELS_RAW = [
-  // ── free tier: what every visitor can pick (both providers, both uncensored) ──
-  { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', name: 'Dolphin 24B', short: 'Dolphin 24B', note: 'Uncensored. Fast. 128k context', tier: 'free' },
+  // ── free tier: what every visitor can pick (both providers, all uncensored). Default = Gemma 4 UC. ──
+  { id: 'venice:gemma-4-uncensored', name: 'Gemma 4 Uncensored', short: 'Gemma 4 UC', note: 'Default. Best pt-BR, cheap, vision, tools. 256k context', tier: 'free' },
   { id: 'venice:venice-uncensored-1-2', name: 'Venice Uncensored 1.2', short: 'Venice UC', note: 'Uncensored, vision and tools. 128k context', tier: 'free' },
+  { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', name: 'Dolphin 24B', short: 'Dolphin 24B', note: 'Uncensored. Fast. 128k context', tier: 'free' },
   // ── pro tier: listed and locked, cheapest first (sorted by estimated cost per 100 messages) ──
   { id: 'venice:olafangensan-glm-4.7-flash-heretic', name: 'Heretic 4.7', short: 'Heretic 4.7', note: 'Abliterated GLM, fast, tools. 200k context', tier: 'pro' },
   { id: 'venice:z-ai-glm-5-3-flash', name: 'GLM 5.3 Flash', short: 'GLM 5.3 Flash', note: 'Fast, vision, tools. 1M context', tier: 'pro' },
-  { id: 'venice:gemma-4-uncensored', name: 'Gemma 4 Uncensored', short: 'Gemma 4 UC', note: 'Very cheap, vision, tools. 256k context', tier: 'pro' },
   { id: 'thedrummer/cydonia-24b-v4.1', name: 'Cydonia 24B', short: 'Cydonia 24B', note: 'Creative, no filter. 128k context', tier: 'pro' },
   { id: 'thedrummer/unslopnemo-12b', name: 'Unslopnemo 12B', short: 'Unslopnemo', note: '1M context', tier: 'pro' },
   { id: 'thedrummer/skyfall-36b-v2', name: 'Skyfall 36B', short: 'Skyfall 36B', note: 'Stories and roleplay. 32k context', tier: 'pro' },

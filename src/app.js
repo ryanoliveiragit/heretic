@@ -114,10 +114,15 @@ app.post('/api/chat', async (c) => {
 
   const agent = agentPrompt(body.agent);
   const systemPrompt = agent ? `${getPersona()}\n\n${agent}` : getPersona();
+  // Sampling calmo por padrão: temperatura 1.0 + top_p 1.0 fazia os modelos menores
+  // (ex.: Venice UC grátis) degenerarem em texto sem sentido e misturar idioma. 0.6/0.9 +
+  // frequency_penalty mantém a resposta coerente e direta.
   const params = {
-    temperature: body.params?.temperature ?? 1,
-    top_p: body.params?.top_p ?? 1,
+    temperature: body.params?.temperature ?? 0.6,
+    top_p: body.params?.top_p ?? 0.9,
     max_tokens: body.params?.max_tokens ?? 4096,
+    frequency_penalty: body.params?.frequency_penalty ?? 0.3,
+    presence_penalty: body.params?.presence_penalty ?? 0,
   };
 
   const ac = new AbortController();

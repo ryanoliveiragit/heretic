@@ -92,8 +92,9 @@ const MAX_PROMPT_CHARS = 16000;
 const MODEL_KEY = "heretic-model";
 /** Used until GET /api/me answers (or if it fails). */
 const FALLBACK_MODELS: ModelOption[] = [
-  { id: "cognitivecomputations/dolphin-mistral-24b-venice-edition", name: "Dolphin 24B", short: "Dolphin 24B", note: "Uncensored. Fast. 128k context", tier: "free", locked: false, provider: "openrouter", cost100: 0.033 },
+  { id: "venice:gemma-4-uncensored", name: "Gemma 4 Uncensored", short: "Gemma 4 UC", note: "Default. Best pt-BR, cheap, vision, tools. 256k context", tier: "free", locked: false, provider: "venice", cost100: 0.020 },
   { id: "venice:venice-uncensored-1-2", name: "Venice Uncensored 1.2", short: "Venice UC", note: "Uncensored, vision and tools. 128k context", tier: "free", locked: false, provider: "venice", cost100: 0.033 },
+  { id: "cognitivecomputations/dolphin-mistral-24b-venice-edition", name: "Dolphin 24B", short: "Dolphin 24B", note: "Uncensored. Fast. 128k context", tier: "free", locked: false, provider: "openrouter", cost100: 0.033 },
 ];
 const titleFrom = (prompt: string) => { const line = prompt.replace(/\s+/g, " ").trim(); return line.length > 44 ? `${line.slice(0, 43).trimEnd()}…` : line; };
 const SUGGESTIONS: ChatSuggestion[] = [

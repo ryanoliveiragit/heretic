@@ -1,7 +1,7 @@
 // Heretic — service worker do PWA.
 // Arquivos fixos (design system, vendor, assets do app, ícones, fontes): cache primeiro.
 // Páginas HTML: rede primeiro, cache se estiver offline. API: nunca entra no cache.
-const VERSION = "heretic-mwirpxdy"; // trocado a cada build: o cache antigo é apagado no activate
+const VERSION = "heretic-mwis6ubf"; // trocado a cada build: o cache antigo é apagado no activate
 const SHELL = ["/", "/m.html", "/app/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
