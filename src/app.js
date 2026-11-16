@@ -6,7 +6,7 @@ import { health, listProjects, createProject, deleteProject,
   listConversations, createConversation, deleteConversation,
   listMessages, addMessage } from './store.js';
 import { getPersona, setPersona } from './persona.js';
-import { streamChat, getRoutes, setRoute, MODEL_CATALOG } from './upstream.js';
+import { streamChat, qualityAnswer, getRoutes, setRoute, MODEL_CATALOG } from './upstream.js';
 import { checkBudget, incrementUsage } from './budget.js';
 import { AGENTS, agentPrompt } from './agents.js';
 import { FREE_MODEL, FREE_DAILY_TOKENS, planOf, modelsFor, canUse, estimateTokens, visitorId, getUsed, addUsed, usageStore, planForKey, issueCode } from './plans.js';
@@ -134,19 +134,18 @@ app.post('/api/chat', async (c) => {
       const send = (event, data) =>
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
       try {
-        for await (const token of streamChat(mode, {
-          messages: body.messages || [],
-          systemPrompt,
-          modelId,
-          ...params,
-        }, {
-          onToken: (t) => {
-            fullText += t;
-            send('token', { token: t });
-          },
+        const chatPayload = { messages: body.messages || [], systemPrompt, modelId, ...params };
+        const handlers = {
+          onToken: (t) => { fullText += t; send('token', { token: t }); },
           onWarning: (w) => send('warning', w),
           signal: ac.signal,
-        })) { /* tokens sent via onToken */ }
+        };
+        // Modo Qualidade (best-of-2) só no Pro; caso contrário, stream normal de 1 modelo.
+        if (body.quality && plan === 'pro') {
+          await qualityAnswer(mode, chatPayload, handlers);
+        } else {
+          for await (const _ of streamChat(mode, chatPayload, handlers)) { /* tokens via onToken */ }
+        }
 
         if (convId && fullText) addMessage(convId, 'assistant', fullText);
         incrementUsage();

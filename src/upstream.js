@@ -235,6 +235,50 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
   throw lastErr;
 }
 
+// ── Modo Qualidade (best-of-2) ──
+// Roda a mesma pergunta em 2 modelos em paralelo, um juiz barato escolhe a melhor e ela é
+// transmitida. Custa ~2–3× os tokens → é recurso Pro. Juiz = Heretic 4.7 (o mais barato).
+const JUDGE_MODEL = 'venice:olafangensan-glm-4.7-flash-heretic';
+const QUALITY_CHALLENGER = 'venice:deepseek-v4-1-flash-uncensored';
+function pickChallenger(primaryId) {
+  return primaryId === QUALITY_CHALLENGER ? 'sao10k/l3.1-euryale-70b' : QUALITY_CHALLENGER;
+}
+
+async function collectFull(mode, payload, signal) {
+  let text = '';
+  try { for await (const _ of streamChat(mode, payload, { onToken: (t) => { text += t; }, signal })) { /* drain */ } }
+  catch { /* keep partial */ }
+  return text;
+}
+
+async function judgeBest(mode, question, a, b, signal) {
+  const prompt = `Pergunta do usuário:\n${question}\n\n--- RESPOSTA A ---\n${a.slice(0, 4000)}\n\n--- RESPOSTA B ---\n${b.slice(0, 4000)}\n\nQual resposta é mais útil, correta, completa e direta para a pergunta? Responda APENAS com uma letra: A ou B.`;
+  const out = await collectFull(mode, { modelId: JUDGE_MODEL, messages: [{ role: 'user', content: prompt }], systemPrompt: '', temperature: 0, top_p: 1, max_tokens: 3 }, signal);
+  return out.trim().toUpperCase().startsWith('B') ? 'B' : 'A';
+}
+
+export async function qualityAnswer(mode, payload, { onToken, onWarning, signal } = {}) {
+  const primaryId = payload.modelId;
+  const challengerId = pickChallenger(primaryId);
+  if (onWarning) onWarning({ type: 'quality', message: 'Comparando 2 modelos…', models: [primaryId, challengerId] });
+  const [a, b] = await Promise.all([
+    collectFull(mode, { ...payload, modelId: primaryId }, signal),
+    collectFull(mode, { ...payload, modelId: challengerId }, signal),
+  ]);
+  let winnerText = '', winnerId = primaryId;
+  if (!a && !b) { if (onWarning) onWarning({ type: 'error', message: 'Nenhum modelo respondeu.' }); return; }
+  else if (!a) { winnerText = b; winnerId = challengerId; }
+  else if (!b) { winnerText = a; winnerId = primaryId; }
+  else {
+    const q = (payload.messages || []).filter(m => m.role === 'user').pop()?.content || '';
+    const w = await judgeBest(mode, q, a, b, signal);
+    winnerText = w === 'B' ? b : a; winnerId = w === 'B' ? challengerId : primaryId;
+  }
+  if (onWarning) onWarning({ type: 'quality_done', winner: winnerId });
+  // transmite a vencedora em pedaços pequenos para dar a sensação de streaming
+  if (onToken) for (const chunk of winnerText.split(/(\s+)/)) { if (chunk) onToken(chunk); }
+}
+
 async function* readSSEStream(res, { onToken, signal } = {}) {
   const reader = res.body.getReader();
   const decoder = new TextDecoder();

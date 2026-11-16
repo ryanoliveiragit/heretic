@@ -142,6 +142,7 @@ export function HereticChat() {
   const [models, setModels] = useState<ModelOption[]>(FALLBACK_MODELS);
   const [plan, setPlan] = useState("free");
   const [keyOpen, setKeyOpen] = useState(false);
+  const [quality, setQuality] = useState(false);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [modelId, setModelId] = useState(() => { try { return localStorage.getItem(MODEL_KEY) ?? ""; } catch { return ""; } });
   const [compact, setCompact] = useState(false);
@@ -167,7 +168,8 @@ export function HereticChat() {
   useEffect(() => {
     const p = new URLSearchParams(location.search);
     const q = p.get("q");
-    if (q) { history.replaceState(null, "", location.pathname); composerRef.current?.fill(q); composerRef.current?.focus(); }
+    // Chegou do preset/hero da landing (?q=): envia na hora em vez de só preencher.
+    if (q) { history.replaceState(null, "", location.pathname); send(q); }
     if (p.get("buy") === "1" || p.get("key") === "1") { history.replaceState(null, "", location.pathname); setKeyOpen(true); }
   }, []);
   // Plan, models (Pro ones arrive locked) and today's token usage.
@@ -232,7 +234,7 @@ export function HereticChat() {
     serverDone.current.delete(messageId);
     setGenerating({ conversationId, messageId });
     ctrl.current = streamChat(
-      { conversationId: 0, mode: "chat", model: model.id, messages: history, params: { temperature: 1, top_p: 1, max_tokens: 4096 } },
+      { conversationId: 0, mode: "chat", model: model.id, messages: history, quality: quality && plan === "pro", params: { temperature: 0.6, top_p: 0.9, max_tokens: 4096 } },
       {
         onUsage: setUsage,
         onToken: full => patchMessage(conversationId, messageId, m => ({ ...m, text: full, state: m.state === "thinking" ? "streaming" : m.state })),
@@ -337,6 +339,7 @@ export function HereticChat() {
               <motion.span key={active?.title ?? "none"} className={styles.titleText} initial={reduceMotion ? false : { opacity: 0, y: 6, filter: `blur(${motionTokens.blur.soft}px)` }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={reduceMotion ? { duration: 0 } : { duration: motionTokens.duration.standard, ease: standard }}>{active?.title ?? "Chat"}</motion.span>
             </AnimatePresence>
           </h2>
+          {plan === "pro" ? <button type="button" className="hx-qtoggle" data-on={quality ? "1" : "0"} onClick={() => setQuality(q => !q)} aria-pressed={quality} title={t("Quality mode: race 2 models, keep the best")}>{t("Quality")}</button> : null}
           <span className={styles.model}><span className={styles.modelDot} aria-hidden="true" />{model.short} · {t("Uncensored")}</span>
         </header>
 

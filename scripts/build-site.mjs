@@ -131,6 +131,8 @@ document.addEventListener('click',function(e){
     if(el.tagName==='BUTTON'||el.tagName==='A'){var t=label(el);
       if(CTA.test(t)){e.preventDefault();e.stopPropagation();goApp();return;}
       if(/^(send|send prompt)$/i.test(t)){var h=heroInput();if(h&&h.value.trim()){e.preventDefault();e.stopPropagation();goApp(h.value.trim());}return;}
+      var grp=el.closest&&el.closest('[aria-label="Example questions"]');
+      if(grp&&t){e.preventDefault();e.stopPropagation();goApp(t);return;}
       return;}}
 },true);
 document.addEventListener('keydown',function(e){

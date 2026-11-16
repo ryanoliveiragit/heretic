@@ -50,6 +50,8 @@ const PT: Record<string, string> = {
   "Get a code": "Pegar um código",
   "Sign out of Pro": "Sair do Pro",
   "Close": "Fechar",
+  "Quality": "Qualidade",
+  "Quality mode: race 2 models, keep the best": "Modo Qualidade: compara 2 modelos e fica com a melhor resposta",
   "Show conversations": "Mostrar conversas",
   "Ask anything.": "Pergunte qualquer coisa.",
   "Ask anything": "Pergunte qualquer coisa",

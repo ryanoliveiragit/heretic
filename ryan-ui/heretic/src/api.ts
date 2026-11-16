@@ -118,7 +118,7 @@ const REFUSALS: Record<string, string> = {
 
 /** Abre o SSE de /api/chat e repassa os eventos. Retorna o AbortController para parar. */
 export function streamChat(
-  body: { conversationId: number; mode: Mode; messages: Msg[]; params: ChatParams; agent?: string; model?: string },
+  body: { conversationId: number; mode: Mode; messages: Msg[]; params: ChatParams; agent?: string; model?: string; quality?: boolean },
   h: StreamHandlers,
 ): AbortController {
   const ctrl = new AbortController();
