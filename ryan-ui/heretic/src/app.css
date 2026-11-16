@@ -455,6 +455,9 @@ body, .composer textarea { font-weight: 300; }
 .hx-convgroup:first-child{margin-top:4px}
 .hx-header[data-compact="0"] .hx-title{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:23px;letter-spacing:0}
 .hx-modelpill{padding:5px 11px!important;border-radius:999px;box-shadow:inset 0 0 0 1px #1F1F24;background:#0C0C0F;color:#B4B4BB!important;font-size:12px!important}
+/* Pílula Cmd+K no compositor (igual ao mockup) — dica de teclado, some no mobile. */
+.hx-cmdk{display:inline-flex;align-items:center;padding:5px 9px;border-radius:7px;box-shadow:inset 0 0 0 1px #26262C;color:#85858D;font:400 11px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.02em;user-select:none;white-space:nowrap}
+.hx-chat[data-compact="true"] .hx-cmdk{display:none}
 /* rótulo acima do diagrama Mermaid (dá o toque "fluxograma · …") */
 .hx-mermaid::before{content:"⌁ diagrama";display:block;margin:-2px 0 10px;font:400 11px/1 "Geist Mono Variable",ui-monospace,monospace;letter-spacing:.06em;color:#6E6E76;text-align:left}
 .hx-mermaid[data-loading]::before{content:none}

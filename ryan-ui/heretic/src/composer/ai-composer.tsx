@@ -535,7 +535,7 @@ function ModelMenu({ models, model, reduced, onModel }: ModelMenuProps) {
         >
           <ModelMask />
           <WidthMorph reduced={reduced} className={styles.modelText}>
-            <span className={styles.modelName}>{model.short}</span>
+            <span className={styles.modelName}>{model.short.replace(/^Heretic\s+/, "")}</span>
           </WidthMorph>
           <ChevronDown className={styles.chevron} aria-hidden="true" />
         </button>
@@ -1332,6 +1332,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         </div>
 
         <div className={styles.toolbar}>
+          {/* Barra igual ao mockup do Claude Design: [+] [mic] [modelo] à esquerda; [⌘K] [enviar] à direita. */}
           <div className={styles.toolGroup}>
             <Tooltip content={t("Attach a text file")}>
               <button
@@ -1343,6 +1344,22 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 <Plus aria-hidden="true" />
               </button>
             </Tooltip>
+            {canDictate ? (
+              <Tooltip content={dictation ? t("Insert the transcript") : t("Dictate")}>
+                <button
+                  type="button"
+                  className={styles.iconButton}
+                  aria-label={dictation ? t("Stop dictation and insert") : t("Dictate")}
+                  aria-pressed={!!dictation}
+                  data-live={dictation ? "" : undefined}
+                  onClick={() => (dictation ? finishDictation() : startDictation())}
+                  disabled={busy && !dictation}
+                >
+                  <Mic aria-hidden="true" />
+                </button>
+              </Tooltip>
+            ) : null}
+            <ModelMenu models={models} model={model} reduced={reduced} onModel={onModel} />
           </div>
           <div className={styles.toolGroup}>
             <AnimatePresence initial={false}>
@@ -1359,22 +1376,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 </motion.span>
               )}
             </AnimatePresence>
-            <ModelMenu models={models} model={model} reduced={reduced} onModel={onModel} />
-            {canDictate ? (
-              <Tooltip content={dictation ? t("Insert the transcript") : t("Dictate")}>
-                <button
-                  type="button"
-                  className={styles.iconButton}
-                  aria-label={dictation ? t("Stop dictation and insert") : t("Dictate")}
-                  aria-pressed={!!dictation}
-                  data-live={dictation ? "" : undefined}
-                  onClick={() => (dictation ? finishDictation() : startDictation())}
-                  disabled={busy && !dictation}
-                >
-                  <Mic aria-hidden="true" />
-                </button>
-              </Tooltip>
-            ) : null}
+            <span className="hx-cmdk" aria-hidden="true">Cmd+K</span>
             <SendButton
               state={state}
               progress={progress}
