@@ -1,8 +1,21 @@
 // Small, safe Markdown renderer for chat replies (no HTML is injected: everything becomes React nodes).
 // Blocks: ``` code fences, # headings, - / * / 1. lists, > quotes, --- rules, paragraphs.
 // Inline: **bold**, *italic*, `code`, [text](https://link).
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { Check, Copy } from "lucide-react";
 import { Mermaid } from "./mermaid";
+
+// Bloco de código com cabeçalho (linguagem + copiar), no estilo do redesign.
+function CodeBlock({ code, lang }: { code: string; lang?: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => { try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* negado */ } };
+  return (
+    <div className="md-codewrap">
+      <div className="md-codebar"><span className="md-codelang">{lang || "código"}</span><button type="button" className="md-codecopy" onClick={copy} aria-label="Copiar código">{copied ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}</button></div>
+      <pre className="md-pre" data-lang={lang || undefined}><code>{code}</code></pre>
+    </div>
+  );
+}
 
 function inline(text: string, key = "i"): ReactNode[] {
   const out: ReactNode[] = [];
@@ -49,7 +62,7 @@ export function Markdown({ text, caret }: { text: string; caret?: boolean }) {
         || /^\s*(?:sequenceDiagram|mindmap|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|journey|gitGraph|timeline|quadrantChart|pie\b)/i.test(bodyText);
       // Diagrama só quando o bloco fechou (evita renderizar Mermaid incompleto durante o streaming).
       if ((lang === "mermaid" || looksMermaid) && closed) blocks.push(<Mermaid key={`m${b++}`} code={bodyText} />);
-      else blocks.push(<pre key={`c${b++}`} className="md-pre" data-lang={fence[1] || undefined}><code>{bodyText}</code></pre>);
+      else blocks.push(<CodeBlock key={`c${b++}`} code={bodyText} lang={fence[1] || undefined} />);
       continue;
     }
     const h = /^(#{1,4})\s+(.*)$/.exec(line);

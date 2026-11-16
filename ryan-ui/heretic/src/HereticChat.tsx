@@ -555,10 +555,11 @@ export function HereticChat() {
         drag={compact && drawer && !reduceMotion ? "x" : false} dragDirectionLock dragConstraints={{ left: 0, right: 0 }} dragElastic={{ left: 0.5, right: 0 }} dragMomentum={false}
         onDragEnd={(_e, info) => { if (info.offset.x < -60 || info.velocity.x < -400) setDrawer(false); }}>
         <div className={styles.sidebarTop}>
-          <a className={`${styles.brand} hx-brand`} href="/" aria-label="Heretic, home"><Cicada width={34} />Heretic</a>
-          <button ref={newChatRef} type="button" className={styles.iconButton} onClick={newChat} aria-label={t("New chat")} title={t("New chat")}><SquarePen size={16} aria-hidden="true" /></button>
+          <a className={`${styles.brand} hx-brand`} href="/" aria-label="Heretic, home"><Cicada width={30} />Heretic</a>
           {compact ? <button type="button" className={styles.iconButton} onClick={() => setDrawer(false)} aria-label={t("Close")} title={t("Close")}><X size={16} aria-hidden="true" /></button> : null}
         </div>
+        <button ref={newChatRef} type="button" className="hx-newchat" onClick={newChat}><SquarePen size={15} aria-hidden="true" />{t("New chat")}</button>
+        <span className="hx-convlabel">{t("Conversations")}</span>
         <LayoutGroup>
           <ul className={styles.conversations}>
             <AnimatePresence initial={false}>
@@ -605,7 +606,7 @@ export function HereticChat() {
           </h2>
           {/* Desktop: Qualidade + legenda do modelo cabem no header. Mobile: header enxuto (menu + título + nova conversa); Qualidade fica junto do compositor e o modelo no seletor dele. */}
           {!compact && plan === "pro" ? <button type="button" className="hx-qtoggle" data-on={quality ? "1" : "0"} onClick={() => setQuality(q => !q)} aria-pressed={quality} title={t("Quality mode: race 2 models, keep the best")}>{t("Quality")}</button> : null}
-          {!compact ? <span className={styles.model}><span className={styles.modelDot} aria-hidden="true" />{model.short} · {t("Uncensored")}</span> : null}
+          {!compact ? <span className={`${styles.model} hx-modelpill`}><span className={styles.modelDot} aria-hidden="true" />{model.short} · {t("Uncensored")}</span> : null}
           {compact ? <button type="button" className={styles.iconButton} onClick={newChat} aria-label={t("New chat")} title={t("New chat")}><SquarePen size={18} aria-hidden="true" /></button> : null}
         </header>
 

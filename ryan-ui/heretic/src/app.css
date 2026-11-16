@@ -310,14 +310,24 @@ body, .composer textarea { font-weight: 300; }
 .md a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
 .md .md-h { font-family: var(--font-body); font-weight: 600; letter-spacing: -.01em; color: #FFFFFF; line-height: 1.3; }
 .md h3.md-h { font-size: 20px; } .md h4.md-h { font-size: 18px; } .md h5.md-h, .md h6.md-h { font-size: 16px; }
-.md ul, .md ol { padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.md ul { padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
 .md ul li::marker { color: var(--accent); }
-.md ol li::marker { color: #85858D; font-family: "Geist Mono Variable", ui-monospace, monospace; font-size: .85em; }
-.md blockquote { padding: 2px 0 2px 14px; border-left: 2px solid #3A3A40; color: #B4B4BB; }
+/* Listas numeradas no estilo do redesign: "01 02 03" em carmim mono. */
+.md ol { list-style: none; counter-reset: hxol; padding-left: 0; display: flex; flex-direction: column; gap: 10px; }
+.md ol > li { position: relative; padding-left: 34px; }
+.md ol > li::before { counter-increment: hxol; content: counter(hxol, decimal-leading-zero); position: absolute; left: 0; top: .05em; font: 500 12px/1.5 "Geist Mono Variable", ui-monospace, monospace; color: var(--accent); }
+.md blockquote { padding: 2px 0 2px 14px; border-left: 2px solid var(--accent); color: #B4B4BB; }
 .md hr { border: 0; border-top: 1px solid #1F1F24; }
-.md .md-code { padding: 2px 6px; border-radius: 6px; background: #16161A; box-shadow: inset 0 0 0 1px #ffffff0f; font: 400 .88em/1.4 "Geist Mono Variable", ui-monospace, monospace; color: #F2F2F5; }
+.md .md-code { padding: 2px 7px; border-radius: 6px; background: #16161A; box-shadow: inset 0 0 0 1px #ffffff14; font: 400 .86em/1.4 "Geist Mono Variable", ui-monospace, monospace; color: #F2F2F5; white-space: nowrap; }
+/* Bloco de código com cabeçalho (linguagem + copiar). */
+.md .md-codewrap { border-radius: 12px; overflow: hidden; box-shadow: inset 0 0 0 1px #1F1F24; background: #08080A; }
+.md .md-codebar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #0C0C0F; border-bottom: 1px solid #1A1A1F; }
+.md .md-codelang { font: 400 11px/1 "Geist Mono Variable", ui-monospace, monospace; letter-spacing: .06em; color: #85858D; text-transform: lowercase; }
+.md .md-codelang::before { content: "›_ "; color: var(--accent); }
+.md .md-codecopy { all: unset; display: grid; place-items: center; width: 26px; height: 24px; border-radius: 6px; color: #85858D; cursor: pointer; transition: color .15s ease, background .15s ease; }
+.md .md-codecopy:hover { color: #F5F5F7; background: #17171B; }
+.md .md-codewrap .md-pre { overflow-x: auto; margin: 0; padding: 13px 15px; background: transparent; box-shadow: none; border-radius: 0; font: 400 13px/1.6 "Geist Mono Variable", ui-monospace, monospace; color: #E6E6EA; }
 .md .md-pre { overflow-x: auto; padding: 14px 16px; border-radius: 12px; background: #08080A; box-shadow: inset 0 0 0 1px #1F1F24; font: 400 13.5px/1.6 "Geist Mono Variable", ui-monospace, monospace; color: #E6E6EA; }
-.md .md-pre[data-lang]::before { content: attr(data-lang); display: block; margin-bottom: 8px; font-size: 11px; color: #6E6E76; text-transform: lowercase; }
 .md-caret { display: inline-block; width: .5em; height: 1.05em; margin-left: 2px; vertical-align: -2px; background: var(--accent); animation: hxBlink 1s steps(1) infinite; }
 @keyframes hxBlink { 50% { opacity: 0; } }
 .hx-chat [class*="messages"] { gap: 28px; }
@@ -430,6 +440,19 @@ body, .composer textarea { font-weight: 300; }
 .hx-genimg-dl:hover{transform:translateY(-1px)}
 .hx-genimg-dl svg{color:var(--accent)}
 @media (hover:none){.hx-genimg-dl{opacity:1}}
+
+/* ── Redesign premium (Linear/Resend × hacker) ── */
+.hx-chat .hx-brand{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:23px;letter-spacing:0;gap:9px}
+.hx-newchat{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:9px;margin:8px 0 2px;padding:10px 12px;border-radius:10px;box-shadow:inset 0 0 0 1px #26262C;color:#E6E6EA;font:500 14px/1 var(--font-body);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:box-shadow .16s ease,background .16s ease}
+.hx-newchat:hover{box-shadow:inset 0 0 0 1px #3A3A40;background:#121216}
+.hx-newchat:active{scale:.985}
+.hx-newchat svg{color:var(--accent)}
+.hx-convlabel{display:block;margin:14px 2px 2px;font:400 10px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:#6E6E76}
+.hx-header[data-compact="0"] .hx-title{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:23px;letter-spacing:0}
+.hx-modelpill{padding:5px 11px!important;border-radius:999px;box-shadow:inset 0 0 0 1px #1F1F24;background:#0C0C0F;color:#B4B4BB!important;font-size:12px!important}
+/* rótulo acima do diagrama Mermaid (dá o toque "fluxograma · …") */
+.hx-mermaid::before{content:"⌁ diagrama";display:block;margin:-2px 0 10px;font:400 11px/1 "Geist Mono Variable",ui-monospace,monospace;letter-spacing:.06em;color:#6E6E76;text-align:left}
+.hx-mermaid[data-loading]::before{content:none}
 
 /* Diagramas Mermaid na conversa ── */
 .hx-mermaid{display:block;margin:14px 0;padding:16px;border-radius:14px;background:#08080A;border:1px solid #1F1F24;overflow-x:auto;text-align:center;animation:hxDiagIn .4s cubic-bezier(.22,.61,.36,1)}
