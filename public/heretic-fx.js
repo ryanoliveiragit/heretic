@@ -97,10 +97,10 @@
   var css = document.createElement('style');
   css.textContent =
     '[data-fx-kicker]{display:flex;align-items:center;gap:8px;margin:0 0 14px;font:400 13px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;color:#6E6E76;letter-spacing:0}' +
-    '[data-fx-kicker] [data-fx-spin]{color:var(--accent,#22E584);min-width:1.2em}' +
-    '[data-fx-kicker] .ok{color:var(--accent,#22E584)}' +
-    '[data-fx-cmd]::after{content:"";display:inline-block;width:.55em;height:1.05em;margin-left:3px;vertical-align:-2px;background:var(--accent,#22E584);animation:fxBlink 1s steps(1) infinite}' +
-    'h2::after{content:"";display:inline-block;width:.08em;height:.78em;margin-left:.12em;vertical-align:-.04em;background:var(--accent,#22E584);opacity:.85;animation:fxBlink 1.1s steps(1) infinite}' +
+    '[data-fx-kicker] [data-fx-spin]{color:var(--accent,#F0335A);min-width:1.2em}' +
+    '[data-fx-kicker] .ok{color:var(--accent,#F0335A)}' +
+    '[data-fx-cmd]::after{content:"";display:inline-block;width:.55em;height:1.05em;margin-left:3px;vertical-align:-2px;background:var(--accent,#F0335A);animation:fxBlink 1s steps(1) infinite}' +
+    'h2::after{content:"";display:inline-block;width:.08em;height:.78em;margin-left:.12em;vertical-align:-.04em;background:var(--accent,#F0335A);opacity:.85;animation:fxBlink 1.1s steps(1) infinite}' +
     '@keyframes fxBlink{50%{opacity:0}}' +
     '@media (prefers-reduced-motion: reduce){[data-fx-cmd]::after,h2::after{animation:none}}';
   document.head.appendChild(css);

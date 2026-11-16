@@ -47,7 +47,7 @@
         d.li.style.transform = 'translate(' + (cx + x).toFixed(1) + 'px,' + (cy + y).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (on ? s * 1.08 : s).toFixed(3) + ')';
         d.li.style.opacity = (on ? 1 : .38 + depth * .62).toFixed(3);
         d.li.style.zIndex = String(Math.round(depth * 100) + (on ? 200 : 0));
-        d.li.style.boxShadow = on ? 'inset 0 0 0 1px #22E584, 0 18px 50px -18px #000' : 'inset 0 0 0 1px #ffffff1a';
+        d.li.style.boxShadow = on ? 'inset 0 0 0 1px #F0335A, 0 18px 50px -18px #000' : 'inset 0 0 0 1px #ffffff1a';
       });
       if (visible && !reduced) raf = requestAnimationFrame(frame);
     }

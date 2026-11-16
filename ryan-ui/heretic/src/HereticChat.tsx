@@ -104,7 +104,7 @@ const SUGGESTIONS: ChatSuggestion[] = [
 ];
 
 const Mask = ({ size = 16 }: { size?: number }) => <span className="mask" aria-hidden style={{ width: size, height: Math.round(size * 1.2) }} />;
-const Cicada = ({ width }: { width: number }) => <img src="/icons/cicada.png" alt="" width={width} style={{ display: "block", height: "auto", filter: "grayscale(1) brightness(1.4)" }} />;
+const Cicada = ({ width }: { width: number }) => <img src="/icons/cicada.png" alt="" width={width} style={{ display: "block", height: "auto" }} />;
 
 function load(): ChatConversation[] {
   try {

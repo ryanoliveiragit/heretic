@@ -9,9 +9,16 @@ import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } fr
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Acento da landing (dono, 15/11 ~19:50Z): verde terminal no lugar do vermelho #FF6B6B.
-const ACCENT = "#22E584", ACCENT_STRONG = "#4BF09E";
-const green = (t) => t.replace(/#FF6B6B/gi, ACCENT).replace(/#FF8A8A/gi, ACCENT_STRONG).replace(/rgba\(255,107,107,/g, "rgba(34,229,132,");
+// Acento da landing (dono, 16/11): vermelho carmim #F0335A (trocado do verde #22E584).
+// accent() reescreve as duas paletas antigas (vermelho coral #FF6B6B e verde terminal #22E584)
+// para o carmim, tanto em hex quanto no rgb usado nos canvas.
+const ACCENT = "#F0335A", ACCENT_STRONG = "#FF6B86", ACCENT_RGB = "240,51,90";
+const green = (t) => t
+  .replace(/#FF6B6B/gi, ACCENT).replace(/#FF8A8A/gi, ACCENT_STRONG)
+  .replace(/#22E584/gi, ACCENT).replace(/#4BF09E/gi, ACCENT_STRONG)
+  .replace(/rgba\(255,107,107,/g, `rgba(${ACCENT_RGB},`)
+  .replace(/rgba\(34,229,132,/g, `rgba(${ACCENT_RGB},`)
+  .replace(/\b34,\s*229,\s*132\b/g, ACCENT_RGB);
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PUB = join(ROOT, "public");
 const SITE = join(ROOT, "site");
@@ -34,10 +41,11 @@ writeFileSync(join(PUB, "heretic-orbit.js"), green(readFileSync(join(LAND, "here
 // imagens que a landing verde usa (logo e máscara dos especialistas)
 cpSync(join(LAND, "uploads"), join(PUB, "uploads"), { recursive: true });
 cpSync(join(LAND, "heretic-hack.js"), join(PUB, "heretic-hack.js"));
-cpSync(join(LAND, "heretic-i18n.js"), join(PUB, "heretic-i18n.js"));
-cpSync(join(LAND, "heretic-fx.js"), join(PUB, "heretic-fx.js"));
-cpSync(join(LAND, "heretic-flow.js"), join(PUB, "heretic-flow.js"));
-cpSync(join(LAND, "heretic-sections.js"), join(PUB, "heretic-sections.js"));
+// estes têm o acento fixo no código → passam pelo accent() (verde/coral antigos → carmim)
+writeFileSync(join(PUB, "heretic-i18n.js"), green(readFileSync(join(LAND, "heretic-i18n.js"), "utf8")));
+writeFileSync(join(PUB, "heretic-fx.js"), green(readFileSync(join(LAND, "heretic-fx.js"), "utf8")));
+writeFileSync(join(PUB, "heretic-flow.js"), green(readFileSync(join(LAND, "heretic-flow.js"), "utf8")));
+writeFileSync(join(PUB, "heretic-sections.js"), green(readFileSync(join(LAND, "heretic-sections.js"), "utf8")));
 const support = readFileSync(join(LAND, "support.js"), "utf8")
   .replaceAll("https://unpkg.com/@babel/standalone@7.29.0/babel.min.js", "/vendor/babel.min.js")
   .replaceAll("https://unpkg.com/react@18.3.1/umd/react.production.min.js", "/vendor/react.production.min.js")

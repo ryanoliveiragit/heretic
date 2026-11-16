@@ -89,7 +89,7 @@
         al *= p.b * (1 + pulse * .8) * (W < 900 ? .55 : 1); // no celular fica atrás do texto: mais apagada
         var sz = (p.dust ? .7 : 1.5) * (.6 + depth * 1.1) * (touch ? 1.1 : 1);
         // branco; ~7% dos pontos do globo em vermelho claro (acento de 10%)
-        ctx.fillStyle = (p.red ? 'rgba(34,229,132,' : 'rgba(255,255,255,') + Math.min(1, p.red ? al * 1.3 : al).toFixed(3) + ')';
+        ctx.fillStyle = (p.red ? 'rgba(240,51,90,' : 'rgba(255,255,255,') + Math.min(1, p.red ? al * 1.3 : al).toFixed(3) + ')';
         if (p.ch) { if (Math.random() < .01) p.ch = HEX[(Math.random() * 16) | 0]; ctx.fillText(p.ch, sx + p.ox, syy + p.oy); }
         else ctx.fillRect(sx + p.ox - sz / 2, syy + p.oy - sz / 2, sz, sz);
       }

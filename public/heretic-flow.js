@@ -35,17 +35,17 @@
       '[data-flow-stage]{position:relative;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;max-width:1280px;margin:0 auto;padding:160px 40px 0}' +
       '[data-flow-section].m [data-flow-stage]{padding:96px 20px 0;gap:12px}' +
       '[data-flow] canvas{display:block;width:100%;border-radius:20px;background:radial-gradient(90% 80% at 50% 50%,#0A0A0C,#040405 70%);box-shadow:inset 0 0 0 1px #ffffff12;touch-action:pan-y}' +
-      '[data-flow-tag]{font:400 13px/1 ' + MONO + ';color:var(--accent,#22E584);letter-spacing:0;min-height:13px}' +
+      '[data-flow-tag]{font:400 13px/1 ' + MONO + ';color:var(--accent,#F0335A);letter-spacing:0;min-height:13px}' +
       '[data-flow-section] h2{margin:0!important;font-size:clamp(40px,4.4vw,64px)!important}[data-flow-section] [data-fx-kicker]{margin:0!important}' +
       '[data-flow-cap]{margin:0;max-width:38em;font:400 20px/1.45 ' + SANS + ';letter-spacing:-.02em;color:#FFFFFF;font-weight:300;min-height:2.9em;position:relative;z-index:2147483002}' +
       '[data-flow-section].m [data-flow-cap]{font-size:17px}' +
-      '[data-flow-bar]{display:flex;gap:6px}[data-flow-bar] i{flex:1;height:3px;padding:8px 0;border-radius:3px;background:#26262B;background-clip:content-box;cursor:pointer;transition:background-color .3s}[data-flow-bar] i.on{background-color:var(--accent,#22E584)}[data-flow-bar] i:hover{background-color:#3A3A40}[data-flow-bar] i.on:hover{background-color:var(--accent-strong,#4BF09E)}' +
-      '[data-flow-cta]{align-self:flex-start;display:inline-flex;align-items:center;height:48px;padding:0 22px;border-radius:999px;background:var(--accent,#22E584);color:#0A0A0B;font:500 16px/1 ' + SANS + ';text-decoration:none;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s;pointer-events:none}' +
+      '[data-flow-bar]{display:flex;gap:6px}[data-flow-bar] i{flex:1;height:3px;padding:8px 0;border-radius:3px;background:#26262B;background-clip:content-box;cursor:pointer;transition:background-color .3s}[data-flow-bar] i.on{background-color:var(--accent,#F0335A)}[data-flow-bar] i:hover{background-color:#3A3A40}[data-flow-bar] i.on:hover{background-color:var(--accent-strong,#FF6B86)}' +
+      '[data-flow-cta]{align-self:flex-start;display:inline-flex;align-items:center;height:48px;padding:0 22px;border-radius:999px;background:var(--accent,#F0335A);color:#0A0A0B;font:500 16px/1 ' + SANS + ';text-decoration:none;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s;pointer-events:none}' +
       '[data-flow-cta].on{opacity:1;transform:none;pointer-events:auto}' +
       '[data-flow-mode]{display:flex;gap:6px;align-self:flex-start;padding:4px;border-radius:999px;box-shadow:inset 0 0 0 1px #1F1F24;font:300 13px/1 ' + MONO + '}' +
       '[data-flow-mode] span{padding:9px 14px;border-radius:999px;color:#4A4A52;transition:background-color .35s,color .35s}' +
       '[data-flow-mode] span::before{content:"";display:inline-block;width:7px;height:7px;margin-right:8px;border-radius:50%;background:currentColor;vertical-align:1px}' +
-      '[data-flow-mode].o .o{background:#16161A;color:#D6D6DC}[data-flow-mode].h .h{background:color-mix(in srgb,var(--accent,#22E584) 14%,transparent);color:var(--accent,#22E584)}' +
+      '[data-flow-mode].o .o{background:#16161A;color:#D6D6DC}[data-flow-mode].h .h{background:color-mix(in srgb,var(--accent,#F0335A) 14%,transparent);color:var(--accent,#F0335A)}' +
       '[data-flow-section].m [data-flow-mode]{font-size:11px}[data-flow-section].m [data-flow-mode] span{padding:8px 10px}';
     document.head.appendChild(s);
   }
@@ -183,8 +183,8 @@
         else p = Math.min(1, p + dt / DUR);
       }
       if (!K) K = frames();
-      var acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#22E584';
-      var m = /^#?([0-9a-f]{6})$/i.exec(acc), A = m ? [0, 2, 4].map(function (j) { return parseInt(m[1].slice(j, j + 2), 16); }).join(',') : '34,229,132';
+      var acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#F0335A';
+      var m = /^#?([0-9a-f]{6})$/i.exec(acc), A = m ? [0, 2, 4].map(function (j) { return parseInt(m[1].slice(j, j + 2), 16); }).join(',') : '240,51,90';
       COL[1] = A;
       var seg = 0; while (seg < STOPS.length - 2 && p > STOPS[seg + 1]) seg++;
       var t = (p - STOPS[seg]) / (STOPS[seg + 1] - STOPS[seg]), raw = seg + Math.max(0, Math.min(1, t));
