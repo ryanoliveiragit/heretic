@@ -33,6 +33,7 @@ export const PUBLIC_MODELS_RAW = [
   // ── free: 2 opções, ambas boas e baratas ──
   { id: 'venice:z-ai-glm-5-3-flash', name: 'Heretic Rapid', short: 'Heretic Rapid', note: 'Default. Smart, detailed, stable. Vision, tools. 1M context', tier: 'free' },
   { id: 'venice:olafangensan-glm-4.7-flash-heretic', name: 'Heretic Swift', short: 'Heretic Swift', note: 'Fastest and cheapest. Tools. 200k context', tier: 'free' },
+  { id: 'pollinations:openai-fast', name: 'Heretic Free', short: 'Heretic Free', note: '100% free · our own provider, no outside key', tier: 'free' },
   // ── pro: 2 degraus de potência, cada um com um papel claro ──
   { id: 'venice:deepseek-v4-1-flash-uncensored', name: 'Heretic Deep', short: 'Heretic Deep', note: 'Reasoning for hard problems. Vision, tools. 1M context', tier: 'pro' },
   { id: 'nousresearch/hermes-4-405b', name: 'Heretic Titan', short: 'Heretic Titan', note: 'Largest model, max capability. 128k context', tier: 'pro' },

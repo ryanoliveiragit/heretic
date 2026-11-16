@@ -20,6 +20,8 @@ export const MODEL_CATALOG = [
   { id: 'venice:olafangensan-glm-4.7-flash-heretic', label: 'Venice Heretic 4.7', provider: 'venice', venice_model: 'olafangensan-glm-4.7-flash-heretic', price_in: 0.07, price_out: 0.40, ctx: 200000, tools: true, uncensored: true, note: 'Barato, tools' },
   { id: 'venice:deepseek-v4-1-flash-uncensored', label: 'DeepSeek V4.1 Flash UC 🔓 abliterated', provider: 'venice', venice_model: 'deepseek-v4-1-flash-uncensored', price_in: 0.33, price_out: 1.32, ctx: 1000000, tools: true, uncensored: true, note: 'MoE abliterated, visão, tools, 1M ctx' },
   { id: 'venice:gemma-4-uncensored', label: 'Gemma 4 Uncensored 🔓', provider: 'venice', venice_model: 'gemma-4-uncensored', price_in: 0.16, price_out: 0.50, ctx: 256000, tools: true, uncensored: true, note: 'Barato, visão, tools, 256k ctx' },
+  // 100% grátis, sem chave, independente da Venice/OpenRouter (Pollinations → GPT-OSS 20B). venice_model = nome enviado ao provedor.
+  { id: 'pollinations:openai-fast', label: 'Heretic Free (Pollinations)', provider: 'pollinations', venice_model: 'openai-fast', price_in: 0, price_out: 0, ctx: 128000, tools: false, uncensored: true, note: '100% grátis, sem chave' },
 ];
 
 // Rotas padrão (in-memory; resets on cold start)
@@ -197,12 +199,14 @@ async function* readGuardedSSE(res, { onToken, ac, outcome, active }) {
 function getApiKey(provider) {
   if (provider === 'openrouter') return process.env.OPENROUTER_API_KEY;
   if (provider === 'venice') return process.env.VENICE_API_KEY;
+  if (provider === 'pollinations') return 'free'; // provedor 100% grátis, sem chave (sentinela p/ não cair no echo)
   return null;
 }
 
 function getBaseUrl(provider) {
   if (provider === 'openrouter') return 'https://openrouter.ai/api/v1/chat/completions';
   if (provider === 'venice') return 'https://api.venice.ai/api/v1/chat/completions';
+  if (provider === 'pollinations') return 'https://text.pollinations.ai/openai';
   return null;
 }
 
@@ -303,7 +307,7 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
+            ...(route.provider === 'pollinations' ? {} : { 'Authorization': `Bearer ${apiKey}` }),
             ...(route.provider === 'openrouter' ? { 'HTTP-Referer': referer } : {}),
           },
           body: JSON.stringify(body),
