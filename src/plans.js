@@ -7,7 +7,9 @@
 // Padrão grátis = Gemma 4 Uncensored (Venice): Google Gemma rende melhor em pt-BR e em seguir
 // instrução, é mais barato que os antigos grátis e roda na Venice (chave ativa). O Venice UC 1.2
 // e o Dolphin seguem como opções grátis.
-export const FREE_MODEL = 'venice:gemma-4-uncensored';
+// Padrão grátis = Heretic Rapid (GLM 5.3): nos testes rendeu respostas mais inteligentes, longas e
+// estáveis (sem loop) que o Gemma, pelo MESMO preço ($0,020/100). Gemma/Venice UC/Dolphin seguem grátis.
+export const FREE_MODEL = 'venice:z-ai-glm-5-3-flash';
 export const FREE_DAILY_TOKENS = Number(process.env.FREE_DAILY_TOKENS) || 20000;
 
 import { MODEL_CATALOG } from './upstream.js';
@@ -27,13 +29,13 @@ export function costPer100(m) {
 
 export const PUBLIC_MODELS_RAW = [
   // Nomes de marca Heretic — os modelos de terceiros ficam escondidos (só o id interno roteia).
-  // ── free tier: what every visitor can pick. Default = Heretic Core. ──
-  { id: 'venice:gemma-4-uncensored', name: 'Heretic Core', short: 'Heretic Core', note: 'Default. Fast, great pt-BR, vision. 256k context', tier: 'free' },
+  // ── free tier: what every visitor can pick. Default = Heretic Rapid (smarter, same price). ──
+  { id: 'venice:z-ai-glm-5-3-flash', name: 'Heretic Rapid', short: 'Heretic Rapid', note: 'Default. Smart, detailed, stable. Vision, tools. 1M context', tier: 'free' },
+  { id: 'venice:gemma-4-uncensored', name: 'Heretic Core', short: 'Heretic Core', note: 'Fast, great pt-BR, vision. 256k context', tier: 'free' },
   { id: 'venice:venice-uncensored-1-2', name: 'Heretic Flash', short: 'Heretic Flash', note: 'Uncensored, vision and tools. 128k context', tier: 'free' },
   { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', name: 'Heretic Mini', short: 'Heretic Mini', note: 'Uncensored, fast. 128k context', tier: 'free' },
   // ── pro tier: listed and locked, cheapest first (sorted by estimated cost per 100 messages) ──
   { id: 'venice:olafangensan-glm-4.7-flash-heretic', name: 'Heretic Swift', short: 'Heretic Swift', note: 'Fast, tools. 200k context', tier: 'pro' },
-  { id: 'venice:z-ai-glm-5-3-flash', name: 'Heretic Rapid', short: 'Heretic Rapid', note: 'Fast, vision, tools. 1M context', tier: 'pro' },
   { id: 'thedrummer/cydonia-24b-v4.1', name: 'Heretic Edge', short: 'Heretic Edge', note: 'Creative, no filter. 128k context', tier: 'pro' },
   { id: 'thedrummer/unslopnemo-12b', name: 'Heretic Nano', short: 'Heretic Nano', note: 'Light. 1M context', tier: 'pro' },
   { id: 'thedrummer/skyfall-36b-v2', name: 'Heretic Saga', short: 'Heretic Saga', note: 'Stories and roleplay. 32k context', tier: 'pro' },

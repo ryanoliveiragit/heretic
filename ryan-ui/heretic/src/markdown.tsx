@@ -21,7 +21,12 @@ function inline(text: string, key = "i"): ReactNode[] {
 }
 
 export function Markdown({ text, caret }: { text: string; caret?: boolean }) {
-  const lines = text.replace(/\r\n?/g, "\n").split("\n");
+  // Normaliza cercas de código: modelos às vezes colam ```bash direto depois do texto ou com o
+  // comando na mesma linha, o que quebrava a renderização (crases soltas dentro de listas).
+  const src = text.replace(/\r\n?/g, "\n")
+    .replace(/([^\n`])(```)/g, "$1\n$2")          // ``` após conteúdo → nova linha
+    .replace(/(^|\n)(```[A-Za-z0-9+-]*)[ \t]+(?=\S)/g, "$1$2\n"); // ```lang <código> → quebra após a linguagem
+  const lines = src.split("\n");
   const blocks: ReactNode[] = [];
   let i = 0, b = 0;
   const para: string[] = [];
@@ -50,7 +55,7 @@ export function Markdown({ text, caret }: { text: string; caret?: boolean }) {
       flush(); const ordered = ol.test(line), items: string[] = [];
       while (i < lines.length && (ordered ? ol : ul).test((lines[i] ?? ""))) {
         let item = (lines[i++] ?? "").replace(ordered ? ol : ul, "");
-        while (i < lines.length && /^\s{2,}\S/.test((lines[i] ?? "")) && !ul.test((lines[i] ?? "")) && !ol.test((lines[i] ?? ""))) item += " " + (lines[i++] ?? "").trim();
+        while (i < lines.length && /^\s{2,}\S/.test((lines[i] ?? "")) && !ul.test((lines[i] ?? "")) && !ol.test((lines[i] ?? "")) && !/^\s*```/.test((lines[i] ?? ""))) item += " " + (lines[i++] ?? "").trim();
         items.push(item);
       }
       const kids = items.map((it, j) => <li key={j}>{inline(it, `l${b}-${j}`)}</li>);

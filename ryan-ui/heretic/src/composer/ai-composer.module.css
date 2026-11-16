@@ -570,6 +570,11 @@
   z-index: 60;
   min-width: 13.5rem;
   max-width: min(19rem, var(--radix-dropdown-menu-content-available-width));
+  /* rolável e sem estourar a tela (antes os 14 modelos passavam por baixo da barra de status) */
+  max-height: min(var(--radix-dropdown-menu-content-available-height, 70dvh), 70dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   padding: 5px;
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);

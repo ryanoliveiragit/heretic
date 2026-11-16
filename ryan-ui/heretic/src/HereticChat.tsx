@@ -92,9 +92,9 @@ const MAX_PROMPT_CHARS = 16000;
 const MODEL_KEY = "heretic-model";
 /** Used until GET /api/me answers (or if it fails). */
 const FALLBACK_MODELS: ModelOption[] = [
-  { id: "venice:gemma-4-uncensored", name: "Heretic Core", short: "Heretic Core", note: "Default. Fast, great pt-BR, vision. 256k context", tier: "free", locked: false, provider: "venice", cost100: 0.020 },
+  { id: "venice:z-ai-glm-5-3-flash", name: "Heretic Rapid", short: "Heretic Rapid", note: "Default. Smart, detailed, stable. Vision, tools. 1M context", tier: "free", locked: false, provider: "venice", cost100: 0.020 },
+  { id: "venice:gemma-4-uncensored", name: "Heretic Core", short: "Heretic Core", note: "Fast, great pt-BR, vision. 256k context", tier: "free", locked: false, provider: "venice", cost100: 0.020 },
   { id: "venice:venice-uncensored-1-2", name: "Heretic Flash", short: "Heretic Flash", note: "Uncensored, vision and tools. 128k context", tier: "free", locked: false, provider: "venice", cost100: 0.033 },
-  { id: "cognitivecomputations/dolphin-mistral-24b-venice-edition", name: "Heretic Mini", short: "Heretic Mini", note: "Uncensored, fast. 128k context", tier: "free", locked: false, provider: "openrouter", cost100: 0.033 },
 ];
 const titleFrom = (prompt: string) => { const line = prompt.replace(/\s+/g, " ").trim(); return line.length > 44 ? `${line.slice(0, 43).trimEnd()}…` : line; };
 const SUGGESTIONS: ChatSuggestion[] = [
@@ -106,6 +106,16 @@ const SUGGESTIONS: ChatSuggestion[] = [
 
 const Mask = ({ size = 16 }: { size?: number }) => <span className="mask" aria-hidden style={{ width: size, height: Math.round(size * 1.2) }} />;
 const Cicada = ({ width }: { width: number }) => <img src="/icons/cicada.png" alt="" width={width} style={{ display: "block", height: "auto" }} />;
+
+// Notifica "resposta pronta" só quando o usuário saiu do app (aba em segundo plano) e autorizou.
+function notifyReply(text: string) {
+  try {
+    if (typeof document === "undefined" || !document.hidden) return;
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    const body = text.replace(/```[\s\S]*?```/g, " ").replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim().slice(0, 140);
+    new Notification("Heretic respondeu", { body: body || "Sua resposta está pronta.", icon: "/icons/icon-192.png", tag: "heretic-reply" });
+  } catch { /* bloqueado / sem suporte */ }
+}
 
 function load(): ChatConversation[] {
   try {
@@ -251,6 +261,7 @@ export function HereticChat() {
           window.clearTimeout(doneTimer.current);
           patchMessage(conversationId, messageId, m => ({ ...m, text: content || m.text, state: "done" }));
           setGenerating(g => (g && g.messageId === messageId ? null : g)); ctrl.current = null;
+          notifyReply(content || "");
         },
       },
     );
@@ -260,6 +271,8 @@ export function HereticChat() {
   const send = (text: string, title?: string) => {
     const prompt = text.trim();
     if (!prompt || busy || !active || outOfTokens) return;
+    // Pede permissão de notificação no gesto de enviar (pra avisar quando a resposta ficar pronta).
+    try { if ("Notification" in window && Notification.permission === "default") void Notification.requestPermission(); } catch { /* ignore */ }
     const userMsg: ChatMessage = { id: nextId("prompt"), role: "user", text: prompt, state: "done" };
     const replyId = nextId("reply");
     const before = active.messages;

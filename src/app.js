@@ -121,8 +121,8 @@ app.post('/api/chat', async (c) => {
     temperature: body.params?.temperature ?? 0.6,
     top_p: body.params?.top_p ?? 0.9,
     max_tokens: body.params?.max_tokens ?? 4096,
-    frequency_penalty: body.params?.frequency_penalty ?? 0.3,
-    presence_penalty: body.params?.presence_penalty ?? 0,
+    frequency_penalty: body.params?.frequency_penalty ?? 0.4,
+    presence_penalty: body.params?.presence_penalty ?? 0.1,
   };
 
   const ac = new AbortController();
