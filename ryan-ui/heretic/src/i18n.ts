@@ -128,6 +128,10 @@ const PT: Record<string, string> = {
   "Couldn't generate the image. Try again.": "Não consegui gerar a imagem. Tente de novo.",
   "Generate an image: /imagem a red neon cicada": "Gerar imagem: /imagem uma cigarra em neon vermelho",
   "Generate an image of anything": "Gere uma imagem de qualquer coisa",
+  "Models & credits": "Modelos & créditos",
+  "Built on open models and providers:": "Construído sobre modelos e provedores abertos:",
+  "images": "imagens",
+  "Thanks to the open-source community.": "Valeu à comunidade open-source.",
 };
 
 /** Translate a UI string; unknown strings stay in English. */

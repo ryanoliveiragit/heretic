@@ -137,6 +137,11 @@ function SettingsModal({ open, plan, usage, onClose, onManageKey }: { open: bool
           <span className="hx-setlabel">{t("Language")}</span>
           <LangSwitch />
         </div>
+
+        <div className="hx-setsection">
+          <span className="hx-setlabel">{t("Models & credits")}</span>
+          <p className="hx-setcredits">{t("Built on open models and providers:")} <b>Venice AI</b>, <b>OpenRouter</b> · GLM (Z.ai), DeepSeek, Google Gemma, Nous Hermes · {t("images")}: Flux (Black Forest Labs), Stable Diffusion. {t("Thanks to the open-source community.")}</p>
+        </div>
       </div>
     </div>
   );

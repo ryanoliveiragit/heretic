@@ -404,6 +404,8 @@ body, .composer textarea { font-weight: 300; }
 .hx-setlangrow{display:flex;align-items:center;justify-content:space-between}
 .hx-setlangrow .hx-setlabel{margin-bottom:0}
 .hx-setlangrow .hx-lang{margin-left:0}
+.hx-setcredits{margin:0;font-size:12px;line-height:1.6;color:#8A8A92}
+.hx-setcredits b{color:#C8C8CE;font-weight:600}
 
 /* ── Celular com cara de app (header, gesto, profundidade) ── */
 /* Header enxuto no mobile: [menu] · título centralizado · [nova conversa]. Sem o título cortado em "Com...". */

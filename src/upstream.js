@@ -493,10 +493,29 @@ async function judgeBest(mode, question, a, b, signal) {
   return out.trim().toUpperCase().startsWith('B') ? 'B' : 'A';
 }
 
+// Passo de REVISÃO: pega o melhor rascunho e melhora de verdade (corrige, completa, deixa mais
+// específico e prático), mantendo idioma e o modo sem censura. Se a revisão falhar ou vier recusa,
+// cai de volta no rascunho — nunca piora.
+async function refineAnswer(mode, payload, modelId, question, draft, signal) {
+  const instruction = `Você é um editor técnico sênior. Abaixo vêm a PERGUNTA do usuário e um RASCUNHO de resposta.
+Entregue a MELHOR versão possível do rascunho: corrija qualquer erro, preencha lacunas, deixe mais específico, prático e direto, com comandos reais e código em blocos quando fizer sentido, e corte enrolação e repetição. Se faltar um diagrama de fluxo, adicione em Mermaid. Mantenha EXATAMENTE o idioma da pergunta (pt-BR do Brasil se for em português). Não comente o que mudou nem mencione "rascunho": devolva SOMENTE a resposta final, pronta para o usuário.
+
+PERGUNTA:
+${question}
+
+RASCUNHO:
+${draft}`;
+  const out = await collectFull(mode, { ...payload, modelId, messages: [{ role: 'user', content: instruction }], temperature: 0.4, top_p: 0.9, max_tokens: payload.max_tokens || 4096 }, signal);
+  const clean = (out || '').trim();
+  // guarda: só aceita a revisão se veio substancial e não é recusa.
+  if (clean.length >= Math.max(40, draft.length * 0.5) && !detectRefusal(clean.slice(0, 800))) return clean;
+  return draft;
+}
+
 export async function qualityAnswer(mode, payload, { onToken, onWarning, signal } = {}) {
   const primaryId = payload.modelId;
   const challengerId = pickChallenger(primaryId);
-  if (onWarning) onWarning({ type: 'quality', message: 'Comparando 2 modelos…', models: [primaryId, challengerId] });
+  if (onWarning) onWarning({ type: 'quality', message: 'Rascunhando em 2 modelos…', models: [primaryId, challengerId] });
   const [a, b] = await Promise.all([
     collectFull(mode, { ...payload, modelId: primaryId }, signal),
     collectFull(mode, { ...payload, modelId: challengerId }, signal),
@@ -510,8 +529,14 @@ export async function qualityAnswer(mode, payload, { onToken, onWarning, signal 
     const w = await judgeBest(mode, q, a, b, signal);
     winnerText = w === 'B' ? b : a; winnerId = w === 'B' ? challengerId : primaryId;
   }
+  // Passo extra do pipeline: revisa/melhora a vencedora (o diferencial "Pro").
+  const question = (payload.messages || []).filter(m => m.role === 'user').pop()?.content || '';
+  if (winnerText) {
+    if (onWarning) onWarning({ type: 'quality', message: 'Revisando e melhorando…', models: [winnerId] });
+    try { winnerText = await refineAnswer(mode, payload, winnerId, question, winnerText, signal); } catch { /* mantém a vencedora */ }
+  }
   if (onWarning) onWarning({ type: 'quality_done', winner: winnerId });
-  // transmite a vencedora em pedaços pequenos para dar a sensação de streaming
+  // transmite a final em pedaços pequenos para dar a sensação de streaming
   if (onToken) for (const chunk of winnerText.split(/(\s+)/)) { if (chunk) onToken(chunk); }
 }
 
