@@ -33,6 +33,16 @@ function loadMermaid(): Promise<MermaidApi> {
   return mermaidPromise;
 }
 
+// Conserta erros comuns de Mermaid que os modelos cometem, pra o diagrama renderizar em vez de
+// cair no fallback de código cru (ex.: rótulo de aresta sem o "|" de abertura: "--> Sim| X").
+function repairMermaid(code: string): string {
+  return code
+    // rótulo de aresta sem o "|" de abertura → "-->|Sim| X"
+    .replace(/(--+>|--+|-\.->|==+>)(?!\s*\|)([ \t]*)([^\n|>[{(]+?)[ \t]*\|/g, "$1|$3|")
+    // dois "|" seguidos vazios → remove
+    .replace(/\|\s*\|/g, "|");
+}
+
 let seq = 0;
 export function Mermaid({ code }: { code: string }) {
   const [svg, setSvg] = useState("");
@@ -40,10 +50,17 @@ export function Mermaid({ code }: { code: string }) {
   useEffect(() => {
     let alive = true;
     setErr(false);
-    loadMermaid()
-      .then(mermaid => mermaid.render(`hx-mmd-${seq++}`, code.trim()))
-      .then(({ svg }) => { if (alive) setSvg(svg); })
-      .catch(() => { if (alive) setErr(true); });
+    const run = async () => {
+      const mermaid = await loadMermaid();
+      const base = code.trim();
+      const variants = [...new Set([repairMermaid(base), base])];
+      for (const v of variants) {
+        try { const { svg } = await mermaid.render(`hx-mmd-${seq++}`, v); if (alive) setSvg(svg); return; }
+        catch { /* tenta a próxima variante */ }
+      }
+      if (alive) setErr(true);
+    };
+    run().catch(() => { if (alive) setErr(true); });
     return () => { alive = false; };
   }, [code]);
   if (err) return <pre className="md-pre" data-lang="mermaid"><code>{code}</code></pre>;
