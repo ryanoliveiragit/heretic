@@ -240,6 +240,12 @@ function fallbackCatalog(route) {
   if (route.provider === 'venice') {
     return getApiKey('openrouter') ? MODEL_CATALOG.find(m => m.id === 'cognitivecomputations/dolphin-mistral-24b-venice-edition') : null;
   }
+  // Heretic Free (Pollinations) é grátis mas instável ("Load failed"): cai pro Venice (ou OpenRouter)
+  // pra nunca deixar o usuário sem resposta.
+  if (route.provider === 'pollinations') {
+    return getApiKey('venice') ? MODEL_CATALOG.find(m => m.id === 'venice:z-ai-glm-5-3-flash')
+      : (getApiKey('openrouter') ? MODEL_CATALOG.find(m => m.id === 'cognitivecomputations/dolphin-mistral-24b-venice-edition') : null);
+  }
   return null;
 }
 
@@ -291,7 +297,7 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
     for (let attempt = 0; attempt < 3; attempt++) {
       const ac = new AbortController();
       if (signal) signal.addEventListener('abort', () => ac.abort());
-      const timeout = setTimeout(() => ac.abort(), 120000);
+      const timeout = setTimeout(() => ac.abort(), route.provider === 'pollinations' ? 25000 : 120000);
       try {
         const body = {
           model: route.model,
@@ -351,7 +357,8 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
       } catch (e) {
         if (e.name === 'AbortError' && signal?.aborted) throw e;
         lastErr = e;
-        if (attempt < 2) {
+        // Pollinations (grátis) é instável: não insiste 3x — cai logo pro fallback (Venice), sem "Load failed".
+        if (attempt < 2 && route.provider !== 'pollinations') {
           const backoff = [1000, 2000, 4000][attempt];
           await new Promise(r => setTimeout(r, backoff));
           continue;

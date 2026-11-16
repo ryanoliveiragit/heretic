@@ -190,6 +190,9 @@ app.post('/api/chat', async (c) => {
       const encoder = new TextEncoder();
       const send = (event, data) =>
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+      // Flush imediato: fecha a conexão SSE com o cliente na hora. Sem isto, se o upstream demora
+      // (ex.: Pollinations lento), o navegador desiste antes do 1º token e mostra "Load failed".
+      controller.enqueue(encoder.encode(`: connected\n\n`));
       try {
         const chatPayload = { messages: body.messages || [], systemPrompt, modelId, ...params };
         const handlers = {
