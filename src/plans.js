@@ -121,6 +121,32 @@ export function visitorId(c) {
   return ip ? `ip:${ip}` : cid ? `cid:${cid}` : 'anon';
 }
 
+// Anti-burla: o usuário é contado por IP E por impressão de dispositivo (fingerprint). O limite
+// bate se QUALQUER um dos dois estourar — então trocar só o IP (VPN) ou só o navegador (limpar cache)
+// não zera; precisa trocar os DOIS (aparelho diferente). Retorna a lista de ids a cruzar.
+export function visitorIds(c) {
+  const fwd = c.req.header('x-forwarded-for') || '';
+  const ip = (fwd.split(',')[0].trim() || c.req.header('x-real-ip') || '').trim();
+  const fp = (c.req.header('x-heretic-client') || '').slice(0, 48).replace(/[^a-zA-Z0-9]/g, '');
+  const ids = [];
+  if (ip) ids.push('ip:' + ip);
+  if (fp) ids.push('fp:' + fp);
+  if (!ids.length) ids.push('anon');
+  return ids;
+}
+// Maior uso entre os ids (bloqueia se qualquer um já passou do limite).
+export async function getUsedMax(ids, day = today()) {
+  let max = 0;
+  for (const id of ids) { const u = await getUsed(id, day); if (u > max) max = u; }
+  return max;
+}
+// Debita em TODOS os ids e devolve o maior (o que conta pro limite).
+export async function addUsedAll(ids, n, day = today()) {
+  let max = 0;
+  for (const id of ids) { const v = await addUsed(id, n, day); if (v > max) max = v; }
+  return max;
+}
+
 export const today = () => new Date().toISOString().slice(0, 10);
 
 // ── usage store ──

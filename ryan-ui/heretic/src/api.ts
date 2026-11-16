@@ -31,11 +31,28 @@ export function getKey(): string {
 export function setKey(code: string) {
   try { if (code) localStorage.setItem(KEY_STORE, code); else localStorage.removeItem(KEY_STORE); } catch { /* private mode */ }
 }
-/** Headers to send on every API call, carrying the access key when set. */
+// Impressão de dispositivo (anti-burla do limite grátis): derivada de sinais estáveis do navegador,
+// então sobrevive a limpar o cache/navegação anônima (mesmo navegador = mesma impressão). Trocar
+// exige outro navegador/aparelho. O servidor cruza isto com o IP.
+let _fp = "";
+export function deviceId(): string {
+  if (_fp) return _fp;
+  try {
+    const n = navigator;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    const s = [n.userAgent, n.language, tz, `${screen.width}x${screen.height}x${screen.colorDepth}`, String(n.hardwareConcurrency || ""), (n as Navigator & { platform?: string }).platform || "", String((n as Navigator & { deviceMemory?: number }).deviceMemory || "")].join("|");
+    let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+    _fp = "fp" + h.toString(36);
+  } catch { _fp = "fp0"; }
+  return _fp;
+}
+
+/** Headers to send on every API call, carrying the access key and the device fingerprint. */
 export function authHeaders(extra?: Record<string, string>): Record<string, string> {
   const h: Record<string, string> = { ...(extra || {}) };
   const k = getKey();
   if (k) h["x-heretic-key"] = k;
+  try { h["x-heretic-client"] = deviceId(); } catch { /* ignore */ }
   return h;
 }
 

@@ -9,7 +9,7 @@ import { getPersona, setPersona } from './persona.js';
 import { streamChat, qualityAnswer, getRoutes, setRoute, MODEL_CATALOG } from './upstream.js';
 import { checkBudget, incrementUsage } from './budget.js';
 import { AGENTS, agentPrompt } from './agents.js';
-import { FREE_MODEL, FREE_DAILY_TOKENS, planOf, modelsFor, canUse, estimateTokens, visitorId, getUsed, addUsed, usageStore, planForKey, issueCode } from './plans.js';
+import { FREE_MODEL, FREE_DAILY_TOKENS, planOf, modelsFor, canUse, estimateTokens, visitorId, visitorIds, getUsed, getUsedMax, addUsed, addUsedAll, usageStore, planForKey, issueCode } from './plans.js';
 
 export const app = new Hono();
 
@@ -75,7 +75,7 @@ app.put('/api/persona', async (c) => {
 // ── Chat (SSE streaming) ──
 // Who is asking: plan, today's token use and the models they can pick.
 app.get('/api/me', async (c) => {
-  const plan = planOf(c), used = await getUsed(visitorId(c)), limit = plan === 'free' ? FREE_DAILY_TOKENS : null;
+  const plan = planOf(c), used = await getUsedMax(visitorIds(c)), limit = plan === 'free' ? FREE_DAILY_TOKENS : null;
   return c.json({ plan, used, limit, remaining: limit === null ? null : Math.max(0, limit - used), store: usageStore(), models: modelsFor(plan) });
 });
 
@@ -92,16 +92,16 @@ function bytesToBase64(bytes) {
   return btoa(bin);
 }
 app.post('/api/image', async (c) => {
-  const plan = planOf(c), who = visitorId(c);
+  const plan = planOf(c), who = visitorIds(c);
   const limit = plan === 'free' ? FREE_DAILY_TOKENS : null;
-  const usedBefore = await getUsed(who);
+  const usedBefore = await getUsedMax(who);
   if (limit !== null && usedBefore >= limit) return c.json({ error: 'daily_token_limit', used: usedBefore, limit }, 429);
   let body = {};
   try { body = await c.req.json(); } catch {}
   const prompt = (body.prompt || '').toString().trim().slice(0, 1500);
   if (!prompt) return c.json({ error: 'empty_prompt' }, 400);
   const done = async (dataUrl, provider, cost) => {
-    const used = await addUsed(who, cost);
+    const used = await addUsedAll(who, cost);
     return c.json({ image: dataUrl, provider, used, limit, remaining: limit === null ? null : Math.max(0, limit - used) });
   };
   // 1) Pollinations (grátis, nosso provedor padrão)
@@ -156,11 +156,11 @@ app.post('/api/chat', async (c) => {
   const body = await c.req.json();
   const mode = body.mode || 'chat';
   const convId = body.conversationId;
-  const plan = planOf(c), who = visitorId(c);
+  const plan = planOf(c), who = visitorIds(c);
   const modelId = body.model || FREE_MODEL;
   if (!canUse(plan, modelId)) return c.json({ error: 'pro_model', message: 'This model is part of Pro.' }, 403);
   const limit = plan === 'free' ? FREE_DAILY_TOKENS : null;
-  const usedBefore = await getUsed(who);
+  const usedBefore = await getUsedMax(who);
   if (limit !== null && usedBefore >= limit) return c.json({ error: 'daily_token_limit', used: usedBefore, limit }, 429);
 
   const budget = checkBudget();
@@ -211,7 +211,7 @@ app.post('/api/chat', async (c) => {
         if (convId && fullText) addMessage(convId, 'assistant', fullText);
         incrementUsage();
         const spent = estimateTokens((body.messages || []).map(m => m.content).join('\n')) + estimateTokens(fullText);
-        const used = await addUsed(who, spent);
+        const used = await addUsedAll(who, spent);
         send('usage', { used, limit, remaining: limit === null ? null : Math.max(0, limit - used), spent });
         send('done', { content: fullText });
       } catch (e) {
