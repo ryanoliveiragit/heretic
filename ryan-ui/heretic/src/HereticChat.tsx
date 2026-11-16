@@ -154,7 +154,8 @@ const MAX_PROMPT_CHARS = 16000;
 const MODEL_KEY = "heretic-model";
 /** Used until GET /api/me answers (or if it fails). */
 const FALLBACK_MODELS: ModelOption[] = [
-  { id: "venice:z-ai-glm-5-3-flash", name: "Heretic Rapid", short: "Heretic Rapid", note: "Default. Smart, detailed, stable. Vision, tools. 1M context", tier: "free", locked: false, provider: "venice", cost100: 0.020 },
+  { id: "cognitivecomputations/dolphin-mistral-24b-venice-edition", name: "Heretic Free", short: "Heretic Free", note: "Default. Uncensored, reliable, cheap (Dolphin 24B). 128k context", tier: "free", locked: false, provider: "openrouter", cost100: 0.033 },
+  { id: "venice:z-ai-glm-5-3-flash", name: "Heretic Rapid", short: "Heretic Rapid", note: "Smart, detailed, stable. Vision, tools. 1M context", tier: "free", locked: false, provider: "venice", cost100: 0.020 },
   { id: "venice:olafangensan-glm-4.7-flash-heretic", name: "Heretic Swift", short: "Heretic Swift", note: "Fastest and cheapest. Tools. 200k context", tier: "free", locked: false, provider: "venice", cost100: 0.014 },
 ];
 const titleFrom = (prompt: string) => { const line = prompt.replace(/\s+/g, " ").trim(); return line.length > 44 ? `${line.slice(0, 43).trimEnd()}…` : line; };

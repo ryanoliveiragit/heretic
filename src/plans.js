@@ -9,7 +9,7 @@
 // e o Dolphin seguem como opções grátis.
 // Padrão grátis = Heretic Rapid (GLM 5.3): nos testes rendeu respostas mais inteligentes, longas e
 // estáveis (sem loop) que o Gemma, pelo MESMO preço ($0,020/100). Gemma/Venice UC/Dolphin seguem grátis.
-export const FREE_MODEL = 'venice:z-ai-glm-5-3-flash';
+export const FREE_MODEL = 'cognitivecomputations/dolphin-mistral-24b-venice-edition';
 export const FREE_DAILY_TOKENS = Number(process.env.FREE_DAILY_TOKENS) || 20000;
 
 import { MODEL_CATALOG } from './upstream.js';
@@ -31,9 +31,9 @@ export const PUBLIC_MODELS_RAW = [
   // Catálogo ENXUTO — só os melhores custo-benefício (nomes de marca Heretic; ids de terceiros escondidos).
   // Dono (16/11): cortado de 14 p/ 4 — "não adianta ter vários e ruins".
   // ── free: 2 opções, ambas boas e baratas ──
-  { id: 'venice:z-ai-glm-5-3-flash', name: 'Heretic Rapid', short: 'Heretic Rapid', note: 'Default. Smart, detailed, stable. Vision, tools. 1M context', tier: 'free' },
+  { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', name: 'Heretic Free', short: 'Heretic Free', note: 'Default. Uncensored, reliable, cheap (Dolphin 24B). 128k context', tier: 'free' },
+  { id: 'venice:z-ai-glm-5-3-flash', name: 'Heretic Rapid', short: 'Heretic Rapid', note: 'Smart, detailed, stable. Vision, tools. 1M context', tier: 'free' },
   { id: 'venice:olafangensan-glm-4.7-flash-heretic', name: 'Heretic Swift', short: 'Heretic Swift', note: 'Fastest and cheapest. Tools. 200k context', tier: 'free' },
-  { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', name: 'Heretic Free', short: 'Heretic Free', note: 'Uncensored, reliable, cheap (Dolphin 24B). 128k context', tier: 'free' },
   // ── pro: 2 degraus de potência, cada um com um papel claro ──
   { id: 'venice:deepseek-v4-1-flash-uncensored', name: 'Heretic Deep', short: 'Heretic Deep', note: 'Reasoning for hard problems. Vision, tools. 1M context', tier: 'pro' },
   { id: 'nousresearch/hermes-4-405b', name: 'Heretic Titan', short: 'Heretic Titan', note: 'Largest model, max capability. 128k context', tier: 'pro' },
