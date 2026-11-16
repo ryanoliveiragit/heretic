@@ -179,11 +179,14 @@ function deloop(text: string): string {
   if (!text) return text;
   // 1) runs gigantes de um mesmo caractere não-espaço → reduz a 3 (preserva "---" de regra/markdown).
   let t = text.replace(/([^\s])\1{23,}/g, (_m, c: string) => c.repeat(3));
-  // 2) loop de um padrão curto repetido no fim → mantém uma cópia e corta o resto (regex só na cauda, sem backtracking caro).
-  const tailStart = Math.max(0, t.length - 1600);
+  // 2) loop de um padrão repetido no fim → mantém uma cópia e corta o resto (regex só na cauda).
+  //    Pega tanto unidade CURTA repetida muito ("]:]:]") quanto unidade LONGA ciclando
+  //    (ex.: "Estou com inveja. — Estou com ciúmes. — …" repetindo), que é o loop mais comum.
+  const tailStart = Math.max(0, t.length - 3200);
   const head = t.slice(0, tailStart);
   const tail = t.slice(tailStart);
-  const m = /([\s\S]{1,60}?)\1{4,}\s*$/.exec(tail);
+  const m = /([\s\S]{1,80}?)\1{4,}\s*$/.exec(tail)      // unidade curta, 5+ cópias
+    || /([\s\S]{1,220}?)\1{2,}\s*$/.exec(tail);          // unidade longa (frase/lista), 3+ cópias
   if (m && typeof m.index === "number") t = head + tail.slice(0, m.index + m[1]!.length);
   return t;
 }
