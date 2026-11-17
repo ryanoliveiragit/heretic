@@ -84,6 +84,7 @@ app.get('/api/me', async (c) => {
 // Venice fica só como reserva se o Pollinations falhar. Desconta um custo pequeno do orçamento diário.
 const IMAGE_COST_FREEPROVIDER = 500;   // Pollinations é de graça pra nós → custo simbólico anti-abuso
 const IMAGE_COST_VENICE = 1500;        // reserva paga → custo maior
+const IMAGE_COST_FAL = 1200;           // fal.ai Flux (pago, mais barato que Venice por imagem)
 // Codifica bytes -> base64 no runtime Edge (sem Buffer), em blocos pra não estourar a pilha.
 function bytesToBase64(bytes) {
   let bin = '';
@@ -104,8 +105,35 @@ app.post('/api/image', async (c) => {
     const used = await addUsedAll(who, cost);
     return c.json({ image: dataUrl, provider, used, limit, remaining: limit === null ? null : Math.max(0, limit - used) });
   };
-  // 1) Venice sd35 — provedor PRIMÁRIO de imagem (dono 17/11): sem censura (safe_mode:false),
-  //    preciso (segue bem o prompt), usa a chave Venice que já temos. Muito melhor que o Pollinations.
+  // 1) fal.ai (Flux) — PRIMÁRIO quando FAL_KEY estiver setada: Flux preciso, sem censura
+  //    (enable_safety_checker:false, exige conta autorizada), fora da Venice. Modelo via FAL_MODEL
+  //    (fal-ai/flux/schnell barato; fal-ai/flux/dev mais preciso). sync_mode devolve data URI direto.
+  const falKey = process.env.FAL_KEY || process.env.FAL_API_KEY;
+  if (falKey) {
+    try {
+      const model = process.env.FAL_MODEL || 'fal-ai/flux/schnell';
+      const r = await fetch(`https://fal.run/${model}`, {
+        method: 'POST',
+        headers: { Authorization: `Key ${falKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, image_size: 'square_hd', num_images: 1, enable_safety_checker: false, sync_mode: true, output_format: 'jpeg' }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        const u = data && data.images && data.images[0] && data.images[0].url;
+        if (u && u.startsWith('data:')) return await done(u, 'fal', IMAGE_COST_FAL);
+        if (u) {
+          const ir = await fetch(u);
+          if (ir.ok) {
+            const bytes = new Uint8Array(await ir.arrayBuffer());
+            const ct = ir.headers.get('content-type') || 'image/jpeg';
+            return await done(`data:${ct};base64,${bytesToBase64(bytes)}`, 'fal', IMAGE_COST_FAL);
+          }
+        }
+      }
+    } catch { /* cai pra Venice */ }
+  }
+  // 2) Venice sd35 — sem censura (safe_mode:false), preciso, usa a chave Venice que já temos.
+  //    Fica como primário enquanto não houver FAL_KEY; depois vira reserva do fal.ai.
   const key = process.env.IMAGE_VENICE_KEY || process.env.VENICE_API_KEY;
   if (key) {
     try {
@@ -121,7 +149,7 @@ app.post('/api/image', async (c) => {
       }
     } catch { /* cai pra reserva */ }
   }
-  // 2) Reserva: Pollinations (grátis, menos preciso) — nunca deixa o usuário sem imagem.
+  // 3) Reserva final: Pollinations (grátis, menos preciso) — nunca deixa o usuário sem imagem.
   try {
     const seed = Math.floor(Math.random() * 1e6);
     const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&model=flux&seed=${seed}`;
