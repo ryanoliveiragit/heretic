@@ -17,12 +17,15 @@ import { ToolCallGroup } from "@pro/tool-call/tool-call";
 import type { ToolCallData } from "@pro/tool-call/tool-call";
 import { SourceCards } from "@pro/source-cards/source-cards";
 import type { SourceCardsSource, SourceMark } from "@pro/source-cards/source-cards";
+import { CoverFlow } from "@pro/cover-flow/cover-flow";
 import { GenerationStats } from "@pro/generation-stats/generation-stats";
 import { ImageReveal } from "@pro/image-reveal/image-reveal";
 import { Markdown } from "./markdown";
 import { t } from "./i18n";
 
 export interface WebSource { url: string; title: string; snippet?: string }
+/** Foto pública de uma pessoa (og:image do perfil dela), extraída pelo servidor numa pesquisa de pessoa. */
+export interface PersonPhoto { src: string; source?: string; title?: string }
 /** Dados extras guardados na própria mensagem (localStorage). */
 export interface ReplyMeta {
   model?: string;
@@ -35,12 +38,27 @@ export interface ReplyMeta {
   inTok?: number;
   search?: { query: string; status: "running" | "success"; t?: number; ms?: number };
   sources?: WebSource[];
+  /** Fotos públicas da pessoa pesquisada (galeria acima da ficha). */
+  photos?: PersonPhoto[];
+  /** Etapas reais do trabalho do servidor (mostradas no bloco "Pensando"). */
+  steps?: { title: string; text: string }[];
   rating?: FeedbackRating | null;
   reasons?: string[];
 }
 export interface TurnMessage extends ReplyMeta { id: string; role: "user" | "assistant"; text: string; state: "thinking" | "streaming" | "done" | "stopped" }
 
 export const estTokens = (s: string) => Math.ceil((s || "").length / 4);
+
+/** A resposta pede pra escolher ENTRE PESSOAS (card com 3+ opções)? Aí não mostra fotos — seriam de quem?
+ *  A conferência "É esta pessoa?" (2 opções) não conta: ali a ficha e as fotos são de uma pessoa só. */
+function pickingPerson(text: string): boolean {
+  const re = /```\s*(?:ask|select|options?|choices?|escolha|op[çc][õo]es|pergunta)\b([\s\S]*?)(?:```|$)/gi;
+  for (const m of text.matchAll(re)) {
+    const opts = (m[1] ?? "").split("\n").filter(l => /^\s*[-*]\s+\S/.test(l)).length;
+    if (opts >= 3) return true;
+  }
+  return false;
+}
 
 /** Raciocínio dentro de <think>…</think> (o servidor manda; antes ficava escondido). */
 export function thinkOf(raw: string): { text: string; present: boolean; closed: boolean } {
@@ -137,7 +155,18 @@ export function Turn({ prompt, reply, shown, caret, fresh, canRegenerate, busy, 
     const waiting = reply.state === "thinking" || (reply.state === "streaming" && !shown && !th.present);
     const search = reply.search;
     const sources = (reply.sources ?? []).map(toCard);
-    const seconds = th.closed && reply.tThink && reply.t0 ? Math.max(1, Math.round((reply.tThink - reply.t0) / 1000)) : undefined;
+    // Etapas reais que o servidor mandou (entendendo, buscando, lendo fontes…) + o raciocínio do modelo, se houver.
+    const steps = reply.steps ?? [];
+    const hasSteps = steps.length > 0;
+    const reasoning = hasSteps
+      ? [...steps, ...(th.text.trim() ? [{ title: "Raciocínio do modelo", text: th.text }] : [])]
+      : th.text;
+    // Com etapas: "pensando" até a resposta começar; depois fica recolhido ("Pensou por X s") pra poder abrir.
+    const thinkStatus: "thinking" | "done" | "stopped" = th.present
+      ? (th.closed ? "done" : reply.state === "stopped" ? "stopped" : "thinking")
+      : waiting ? (reply.state === "stopped" ? "stopped" : "thinking") : "done";
+    const thinkEnd = th.closed ? reply.tThink : reply.tFirst;
+    const seconds = thinkStatus === "done" && thinkEnd && reply.t0 ? Math.max(1, Math.round((thinkEnd - reply.t0) / 1000)) : undefined;
     const call: ToolCallData | null = search ? {
       id: "busca", tool: "web", title: t("Search the web"),
       status: search.status === "running" ? "running" : "success",
@@ -151,16 +180,24 @@ export function Turn({ prompt, reply, shown, caret, fresh, canRegenerate, busy, 
     const stats = reply.state === "done" && reply.t0 && reply.t2 && shown && !reply.text.startsWith(t("Something went wrong: "));
     blocks = (
       <>
-        {th.present || waiting ? (
+        {th.present || waiting || hasSteps ? (
           <ReasoningBlock
-            reasoning={th.text}
-            status={th.closed ? "done" : reply.state === "stopped" ? "stopped" : "thinking"}
+            reasoning={reasoning}
+            status={thinkStatus}
             seconds={seconds}
             model={heretic}
             variant="plain"
           />
         ) : null}
         {call ? <ToolCallGroup calls={[call]} active={search?.status === "running"} /> : null}
+        {reply.photos && reply.photos.length && !pickingPerson(reply.text) ? (
+          <div className="hx-photos">
+            <CoverFlow
+              label={t("Photos")}
+              items={reply.photos.map((p, i) => ({ id: `${i}-${p.src}`, title: p.title || "", subtitle: p.source, image: p.src, imagePosition: "50% 25%", alt: p.title || "" }))}
+            />
+          </div>
+        ) : null}
         {shown ? <Markdown text={shown} caret={caret} onOption={onOption} /> : null}
         {sources.length ? <SourceCards sources={sources} status="done" total={sources.length} query={search?.query} hideStatus label={t("Sources")} /> : null}
         {stats ? (

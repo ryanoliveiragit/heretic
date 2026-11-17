@@ -165,6 +165,7 @@ const PT: Record<string, string> = {
   "sources found": "fontes encontradas",
   "Search done": "Busca concluída",
   "Sources": "Fontes",
+  "Photos": "Fotos",
   "Tell us what happened (optional)": "Conte o que aconteceu (opcional)",
   "Your rating stays on this device. We only count good or bad, never the text.": "Sua nota fica neste aparelho. Só contamos se foi boa ou ruim, nunca o texto.",
   "Thanks for the rating": "Obrigado pela avaliação",

@@ -382,23 +382,102 @@ async function decideSearchLLM(question) {
 // Busca web pro Heretic Max: a Anthropic não tem o plugin web do OpenRouter, então rodamos UMA busca
 // via OpenRouter (plugin Exa) e devolvemos um resumo + fontes reais pra injetar no contexto do Claude.
 // Assim o Max responde pesquisa de pessoa/empresa/fato com links de verdade, em vez de inventar menu.
-async function webContext(query, signal) {
+// Detecta pedido de PESSOA (pesquisar/investigar/dossiê de um nome próprio), pra busca separar candidatos.
+const PERSON_INTENT = /\b(pesquis\w+|investig\w+|dossi[êe]|quem [eé]|sobre (?:a |o )?(?:pessoa|fulan\w+)|perfil (?:de|da|do)|informa[çc][õo]es sobre|vida d[eo])\b/i;
+function isPersonQuery(q) {
+  const t = String(q || '');
+  if (!PERSON_INTENT.test(t)) return false;
+  // Heurística de nome próprio: 2+ palavras Capitalizadas seguidas (ex.: "Ana Souza").
+  return /\b([A-ZÀ-Þ][a-zà-ÿ]+)\s+([A-ZÀ-Þ][a-zà-ÿ]+)/.test(t);
+}
+
+// Alvo PESSOA (dono 17/11): a heurística só pegava nome com maiúscula ("Troy Hunt"); "ryan oliveira
+// brito" em minúsculas passava batido e a resposta despejava fichas de todo mundo. Um classificador
+// rápido devolve o NOME COMPLETO (com maiúsculas, serve pra Wikipédia) ou NAO. Erro → heurística.
+const ASKS_ABOUT = /(pesquis|investig|dossi|quem [eé]|busc|procur|descobr|encontr|levant|sobre|perfil|ficha|informa[çc])/i;
+// Reserva sem modelo: nome depois de "sobre/quem é/dossiê de/perfil de", mesmo em minúsculas.
+const NAME_AFTER = /\b(?:sobre|quem\s+[eé]|dossi[eê]\s+d[eoa]s?|perfil\s+d[eoa]s?|ficha\s+d[eoa]s?)\s+(?:[oa]\s+)?([a-zà-ÿ]+(?:\s+(?:d[aeo]s?|[a-zà-ÿ]{2,})){1,4})/i;
+const NOT_NAME = /\b(como|que|qual|quais|para|pra|com|sem|ataque|ataques|seguran[çc]a|empresa|site|app|ferramenta|v[ií]rus|hack\w*|pentest|sql|xss|api|linux|windows|python|java\w*|curso|pre[çc]o|not[ií]cia\w*|mercado|tecnologia|intelig[eê]ncia)\b/i;
+function titleCase(s) {
+  return s.toLowerCase().split(/\s+/).map(w => /^(d[aeo]s?|e)$/.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+function lowercaseName(t) {
+  const m = NAME_AFTER.exec(t);
+  if (!m) return '';
+  const cand = m[1].replace(/[,.;:!?].*$/, '').trim();
+  const words = cand.split(/\s+/).filter(w => !/^d[aeo]s?$/i.test(w));
+  if (words.length < 2 || words.length > 5 || NOT_NAME.test(cand)) return '';
+  return titleCase(cand);
+}
+async function personTarget(q) {
+  const t = String(q || '').trim();
+  if (t.length < 6 || !ASKS_ABOUT.test(t)) return '';
+  const key = process.env.OPENROUTER_API_KEY;
+  if (key) {
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), 6000);
+    try {
+      // Tarefa de EXTRAÇÃO com exemplos e formato fixo — um modelo pequeno, se a mensagem vier crua,
+      // tenta responder a ela ("Não tenho informações sobre…") em vez de classificar.
+      const shot = (msg) => ({ role: 'user', content: `<msg>${msg}</msg>` });
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`, 'HTTP-Referer': process.env.OPENROUTER_REFERER || 'https://heretic.vercel.app' },
+        body: JSON.stringify({
+          model: process.env.ROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct',
+          messages: [
+            { role: 'system', content: 'Você é um classificador de texto. NÃO responda à mensagem e NÃO comente. Leia a mensagem entre <msg> e </msg> e diga se ela pede informação sobre uma PESSOA FÍSICA específica. Responda em UMA linha, exatamente num destes formatos:\nPESSOA: Nome Completo (com maiúsculas corretas)\nOUTRO' },
+            shot('quem é joão pedro silva?'), { role: 'assistant', content: 'PESSOA: João Pedro Silva' },
+            shot('pesquise sobre ataques xss em formulários'), { role: 'assistant', content: 'OUTRO' },
+            shot('me fala tudo sobre a empresa nubank'), { role: 'assistant', content: 'OUTRO' },
+            shot('quero fazer uma busca sobre maria de souza lima, encontrar tudo sobre a vida dela'), { role: 'assistant', content: 'PESSOA: Maria de Souza Lima' },
+            shot(t.slice(0, 600)),
+          ],
+          max_tokens: 20, temperature: 0,
+        }),
+        signal: ac.signal,
+      });
+      if (res.ok) {
+        const out = String((await res.json())?.choices?.[0]?.message?.content || '').trim();
+        const m = /PESSOA\s*:\s*([^\n]+)/i.exec(out);
+        if (m) {
+          const name = m[1].trim().replace(/^["'“”]+|["'“”.]+$/g, '');
+          const words = name.split(/\s+/);
+          if (words.length >= 2 && words.length <= 6 && /^[\p{L}' .-]+$/u.test(name)) return name;
+        }
+        if (/^\s*OUTRO\b/i.test(out)) return '';
+      }
+    } catch { /* timeout/erro → reserva */ } finally { clearTimeout(to); }
+  }
+  // Resposta fora do formato, erro ou timeout: heurística (maiúsculas ou "sobre <nome>").
+  return isPersonQuery(t) ? personName(t) : lowercaseName(t);
+}
+
+async function webContext(query, signal, { person = false, name = '' } = {}) {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) return null;
   const model = process.env.SEARCH_MODEL || process.env.ROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct';
   const ac = new AbortController();
-  const to = setTimeout(() => ac.abort(), 22000);
+  const to = setTimeout(() => ac.abort(), 30000); // pesquisa de pessoa com 8 fontes passava de 22 s e era cortada
   if (signal) signal.addEventListener('abort', () => ac.abort());
+  const prompt = person
+    ? `Busque na web sobre esta PESSOA. ATENÇÃO: várias pessoas podem ter o mesmo nome — NÃO misture fatos de pessoas diferentes.\n`
+      + `Só escreva CANDIDATOS se as fontes forem de pessoas CLARAMENTE DIFERENTES com esse nome (cidades/empresas/áreas incompatíveis entre si). Nesse caso liste UMA linha por pessoa diferente:\n`
+      + `CANDIDATOS:\n- Nome — cargo/área, cidade/empresa (fonte)\n- Nome — cargo/área, cidade/empresa (fonte)\n`
+      + `NÃO repita a MESMA pessoa em várias linhas. Se todas as fontes são da MESMA pessoa (mesmo que de sites diferentes), escreva "CANDIDATO ÚNICO" e então os fatos verificáveis dela em bullets curtos (nome, cargo, empresa, cidade, formação, datas), um por linha. Na dúvida entre único e vários, prefira ÚNICO. Nada de parágrafo longo nem tradução de blocos. Responda em português.`
+    : `Busque na web e resuma os FATOS PRINCIPAIS de forma objetiva e curta, em português, em bullets (máx. 8 linhas). Não copie blocos longos do site e não traduza parágrafos inteiros: só o essencial verificável (nomes, cargos, empresas, datas, números).`;
   try {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`, 'HTTP-Referer': process.env.OPENROUTER_REFERER || 'https://heretic.vercel.app' },
       body: JSON.stringify({
         model,
-        messages: [{ role: 'user', content: `Busque na web e resuma os FATOS PRINCIPAIS de forma objetiva e curta, em português, em bullets (máx. 8 linhas). Não copie blocos longos do site e não traduza parágrafos inteiros: só o essencial verificável (nomes, cargos, empresas, datas, números). Assunto:\n${String(query).slice(0, 500)}` }],
-        plugins: [{ id: 'web', max_results: 5 }],
+        // Instruções no system; no user SÓ o termo de busca — o plugin web usa a mensagem do usuário
+        // como consulta, e com as instruções junto o Exa buscava o texto delas (vinha Wikipédia aleatória).
+        messages: [{ role: 'system', content: prompt }, { role: 'user', content: person && name ? name : String(query).slice(0, 500) }],
+        plugins: [{ id: 'web', max_results: person ? 6 : 5 }],
         web_search_options: { search_context_size: 'medium' },
-        max_tokens: 800, temperature: 0,
+        max_tokens: 900, temperature: 0,
       }),
       signal: ac.signal,
     });
@@ -417,6 +496,104 @@ async function webContext(query, signal) {
     if (!text && !sources.length) return null;
     return { text, sources };
   } catch { return null; } finally { clearTimeout(to); }
+}
+
+// Fotos de PESSOA (dono 17/11): a busca não devolve imagem. Então, quando a identidade já está
+// cravada (UMA pessoa), o servidor baixa as páginas de perfil dela (LinkedIn costuma bloquear 999,
+// mas Instagram/sites/imprensa expõem og:image = a foto) e extrai a foto pública. Só dispara pra
+// pessoa única — nunca com vários candidatos — pra NUNCA misturar foto de gente diferente.
+const HTML_ENT = { '&amp;': '&', '&quot;': '"', '&#39;': "'", '&#x27;': "'", '&lt;': '<', '&gt;': '>', '&#x2F;': '/' };
+function decodeEntities(s) { return String(s || '').replace(/&(amp|quot|#39|#x27|lt|gt|#x2F);/g, m => HTML_ENT[m] || m); }
+function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } }
+function extractImage(html, baseUrl) {
+  const metas = [
+    /<meta[^>]+property=["']og:image(?::secure_url)?["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i,
+    /<meta[^>]+name=["']twitter:image(?::src)?["'][^>]+content=["']([^"']+)["']/i,
+    /<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)["']/i,
+  ];
+  for (const re of metas) {
+    const m = re.exec(html);
+    if (m && m[1]) {
+      let u = decodeEntities(m[1].trim());
+      if (u.startsWith('//')) u = 'https:' + u;
+      else if (u.startsWith('/')) { try { u = new URL(u, baseUrl).href; } catch {} }
+      if (/^https?:\/\//i.test(u) && !/\.svg(\?|$)/i.test(u)) return u;
+    }
+  }
+  return null;
+}
+// Domínios que costumam servir a FOTO da própria pessoa (perfil/retrato), não imagem de matéria.
+const PORTRAIT_HOSTS = /(?:^|\.)(instagram\.com|cdninstagram\.com|wikipedia\.org|wikimedia\.org|twitter\.com|x\.com|twimg\.com|github\.com|githubusercontent\.com|gravatar\.com|medium\.com|about\.me|gettyimages|behance\.net|dribbble\.com)/i;
+// og:image genérica (logo/placeholder do site, não a pessoa) — descarta.
+const GENERIC_IMG = /\/(og-?image|og_default|default-?og|share(?:-image)?|logo|placeholder|banner|cover-?default|favicon|thumbnail-default)[-_.]/i;
+// Retrato confiável pela API da Wikipédia (pt→en): pessoa notável tem foto de infobox, sem chave e
+// sem Cloudflare. É a fonte MAIS segura de "a cara certa" — entra na frente das imagens de matéria.
+function personName(q) {
+  const m = /\b([A-ZÀ-Þ][a-zà-ÿ]+(?:\s+(?:[A-ZÀ-Þ][a-zà-ÿ]+|Jr\.?|Neto|Filho|da|de|do|dos|das)){1,3})/.exec(String(q || ''));
+  return m ? m[1].replace(/\s+(da|de|do|dos|das)\s+/gi, ' $1 ').trim() : '';
+}
+async function wikiPortrait(name, signal) {
+  if (!name) return null;
+  for (const lang of ['pt', 'en']) {
+    try {
+      const api = `https://${lang}.wikipedia.org/w/api.php?action=query&format=json&prop=pageimages&piprop=thumbnail&pithumbsize=480&redirects=1&titles=${encodeURIComponent(name)}&origin=*`;
+      const ac = new AbortController();
+      const to = setTimeout(() => ac.abort(), 7000);
+      if (signal) signal.addEventListener('abort', () => ac.abort());
+      const r = await fetch(api, { headers: { 'User-Agent': 'HereticBot/1.0 (research)' }, signal: ac.signal }).finally(() => clearTimeout(to));
+      if (!r.ok) continue;
+      const data = await r.json();
+      const pages = data?.query?.pages || {};
+      for (const k of Object.keys(pages)) {
+        const th = pages[k]?.thumbnail?.source;
+        if (th) return { src: th, source: `${lang}.wikipedia.org`, title: pages[k].title || name };
+      }
+    } catch { /* ignora */ }
+  }
+  return null;
+}
+async function ogImages(sources, signal, name = '') {
+  // UA de navegador real: alguns sites (Cloudflare etc.) bloqueiam bots declarados e IP de datacenter.
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
+  // Só confia na foto de uma fonte cujo título/URL casa com o NOME da pessoa — senão vem foto de OUTRA
+  // pessoa quando a busca polui os resultados (ex.: pediram "Troy Hunt" e veio "Washington Luís").
+  const nameTokens = String(name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/\s+/).filter(t => t.length >= 3 && !/^(jr|neto|filho|da|de|do|dos|das)$/.test(t));
+  const matchesName = (s) => {
+    if (!nameTokens.length) return true;
+    const hay = `${s.title || ''} ${s.url || ''}`.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    return nameTokens.every(t => hay.includes(t)); // exige TODOS os tokens do nome (ex.: troy E hunt)
+  };
+  const list = (sources || []).slice(0, 6);
+  const out = [], seen = new Set();
+  await Promise.all(list.map(async (s) => {
+    if (!s || !s.url) return;
+    if (!matchesName(s)) return; // fonte não é sobre esta pessoa → ignora a foto
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), 8000);
+    if (signal) signal.addEventListener('abort', () => ac.abort());
+    try {
+      const r = await fetch(s.url, { headers: { 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml', 'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8' }, redirect: 'follow', signal: ac.signal });
+      if (!r.ok) return;
+      const html = (await r.text()).slice(0, 400000);
+      const img = extractImage(html, s.url);
+      if (!img || seen.has(img)) return;
+      if (GENERIC_IMG.test(img)) return; // og-image/logo do site, não a pessoa
+      seen.add(img);
+      const host = hostOf(s.url);
+      // "portrait" = foto de perfil confiável (rede social / Wikipédia / avatar). Prioriza essas.
+      const portrait = PORTRAIT_HOSTS.test(host) || PORTRAIT_HOSTS.test(img);
+      // Fora de rede social/Wikipédia, só aceita se o ARQUIVO da imagem tiver o nome da pessoa — senão é
+      // banner/logo do site (ex.: sites de CNPJ), não a foto dela.
+      let imgPath = img; try { imgPath = decodeURIComponent(new URL(img).pathname); } catch {}
+      const imgNorm = imgPath.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (nameTokens.length && !portrait && !nameTokens.some(t => imgNorm.includes(t))) return;
+      out.push({ src: img, source: host, title: String(s.title || '').slice(0, 120), portrait });
+    } catch { /* bloqueado/timeout: ignora */ } finally { clearTimeout(to); }
+  }));
+  // Retrato de perfil primeiro; no máximo 4. Se nenhuma for retrato confiável, ainda mostra as de matéria.
+  out.sort((a, b) => (b.portrait ? 1 : 0) - (a.portrait ? 1 : 0));
+  return out.slice(0, 4).map(({ portrait, ...rest }) => rest);
 }
 
 // ---- Mão: probe de URL (dono 17/11). Quando a pergunta é sobre um site (URL + intenção de
@@ -568,17 +745,82 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
       if (/https?:\/\/|github\.com|gitlab\.com/i.test(q) || STRONG_SEARCH.test(q)) doSearch = true;
       else { const llm = await decideSearchLLM(q); doSearch = (llm === null) ? shouldSearch(q) : llm; }
     }
+    // Etapas REAIS do que o servidor está fazendo (dono 17/11): o "Pensando 24 s" vazio não dizia nada.
+    // Cada etapa vira um passo no ReasoningBlock da tela. Só o que de fato acontece — nada inventado.
+    const step = (title, text) => { if (onWarning) onWarning({ type: 'step', title, text }); };
+    let writeNote = 'Juntando tudo numa resposta direta.';
+    step('Entendendo o pedido', doSearch ? 'Precisa de informação de fora: vou buscar na web.' : 'Dá pra responder direto, sem buscar na web.');
     if (doSearch) {
+      const nm = await personTarget(q);
+      const person = !!nm;
+      if (person) step('Identificando o alvo', `É uma pesquisa de pessoa: ${nm}.`);
       if (onWarning) onWarning({ type: 'search', query: q.replace(/\s+/g, ' ').slice(0, 120) });
-      const wc = await webContext(q, signal).catch(() => null);
+      step('Buscando na web', person ? `Procurando fontes públicas sobre ${nm}.` : q.replace(/\s+/g, ' ').slice(0, 140));
+      const wc = await webContext(q, signal, { person, name: nm }).catch(() => null);
+      if (!wc) {
+        step('Busca sem resultado', 'Não achei fontes; vou responder com o que sei e deixar isso claro.');
+        // Mesmo sem busca, pessoa notável tem retrato na Wikipédia pelo nome (sem fonte de outra pessoa).
+        if (person) {
+          const wiki = await wikiPortrait(nm, signal).catch(() => null);
+          step('Buscando fotos', wiki ? `1 foto confiável: ${wiki.source}.` : 'Nenhuma foto confiável dessa pessoa; prefiro não mostrar foto de outra.');
+          if (wiki && onWarning) onWarning({ type: 'images', images: [wiki] });
+        }
+      }
       if (wc) {
+        const hosts = [...new Set(wc.sources.map(s => hostOf(s.url)).filter(Boolean))];
+        step('Lendo as fontes', wc.sources.length ? `${wc.sources.length} fontes: ${hosts.slice(0, 4).join(', ')}${hosts.length > 4 ? ' e outras.' : '.'}` : 'A busca não trouxe links.');
         systemPrompt += '\n\n## RESULTADOS DE BUSCA NA WEB (reais, agora) — baseie os fatos APENAS nestes resultados e cite os links; nunca invente URL:\n'
           + (wc.text ? wc.text + '\n\n' : '')
           + 'Fontes:\n' + wc.sources.map((s, i) => `[${i + 1}] ${s.title} — ${s.url}${s.snippet ? '\n    ' + s.snippet : ''}`).join('\n')
           + '\nRegra: NÃO repita blocos longos do texto da busca (nem em outro idioma) — entregue só fatos curtos com o link da fonte ao final de cada fato.';
         if (onWarning && wc.sources.length) onWarning({ type: 'sources', sources: wc.sources });
+        if (person) {
+          // Ambíguo de verdade = candidatos DIFERENTES (nome + começo da descrição). A mesma pessoa
+          // repetida por fontes diferentes ("Marina Silva — Ministra…" x3) conta como uma só.
+          const txt = wc.text || '';
+          const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+          const cands = new Map();
+          for (const m of txt.matchAll(/^\s*[-*]\s+([^—–\n]+?)\s*[—–]\s*([^\n(]*)/gm)) {
+            const n = norm(m[1]);
+            if (!n || n.split(' ').length < 2) continue;
+            const k = n + '|' + norm(m[2]).slice(0, 18);
+            if (!cands.has(k)) cands.set(k, m[1].trim());
+          }
+          const multi = /CANDIDATOS?\s*:/i.test(txt) && cands.size >= 2;
+          if (multi) {
+            step('Conferindo quem é', `Achei ${cands.size} pessoas diferentes com esse nome. Vou te pedir pra escolher antes de montar qualquer ficha.`);
+            writeNote = 'Só uma linha e o seletor de pessoa.';
+            systemPrompt += '\n\n## RESPOSTA OBRIGATÓRIA (várias pessoas com esse nome)\n'
+              + 'Sua resposta INTEIRA é: uma frase curta (ex.: "Achei mais de uma pessoa com esse nome.") e logo depois o card ```escolha```. Nada antes da frase, nada depois do card.\n'
+              + 'PROIBIDO escrever ficha, CNPJ, endereço, telefone, e-mail, experiência ou qualquer dado de qualquer candidato fora do card — os detalhes só vêm DEPOIS que o usuário escolher.\n'
+              + 'No card: 1ª linha = "Qual dessas pessoas você quer pesquisar?"; depois uma opção por pessoa no formato "Nome — o que faz, cidade" (no máximo uns 60 caracteres por opção); a última opção é "Nenhuma dessas / é outra pessoa".';
+          } else {
+            step('Conferindo quem é', 'O resumo da busca aponta para uma pessoa só.');
+            writeNote = 'Montando a ficha só com o que é dessa pessoa.';
+            systemPrompt += '\n\n## IDENTIDADE (pesquisa de pessoa): as fontes apontam para UMA pessoa. Monte a ficha só com fatos dela; se algum resultado parecer de outra pessoa com o mesmo nome, deixe de fora. Se o usuário só deu o nome, feche com o card ```escolha``` "É esta pessoa?" com as opções "Sim, é essa" e "Não, é outra pessoa" (nada depois do card).';
+            // Retrato da Wikipédia (fonte segura) na frente; depois fotos de fontes cujo título casa com o nome.
+            const [wiki, og] = await Promise.all([
+              wikiPortrait(nm, signal).catch(() => null),
+              ogImages(wc.sources, signal, nm).catch(() => []),
+            ]);
+            const photos = [], seenSrc = new Set();
+            for (const p of [wiki, ...og]) {
+              // Mesma foto em tamanhos diferentes ('500px-X.jpg' e '1280px-X.jpg') conta uma vez só.
+              let fileKey = p && p.src; try { fileKey = decodeURIComponent(new URL(p.src).pathname.split('/').pop() || p.src).replace(/^\d+px-/, '').toLowerCase(); } catch {}
+              if (p && p.src && !seenSrc.has(fileKey) && photos.length < 4) { seenSrc.add(fileKey); photos.push(p); }
+            }
+            step('Buscando fotos', photos.length
+              ? `${photos.length} foto(s) confiável(is): ${[...new Set(photos.map(p => p.source))].join(', ')}.`
+              : 'Nenhuma foto confiável dessa pessoa; prefiro não mostrar foto de outra.');
+            if (photos.length) {
+              if (onWarning) onWarning({ type: 'images', images: photos });
+              systemPrompt += '\n\n## FOTOS: achei ' + photos.length + ' foto(s) pública(s) DESTA pessoa, já exibidas numa galeria acima da sua resposta. NÃO cole URLs de imagem nem descreva as fotos no texto; só comente se alguma claramente não for a pessoa.';
+            }
+          }
+        }
       }
     }
+    step('Escrevendo a resposta', writeNote);
     try { yield* anthropicComplete({ model: route.model, systemPrompt, messages, payload, onToken }); }
     catch (e) {
       if (onWarning) onWarning({ type: 'rerouted', reason: `Max indisponível (${String(e.message).slice(0, 400)}) — caindo pro OpenRouter`, from: mode, to: 'openrouter' });
@@ -605,6 +847,12 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
   if (webSearch) systemPrompt += '\n\n## Busca na web ativa\nVocê recebeu resultados de busca da web no contexto. Use-os para dar fatos atuais e LINKS REAIS (repos no GitHub, sites, versões), e cite os links de verdade. Nunca invente URL.';
   // Avisa o app que a busca web começou (ele mostra "Buscando na web…" até as fontes chegarem).
   if (webSearch && onWarning) onWarning({ type: 'search', query: String(userQuestion || '').replace(/\s+/g, ' ').trim().slice(0, 120) });
+  // Etapas reais pro "Pensando" (mesmo formato do caminho do Max).
+  if (onWarning) {
+    onWarning({ type: 'step', title: 'Entendendo o pedido', text: webSearch ? 'Precisa de informação de fora: vou buscar na web.' : 'Dá pra responder direto, sem buscar na web.' });
+    if (webSearch) onWarning({ type: 'step', title: 'Buscando na web', text: String(userQuestion || '').replace(/\s+/g, ' ').trim().slice(0, 140) });
+    onWarning({ type: 'step', title: 'Escrevendo a resposta', text: 'Juntando tudo numa resposta direta.' });
+  }
   for (let forces = 0; forces <= MAX_FORCES; forces++) {
     const active = forces < MAX_FORCES; // a última rodada nunca corta: entrega a resposta como sair
     let hitRefusal = false, refusalText = '';

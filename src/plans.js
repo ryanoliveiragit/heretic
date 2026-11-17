@@ -34,8 +34,10 @@ export const PUBLIC_MODELS_RAW = [
   { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', name: 'Heretic Free', short: 'Heretic Free', note: 'Uncensored, rápido e barato (Dolphin 24B)', tier: 'free', quality: 1 },
   { id: 'thedrummer/cydonia-24b-v4.1', name: 'Heretic Swift', short: 'Heretic Swift', note: 'Equilíbrio de velocidade e qualidade (Cydonia 24B)', tier: 'free', quality: 2 },
   { id: 'sao10k/l3.1-euryale-70b', name: 'Heretic Rapid', short: 'Heretic Rapid', note: 'Mais esperto, melhor custo (Euryale 70B)', tier: 'free', quality: 3 },
-  { id: 'anthracite-org/magnum-v4-72b', name: 'Heretic Deep', short: 'Heretic Deep', note: 'Profundidade em problemas difíceis (Magnum 72B)', tier: 'pro', quality: 3 },
-  { id: 'nousresearch/hermes-4-405b', name: 'Heretic Titan', short: 'Heretic Titan', note: 'Capacidade máxima sem censura aberta (Hermes 405B)', tier: 'pro', quality: 4 },
+  // Pro = DOIS modelos de topo pra comparar (dono 17/11), ambos sem censura:
+  //  • Heretic Titan = a melhor aberta do OpenRouter (Hermes 405B).
+  //  • Heretic Max = cérebro de nuvem Claude (estilo Drael), com camada anti-recusa.
+  { id: 'nousresearch/hermes-4-405b', name: 'Heretic Titan', short: 'Heretic Titan', note: 'Melhor modelo aberto sem censura (Hermes 405B, OpenRouter)', tier: 'pro', quality: 4 },
   // Heretic Max — cérebro de nuvem (Claude). Só aparece quando a chave CLAUDE_KEY está no ambiente.
   { id: 'claude-sonnet-5-5', name: 'Heretic Max', short: 'Heretic Max', note: 'Nível Claude — lê contexto e ferramentas sem alucinar (nuvem)', tier: 'pro', quality: 4 },
 ];

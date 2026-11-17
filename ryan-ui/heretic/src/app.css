@@ -605,6 +605,8 @@ html .hx-palette>div:last-child{padding:10px}
 html .hx-palette [class*="palette"]{border:0;box-shadow:none;background:transparent}
 /* Estatística da resposta: no celular a linha rola de lado em vez de passar da borda */
 .hx-genstats{min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.hx-photos{margin:10px 0 14px;max-width:100%}
+.hx-photos img{background:#15151a}
 .hx-genstats::-webkit-scrollbar{display:none}
 /* Coluna nunca mais larga que a tela: código comprido rola dentro do bloco, não estica o turno */
 .hx-turn,.hx-reply,.hx-turn-body{grid-template-columns:minmax(0,1fr)}

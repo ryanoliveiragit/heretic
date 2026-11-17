@@ -4,6 +4,7 @@
 import { useState, type ReactNode } from "react";
 import { Check, Copy } from "lucide-react";
 import { Mermaid } from "./mermaid";
+import { RadioCards, type RadioCardOption } from "@/registry/components/radio-cards/radio-cards";
 
 // Bloco de código com cabeçalho (linguagem + copiar), no estilo do redesign.
 function CodeBlock({ code, lang }: { code: string; lang?: string }) {
@@ -33,16 +34,24 @@ function AskBlock({ body, onOption, disabled }: { body: string; onOption?: (v: s
   }
   const question = qLines.join(" ");
   if (!opts.length) return <CodeBlock code={body} lang="ask" />; // malformado → mostra cru
+  // Cada opção pode trazer uma descrição depois de " — " (ou " - "): vira label + description no cartão
+  // (ótimo pros candidatos de pessoa: "Ana Souza — desenvolvedora, Campinas SP").
+  const options: RadioCardOption[] = opts.map((o) => {
+    const m = /^(.+?)\s+[—–-]\s+(.+)$/.exec(o);
+    return m ? { value: o, label: m[1]!.trim(), description: m[2]!.trim() } : { value: o, label: o };
+  });
   const choose = (v: string) => { if (disabled || picked || !onOption) return; setPicked(v); onOption(v); };
   return (
-    <div className="md-ask" role="group" aria-label={question || "Opções"}>
+    <div className="md-ask">
       {question ? <p className="md-ask-q">{inline(question, "ask-q")}</p> : null}
-      <div className="md-ask-opts">
-        {opts.map((o, j) => (
-          <button key={j} type="button" className="md-ask-chip" disabled={disabled || !!picked || !onOption}
-            aria-pressed={picked === o} data-picked={picked === o || undefined} onClick={() => choose(o)}>{o}</button>
-        ))}
-      </div>
+      <RadioCards
+        options={options}
+        value={picked}
+        onValueChange={choose}
+        layout="list"
+        aria-label={question || "Opções"}
+        disabled={disabled || !!picked || !onOption}
+      />
     </div>
   );
 }

@@ -20,7 +20,7 @@ import { CommandPalette } from "@pro/command-palette/command-palette";
 import type { CommandItem } from "@pro/command-palette/command-palette";
 import { Dialog, DialogContent } from "@pro/dialog/dialog";
 import { Turn, estTokens } from "./turn";
-import type { FeedbackEvent, TurnMessage, WebSource } from "./turn";
+import type { FeedbackEvent, TurnMessage, WebSource, PersonPhoto } from "./turn";
 import { usePtBrComponents } from "./ptbr";
 import { KBD } from "./kbd";
 import styles from "@/registry/blocks/chat-app/chat-app.module.css";
@@ -500,7 +500,7 @@ export function HereticChat() {
     // Medidas reais desta resposta (estatística do turno): envio, 1º token, fim do raciocínio, fim e velocidade.
     const t0 = Date.now();
     sampleRef.current = { t: 0, chars: 0, samples: [] };
-    patchMessage(conversationId, messageId, m => ({ ...m, t0, inTok: estTokens(history.map(h => h.content).join("\n")), tFirst: undefined, tThink: undefined, t2: undefined, samples: undefined, search: undefined, sources: undefined, rating: null } as ChatMessage));
+    patchMessage(conversationId, messageId, m => ({ ...m, t0, inTok: estTokens(history.map(h => h.content).join("\n")), tFirst: undefined, tThink: undefined, t2: undefined, samples: undefined, search: undefined, sources: undefined, photos: undefined, steps: undefined, rating: null } as ChatMessage));
     ctrl.current = streamChat(
       { conversationId: 0, mode: "chat", model: model.id, messages: history, quality: quality && plan === "pro", params: { temperature: 0.6, top_p: 0.9, max_tokens: 4096 } },
       {
@@ -520,11 +520,16 @@ export function HereticChat() {
         },
         // Busca na web: o servidor avisa quando começa e manda as fontes que achou.
         onWarning: data => {
-          const w = data as { type?: string; query?: string; sources?: WebSource[] };
+          const w = data as { type?: string; query?: string; sources?: WebSource[]; images?: PersonPhoto[]; title?: string; text?: string };
           if (w.type === "search") patchMessage(conversationId, messageId, m => ({ ...m, search: { query: w.query || "", status: "running", t: Date.now() } } as ChatMessage));
           else if (w.type === "sources" && Array.isArray(w.sources)) patchMessage(conversationId, messageId, m => {
             const mm = m as TurnMessage; const now = Date.now();
             return { ...m, sources: w.sources, search: mm.search ? { ...mm.search, status: "success", ms: mm.search.ms ?? now - (mm.search.t ?? now) } : { query: "", status: "success" } } as ChatMessage;
+          });
+          else if (w.type === "images" && Array.isArray(w.images)) patchMessage(conversationId, messageId, m => ({ ...m, photos: w.images } as ChatMessage));
+          else if (w.type === "step" && w.title) patchMessage(conversationId, messageId, m => {
+            const prev = (m as TurnMessage).steps ?? [];
+            return { ...m, steps: [...prev, { title: String(w.title), text: String(w.text ?? "") }] } as ChatMessage;
           });
         },
         // FORÇA TUDO: o servidor descartou uma recusa e re-rodou o modelo → limpa e volta ao "pensando".
