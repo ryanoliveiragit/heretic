@@ -245,6 +245,15 @@ body { letter-spacing: -.02em; }
 
 /* ── mesmo padrão da landing (dono, 15/11 21h): preto + prata, verde só no acento, máscara prata, títulos em serifa prata, texto fino, cartões estilo terminal ── */
 .mask { display: inline-block; flex: none; background: #C8C8CE; -webkit-mask: url(/icons/mascara.png) center / contain no-repeat; mask: url(/icons/mascara.png) center / contain no-repeat; filter: drop-shadow(0 0 4px #ffffff22); }
+/* Cigarra mascarada (dono 17/11): a mesma logo, pintável e com brilho cromado em movimento. */
+.hx-cicada { display: block; flex: none; background: var(--cic, var(--accent)); -webkit-mask: url(/icons/cicada.png) center / contain no-repeat; mask: url(/icons/cicada.png) center / contain no-repeat; }
+.hx-cicada-chrome { background: linear-gradient(100deg, #5E5E66 0%, #FFFFFF 16%, #E8E2D0 32%, #9A9AA3 50%, #FFFFFF 70%, #6E6E76 86%, #5E5E66 100%); background-size: 300% 100%; animation: hxChrome 4.2s linear infinite; }
+.hx-avatar-cic { background: transparent !important; box-shadow: none !important; }
+.hx-avatar-cic .hx-cicada { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--cic, #fff) 35%, transparent)); }
+/* Texto cromado animado (título da tela vazia). */
+.hx-chrome-text { background: linear-gradient(100deg, #8A8A90 0%, #FFFFFF 20%, #E8E2D0 38%, #B9B9C2 55%, #FFFFFF 78%, #8A8A90 100%); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: hxChrome 5s linear infinite; }
+@keyframes hxChrome { from { background-position: 150% 0; } to { background-position: -150% 0; } }
+@media (prefers-reduced-motion: reduce) { .hx-cicada-chrome, .hx-chrome-text { animation: none; } }
 .empty-logo { display: block; height: auto; filter: grayscale(1) brightness(1.4); opacity: .9; }
 .empty h2, .onb-title { background: linear-gradient(180deg, #FFFFFF 15%, #B9B9C2 90%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: none; filter: none; }
 .empty h2::after { content: none; }

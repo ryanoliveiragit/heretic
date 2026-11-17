@@ -66,7 +66,8 @@ const HEAD = `<title>Heretic — Uncensored AI</title>
 <meta name="description" content="Uncensored AI that answers anything. Free to start, no account, no email.">
 <meta name="theme-color" content="#040405">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg?v=${STAMP}">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=${STAMP}">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -206,7 +207,8 @@ const HEAD_VIVA = `<title>Heretic — IA sem censura</title>
 <meta name="description" content="IA sem censura para hacking: DDoS, engenharia reversa, clonagem. Grátis, sem conta, sem e-mail.">
 <meta name="theme-color" content="#040405">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg?v=${STAMP}">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=${STAMP}">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -235,17 +237,26 @@ function pageViva() {
 @media (max-width:860px){
   html,body{overflow-x:hidden!important}
   header{padding-left:18px!important;padding-right:18px!important;flex-wrap:wrap!important;gap:10px!important}
-  nav[aria-label="Se\\u00e7\\u00f5es"]{display:none!important}
+  header nav{display:none!important}
   #topo{min-height:0!important}
   #topo > section{padding:88px 18px 36px!important}
   #topo h1{font-size:clamp(36px,12vw,58px)!important;max-width:none!important}
   canvas[data-nebula]{opacity:.3!important}
   #como-funciona,#especialistas,#assinar,#duvidas{padding-left:18px!important;padding-right:18px!important}
-  [style*="grid-template-columns:repeat(2,minmax(0,1fr))"]{grid-template-columns:1fr!important}
-  [style*="grid-template-columns:minmax(0,4fr) minmax(0"]{grid-template-columns:1fr!important}
+  /* Colapsa QUALQUER grade inline em 1 coluna no mobile (robusto: casa o nome da propriedade, não o valor, que pode ter espaços). */
+  #topo [style*="grid-template-columns"],
+  #como-funciona [style*="grid-template-columns"],
+  #especialistas [style*="grid-template-columns"],
+  #assinar [style*="grid-template-columns"],
+  #duvidas,
+  #duvidas [style*="grid-template-columns"]{grid-template-columns:1fr!important}
+  #duvidas{gap:var(--space-8)!important}
   #assinar div[aria-hidden="true"]:empty{display:none!important}
-  [data-orbit]{height:420px!important}
-  [data-orbit-name]{font-size:30px!important}
+  /* orbe dos especialistas: cabe na largura, texto central menor, não encosta nas bordas */
+  [data-orbit]{height:min(78vw,360px)!important}
+  [data-orbit-panel]{width:min(280px,82vw)!important}
+  [data-orbit-name]{font-size:26px!important}
+  [data-orbit-line]{font-size:15px!important}
   h2,h2[style]{font-size:clamp(30px,8vw,44px)!important}
   [data-bar] [style*="nowrap"]{white-space:normal!important}
   [data-bar-progress]{display:none!important}

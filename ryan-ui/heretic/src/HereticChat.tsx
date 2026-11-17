@@ -4,7 +4,7 @@
 // and the reply driven by the server instead of canned text. The prompt box is the forked
 // ryan-ui Pro composer (./composer), with the model menu and the daily-token meter.
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import type { ReactNode, TouchEvent as ReactTouchEvent } from "react";
+import type { CSSProperties, ReactNode, TouchEvent as ReactTouchEvent } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
 import { Check, Copy, Download, FileDown, FileText, KeyRound, Lock, MoreHorizontal, PanelLeft, Pencil, RefreshCw, Settings as SettingsIcon, SquarePen, Trash2, X, Zap } from "lucide-react";
@@ -172,6 +172,9 @@ const SUGGESTIONS: ChatSuggestion[] = [
 
 const Mask = ({ size = 16 }: { size?: number }) => <span className="mask" aria-hidden style={{ width: size, height: Math.round(size * 1.2) }} />;
 const Cicada = ({ width }: { width: number }) => <img src="/icons/cicada.svg" alt="" width={width} style={{ display: "block", height: "auto" }} />;
+// Cigarra mascarada: a mesma logo, pintável (vermelha Pro / branca grátis) e com brilho cromado opcional.
+const CicadaMask = ({ w, h, color, shimmer }: { w: number; h: number; color?: string; shimmer?: boolean }) =>
+  <span aria-hidden="true" className={shimmer ? "hx-cicada hx-cicada-chrome" : "hx-cicada"} style={{ width: w, height: h, ...(color ? { ["--cic"]: color } : {}) } as CSSProperties} />;
 
 // A IA raciocina dentro de <think>…</think> antes de responder (estilo Dolphin/reasoning): isso é
 // OCULTO do usuário — mostramos só a resposta final. Enquanto o <think> ainda está aberto (streaming),
@@ -664,7 +667,7 @@ export function HereticChat() {
           </ul>
         </LayoutGroup>
         <div className={styles.user}>
-          <span className={styles.avatar} aria-hidden="true"><Mask size={16} /></span>
+          <span className={`${styles.avatar} hx-avatar-cic`} aria-hidden="true"><CicadaMask w={26} h={20} color={plan === "pro" ? "#F0335A" : "#FFFFFF"} /></span>
           <span className={styles.userText}>
             <span className={styles.userName}>{t("Anonymous")}{plan === "pro" ? <span className="hx-pro">PRO</span> : null}</span>
             <span className={styles.userDetail}>{plan === "pro" ? t("Pro · every AI unlocked") : t("Free · no account")}</span>
@@ -697,18 +700,8 @@ export function HereticChat() {
           <motion.div key={active?.id} ref={threadRef} className={styles.thread} initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={reduceMotion ? { duration: 0 } : { duration: motionTokens.duration.standard, ease: standard }}>
             {active && active.messages.length === 0 ? (
               <div className={styles.empty}>
-                <motion.span className={`${styles.emptyMark} hx-empty-mark`} aria-hidden="true" initial={reduceMotion ? false : { scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={pop}><Cicada width={120} /></motion.span>
-                <h3 className={`${styles.emptyTitle} hx-empty-title`}>{t("Ask anything.")}</h3>
-                <ul className={styles.suggestions}>
-                  {SUGGESTIONS.map((s, index) => (
-                    <motion.li key={s.title} initial={reduceMotion ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={reduceMotion ? { duration: 0 } : { ...motionTokens.spring.gentle, delay: 0.08 + index * motionTokens.stagger.item * 1.6 }}>
-                      <button type="button" className={styles.suggestion} onClick={() => send(s.prompt)}>
-                        <span className={styles.suggestionTitle}>{s.title}</span>
-                        <span className={styles.suggestionPrompt}>{s.prompt}</span>
-                      </button>
-                    </motion.li>
-                  ))}
-                </ul>
+                <motion.span className={`${styles.emptyMark} hx-empty-mark`} aria-hidden="true" initial={reduceMotion ? false : { scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={pop}><CicadaMask w={150} h={56} shimmer={!reduceMotion} /></motion.span>
+                <h3 className={`${styles.emptyTitle} hx-empty-title hx-chrome-text`}>{t("Ask anything.")}</h3>
               </div>
             ) : null}
             <ol className={styles.messages} aria-label={t("Messages")}>
