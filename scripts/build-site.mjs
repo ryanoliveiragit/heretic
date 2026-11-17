@@ -203,7 +203,7 @@ const DS_DIR = "_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f";
 cpSync(join(VIVA, "anim"), join(PUB, "anim"), { recursive: true });
 for (const f of ["ryan-ui-extra.js", "ryan-ui-extra.css", "ryan-ui-extra2.js", "ryan-ui-extra2.css"]) cpSync(join(VIVA, "extra", f), join(PUB, "uploads", f));
 const HEAD_VIVA = `<title>Heretic — IA sem censura</title>
-<meta name="description" content="IA sem censura, grátis para todo mundo. Sem conta, sem e-mail.">
+<meta name="description" content="IA sem censura para hacking: DDoS, engenharia reversa, clonagem. Grátis, sem conta, sem e-mail.">
 <meta name="theme-color" content="#040405">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">

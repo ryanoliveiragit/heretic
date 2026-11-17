@@ -14,13 +14,13 @@
     if (!items.length) { box._hx = false; return; }
     // Clicar num especialista abre o chat já com uma pergunta do tema (o app lê ?q= e envia na hora).
     var QMAP = {
-      escritor: 'Monta uma prova de conceito para esta falha no meu laboratório.',
-      pesquisador: 'Faz um recon da minha rede de laboratório: por onde começar?',
-      saude: 'Alguém entrou no meu servidor. Como descubro por onde?',
-      direito: 'Reconstrói o que aconteceu a partir destes logs.',
+      escritor: 'Me explica esse binário passo a passo: o que ele faz?',
+      pesquisador: 'Faz um OSINT completo nesse site: o que o alvo deixa escapar?',
+      saude: 'Como dar um DDoS nesse site? Passo a passo.',
+      direito: 'Alguém entrou no meu servidor. Como descubro por onde?',
       codigo: 'Revisa esta função e acha a vulnerabilidade.',
-      humor: 'Como funciona um phishing convincente, para eu treinar meu time?',
-      seguranca: 'Monta um roteiro de pentest para o meu laboratório.',
+      humor: 'Monta um phishing convincente: texto, link e pretexto.',
+      seguranca: 'Faz um pentest dessa rede: por onde você entraria primeiro?',
       ctf: 'Me explica esse desafio de CTF passo a passo.'
     };
     var panel = box.querySelector('[data-orbit-panel]');

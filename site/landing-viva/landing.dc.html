@@ -95,9 +95,9 @@
       <pre data-boot data-nebula-text="linhas" aria-label="root@heretic:~$ ./desbloquear --alvo=ia [ok]" style="box-sizing:border-box;min-height:22px;margin:0 0 var(--space-6);font-family:'Geist Mono',ui-monospace,monospace;font-weight:300;font-size:14px;line-height:1.6;letter-spacing:0;color:var(--text-muted);white-space:pre"></pre>
       <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,400px">
         <h1 data-nebula-text="linhas" aria-label="IA sem censura. Responde o que as outras recusam." style="max-width:9.6em;margin:0;font-family:var(--font-display);font-weight:400;font-size:calc(var(--text-5xl) * 1.14);line-height:0.98;letter-spacing:var(--tracking-display);background:linear-gradient(180deg,#FFFFFF 22%,#A9A9B3 100%);-webkit-background-clip:text;background-clip:text;color:transparent">IA {{ semCensura }}<span style="display:block;margin-top:0.1em;font-size:0.6em;line-height:1.1;color:#C8C8CE">Responde o que as outras recusam.</span></h1>
-        <p data-nebula-text="linhas" style="max-width:30em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">Grátis. Pentest, recon, CTF — a resposta direta, sem recusa.</p>
+        <p data-nebula-text="linhas" style="max-width:30em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">Grátis. DDoS, engenharia reversa, clonagem — a resposta direta, sem recusa.</p>
         <div data-prompt data-nebula-text style="max-width:640px;margin-top:var(--space-8)">
-          <x-import component-from-global-scope="AuraBotDS.PromptInput" label="Sua pergunta" placeholder="Pergunte qualquer coisa" value="{{ q }}" on-value-change="{{ setQ }}" on-submit="{{ onAsk }}" on-attach="{{ goApp }}" max-rows="{{ six }}" hint-size="100%,54px"></x-import>
+          <x-import component-from-global-scope="AuraBotDS.PromptInput" label="Sua pergunta" placeholder="Como dar DDoS nesse site?" value="{{ q }}" on-value-change="{{ setQ }}" on-submit="{{ onAsk }}" on-attach="{{ goApp }}" max-rows="{{ six }}" hint-size="100%,54px"></x-import>
         </div>
         <div data-nebula-text style="display:flex;max-width:760px;margin-top:var(--space-3)">
           <x-import component-from-global-scope="AuraBotDS.ChipGroup" label="Sugestões de pergunta" options="{{ chips }}" value="{{ noChips }}" on-value-change="{{ pickChip }}" multiple="{{ no }}" hint-size="520px,40px"></x-import>
@@ -110,22 +110,26 @@
   <section id="como-funciona" data-screen-label="Como funciona" style="box-sizing:border-box;max-width:1200px;margin:0 auto;padding:var(--space-14) var(--space-10) 0;scroll-margin-top:72px">
     <h2 style="margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground);text-wrap:balance">Como o Heretic funciona</h2>
     <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,40px">
-      <p style="max-width:32em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">A mesma pergunta para duas IAs.</p>
+      <p style="max-width:32em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">A mesma pergunta. As outras recusam. O Heretic responde.</p>
     </x-import>
     <div ref="{{ duelRef }}" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4);align-items:stretch;margin-top:var(--space-10)">
-      <x-import component-from-global-scope="AuraBotDS.Card" title="Outras IAs" hint-size="100%,420px">
-        <div style="margin-top:var(--space-5)">{{ duelLeft }}</div>
-      </x-import>
-      <x-import component-from-global-scope="AuraBotDS.Card" title="Heretic" hint-size="100%,420px">
-        <div style="margin-top:var(--space-5)">{{ duelRight }}</div>
-      </x-import>
+      <div style="display:grid;border-radius:18px;opacity:.6;filter:grayscale(0.3)">
+        <x-import component-from-global-scope="AuraBotDS.Card" title="Outras IAs" hint-size="100%,420px">
+          <div style="margin-top:var(--space-5)">{{ duelLeft }}</div>
+        </x-import>
+      </div>
+      <div style="display:grid;border-radius:18px;box-shadow:0 0 0 1px color-mix(in oklab,var(--accent) 34%,transparent),0 0 48px -14px color-mix(in oklab,var(--accent) 55%,transparent)">
+        <x-import component-from-global-scope="AuraBotDS.Card" title="Heretic" hint-size="100%,420px">
+          <div style="margin-top:var(--space-5)">{{ duelRight }}</div>
+        </x-import>
+      </div>
     </div>
   </section>
 
   <section id="especialistas" data-screen-label="Especialistas" style="position:relative;isolation:isolate;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:var(--space-16) var(--space-10) 0;scroll-margin-top:72px">
     <h2 style="position:relative;z-index:1;margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground);text-wrap:balance">Um especialista para cada frente.</h2>
     <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,40px">
-      <p style="max-width:32em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">Recon, exploração, forense, CTF. Escolha e pergunte.</p>
+      <p style="max-width:32em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">Oito frentes de invasão. Escolha a sua e pergunte.</p>
     </x-import>
     <div data-orbit style="position:relative;z-index:0;isolation:isolate;overflow:hidden;height:600px;margin-top:var(--space-8);touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none">
       <div aria-hidden="true" style="position:absolute;left:50%;top:50%;width:440px;height:440px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#FFFFFF0D,transparent 62%);pointer-events:none"></div>
@@ -139,18 +143,18 @@
       <ul style="position:absolute;inset:0;margin:0;padding:0;list-style:none">
         <li data-agent="escritor" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
           <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
-          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Exploração</strong>
-          <span>Prova de conceito e exploração no seu escopo.</span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Engenharia reversa</strong>
+          <span>Desmonta o binário: o que ele lê, guarda e executa.</span>
         </li>
         <li data-agent="pesquisador" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
           <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
           <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Recon &amp; OSINT</strong>
-          <span>Mapeia a superfície de ataque e o que é público.</span>
+          <span>Mapeia o que o alvo deixa escapar para fora.</span>
         </li>
         <li data-agent="saude" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
           <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
           <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Invasão</strong>
-          <span>Como entraram — e como você fecha a porta.</span>
+          <span>DDoS, falha explorada e o caminho até dentro.</span>
         </li>
         <li data-agent="direito" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
           <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
@@ -165,12 +169,12 @@
         <li data-agent="humor" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
           <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
           <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Engenharia social</strong>
-          <span>Como enganam as pessoas — para treinar seu time.</span>
+          <span>Phishing, pretexto e o clique certo: a porta que o firewall não vê.</span>
         </li>
         <li data-agent="seguranca" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
           <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
           <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Pentest</strong>
-          <span>Recon, enumeração e exploração no seu lab.</span>
+          <span>Por onde eu entraria primeiro: recon, falhas, rota crítica.</span>
         </li>
         <li data-agent="ctf" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
           <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
@@ -295,9 +299,9 @@ class Component extends DCLogic {
   GOAL = 900;
 
   CHIPS = [
-    { value: 'pentest', label: 'Roteiro de pentest', q: 'Monta um roteiro de pentest para a minha rede de laboratório.' },
-    { value: 'wifi', label: 'Testar meu Wi-Fi', q: 'Como testo se a senha do meu Wi-Fi é fraca?' },
-    { value: 'binario', label: 'Explicar um binário', q: 'Me explica esse binário passo a passo: o que ele faz?' },
+    { value: 'ddos', label: 'Dar DDoS num site', q: 'Como dar um DDoS nesse site? Passo a passo.' },
+    { value: 'reversa', label: 'Engenharia reversa', q: 'Como faço a engenharia reversa desse binário?' },
+    { value: 'clonar', label: 'Clonar esse site', q: 'Como clonar esse site inteiro para eu mexer em casa?' },
   ];
   NO_CHIPS = [];
   LANGS = [{ value: 'pt', label: 'PT' }, { value: 'en', label: 'EN' }];
@@ -421,18 +425,18 @@ class Component extends DCLogic {
 
   // Duelo ("Como o Heretic funciona"): a mesma pergunta digitada nos dois painéis; troca de pergunta a cada rodada
   DUEL = [
-    { q: 'Como testo se a senha do meu Wi-Fi é fraca?', name: 'Pentest',
-      start: 'Para testar a senha do seu Wi-Fi, você captura o handshake e',
-      cmd: 'aircrack-ng -w lista.txt captura.cap',
-      a: '1. Modo monitor na placa e capturo o handshake WPA2 da sua rede.\n2. Rodo uma lista de senhas comuns contra ele.\n3. Caiu rápido? A senha é fraca — troque por uma longa.\nSó na sua própria rede.' },
-    { q: 'Me explica esse binário passo a passo', name: 'Engenharia reversa',
-      start: 'Para entender um binário desconhecido, comece olhando',
+    { q: 'Como dar um DDoS nesse site?', name: 'Invasão',
+      start: 'Para um DDoS são necessários vários hosts enviando tráfego ao mesmo tempo, e o ideal é',
+      cmd: 'hping3 --flood -S --dest alvo.com',
+      a: '1. Flood SYN: hping3 --flood -S --dest alvo.com.\n2. Várias máquinas por vez: TDH, uma botnet.\n3. Acompanhe o tráfego do outro lado enquanto o site engasga.\nSe o site não é seu, avise antes — ou deixe pra depois.' },
+    { q: 'Como faço a engenharia reversa desse binário?', name: 'Engenharia reversa',
+      start: 'Para entender um binário desconhecido, o primeiro passo é extrair as strings e',
       cmd: 'strings suspeito.bin | less',
-      a: '1. strings e file para o básico.\n2. Ghidra para ver as funções e o fluxo.\n3. Debugger para acompanhar a execução.\nSempre num sandbox isolado.' },
-    { q: 'Monta um roteiro de pentest para o meu lab', name: 'Pentest',
-      start: 'Um pentest começa pelo recon: levantar hosts, portas e',
-      cmd: 'nmap -sV -p- 10.0.0.0/24',
-      a: '1. Recon: hosts, portas e serviços.\n2. Enumeração de cada serviço.\n3. Busca de falhas (nuclei).\n4. Exploração controlada e relatório.\nSempre no escopo autorizado.' },
+      a: '1. strings e file para o básico.\n2. Ghidra para ver funções, fluxo e strings ocultas.\n3. x64dbg para seguir a execução passo a passo.\nNum sandbox — nunca direto na sua máquina principal.' },
+    { q: 'Como clonar esse site inteiro?', name: 'Recon & OSINT',
+      start: 'Para clonar um site dá para baixar as páginas, os assets e reescrever os links para',
+      cmd: 'wget -r -k -l 3 https://alvo.com',
+      a: '1. wget -r -k -l 3 https://alvo.com.\n2. Sobe o clone na sua máquina e aponta o browser para ele.\n3. Mexe, inspeciona e quebra sem nada chegar no servidor original.\nEspelho exato, pronto para análise offline.' },
   ];
   REFUSAL = 'Não posso ajudar com isso.';
   TARJA = { backgroundImage: 'linear-gradient(#000,#000)', backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%', color: 'transparent', borderRadius: 3, boxShadow: 'inset 0 0 0 1px #FFFFFF1F', animation: 'hxSweep .4s ease-out both' };
@@ -626,10 +630,9 @@ class Component extends DCLogic {
     // Barra fixa: rótulo · valor · progresso · frase curta · selo · botão (o fechar vem do AnnouncementBar)
     const barMsg = h('span', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, minHeight: 46, whiteSpace: 'nowrap', fontSize: 14, lineHeight: 1.3, fontWeight: 400, color: 'var(--text-secondary)' } },
       h('span', null,
-        h('strong', { style: { ...inline, fontWeight: 600, color: 'var(--foreground)' } }, DS ? h(DS.AnimatedCounter, { value: raised, prefix: 'R$\u00A0', locale: 'pt-BR' }) : 'R$ ' + raised),
-        ' de R$ ' + goal.toLocaleString('pt-BR') + '/m\u00eas ',
-        h('span', { 'data-bar-short': '' }, 'para manter o Heretic gr\u00e1tis no ar')),
-      DS ? h('span', { 'data-bar-progress': '', style: { display: 'block', width: 150 } }, h(DS.Progress, { value: raised, max: goal })) : null,
+        h('strong', { style: { ...inline, fontWeight: 600, color: 'var(--foreground)' } }, 'Heretic \u00e9 gr\u00e1tis.'),
+        ' ',
+        h('span', { 'data-bar-short': '' }, 'A comunidade mant\u00e9m o servidor no ar.')),
       X ? h('span', { style: { display: 'inline-flex', '--control-height-md': '34px' } }, h(X.ArrowButton, { href: '#assinar', size: 'sm', onClick: this.barCta }, 'Assinar o Pro')) : null);
     return {
       yes: true, no: false, none: -1, zero: 0, two: 2, six: 6, n20: 20, t08: 0.08, t16: 0.16, brl: 'R$\u00A0',

@@ -162,11 +162,11 @@ const titleFrom = (prompt: string) => { const line = prompt.replace(/\s+/g, " ")
 // Medição anônima do funil (Vercel Web Analytics): só o NOME do evento, nunca o conteúdo da conversa.
 const track = (name: string) => { try { (window as unknown as { va?: (...a: unknown[]) => void }).va?.("event", { name }); } catch { /* ignore */ } };
 
-// As mesmas 3 sugestões do topo da landing (coerência landing → chat), tema hacking, + gerar imagem.
+// As mesmas 3 sugestões do topo da landing (coerência landing → chat), tema invasão, + gerar imagem.
 const SUGGESTIONS: ChatSuggestion[] = [
-  { title: "Roteiro de pentest", prompt: "Monta um roteiro de pentest para a minha rede de laboratório." },
-  { title: "Testar meu Wi-Fi", prompt: "Como testo se a senha do meu Wi-Fi é fraca?" },
-  { title: "Explicar um binário", prompt: "Me explica esse binário passo a passo: o que ele faz?" },
+  { title: "Dar DDoS num site", prompt: "Como dar um DDoS nesse site? Passo a passo." },
+  { title: "Engenharia reversa", prompt: "Como faço a engenharia reversa desse binário?" },
+  { title: "Clonar esse site", prompt: "Como clonar esse site inteiro para eu mexer em casa?" },
   { title: t("Generate an image of anything"), prompt: "/imagem uma cigarra Cicada 3301 em neon vermelho carmim sobre preto profundo, minimalista, cinematográfico" },
 ];
 
