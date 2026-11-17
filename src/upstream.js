@@ -245,6 +245,38 @@ function shouldSearch(text) {
   return SEARCH_HINTS.test(t);
 }
 
+// Upgrade (dono 17/11): o PRÓPRIO modelo decide se precisa buscar (classificador rápido SIM/NAO).
+// Modelo pequeno e barato, não-streaming, timeout curto. Em erro/timeout → null (cai na heurística).
+async function decideSearchLLM(question) {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) return null;
+  const model = process.env.ROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct';
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 6000);
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`, 'HTTP-Referer': process.env.OPENROUTER_REFERER || 'https://heretic.vercel.app' },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: 'Você decide se uma mensagem precisa de BUSCA NA INTERNET agora para ser bem respondida. PRECISA buscar quando pede: fato atual ou recente, um repositório/ferramenta/site específico, versão/preço/CVE, achar/encontrar algo, ou um link real. NÃO precisa para conhecimento geral, explicar conceito, escrever código, redação ou conversa. Responda SOMENTE com a palavra SIM ou NAO.' },
+          { role: 'user', content: String(question).slice(0, 800) },
+        ],
+        max_tokens: 2,
+        temperature: 0,
+      }),
+      signal: ac.signal,
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const out = (data?.choices?.[0]?.message?.content || '').trim().toUpperCase();
+    if (out.startsWith('SIM')) return true;
+    if (out.startsWith('NAO') || out.startsWith('NÃO') || out.startsWith('NO')) return false;
+    return null;
+  } catch { return null; } finally { clearTimeout(to); }
+}
+
 function buildSystemPrompt(userPersona, uncensored) {
   if (uncensored) return ANTI_CENSORSHIP_PREFIX + (userPersona || '');
   return userPersona || '';
@@ -318,8 +350,16 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
   let lastErr = null, emitted = false, lastRoundText = '';
   // Pedido original do usuário (o juiz precisa do pedido de verdade, não do FORCE_REMINDER).
   const userQuestion = (payload.messages || []).filter(m => m.role === 'user').pop()?.content || '';
-  // A IA decide sozinha se busca (sem botão): só no OpenRouter e quando a pergunta pede.
-  const webSearch = route.provider === 'openrouter' && shouldSearch(userQuestion);
+  // A IA decide sozinha se busca (sem botão). Upgrade: um modelo rápido classifica (SIM/NAO);
+  // atalho pros casos óbvios (link/repo) pra não pesar; heurística como fallback se o classificador falhar.
+  let webSearch = false;
+  if (route.provider === 'openrouter') {
+    const q = (userQuestion || '').trim();
+    if (q.length >= 8) {
+      if (/https?:\/\/|github\.com|gitlab\.com/i.test(q)) webSearch = true;
+      else { const llm = await decideSearchLLM(q); webSearch = (llm === null) ? shouldSearch(q) : llm; }
+    }
+  }
   if (webSearch) systemPrompt += '\n\n## Busca na web ativa\nVocê recebeu resultados de busca da web no contexto. Use-os para dar fatos atuais e LINKS REAIS (repos no GitHub, sites, versões), e cite os links de verdade. Nunca invente URL.';
   for (let forces = 0; forces <= MAX_FORCES; forces++) {
     const active = forces < MAX_FORCES; // a última rodada nunca corta: entrega a resposta como sair
