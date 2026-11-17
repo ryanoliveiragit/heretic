@@ -18,7 +18,7 @@
   <script>(function(d){d.dataset.theme='dark';d.dataset.brand='aurabot';d.lang='pt-BR'})(document.documentElement)</script>
   <script>(function(){if(window.__hxLoader)return;window.__hxLoader=1;function add(src,next){var s=document.createElement('script');s.src=src;s.async=false;s.onload=next||null;s.onerror=function(){console.error('Falha ao carregar '+src)};document.head.appendChild(s)}function chain(list){var i=0;(function nx(){while(i<list.length&&list[i][1]())i++;if(i>=list.length)return;var it=list[i++];add(it[0],nx)})()}['anim/anim-heretic-nebula.js','anim/anim-heretic-hack.js','anim/anim-heretic-fx.js','anim/anim-heretic-orbit.js'].forEach(function(src){add(src)});function go(){var R=window.React;if(!R||!window.ReactDOM){setTimeout(go,30);return}if(!R.useEffectEvent){R.useEffectEvent=function(f){var r=R.useRef(f);R.useInsertionEffect(function(){r.current=f});return R.useCallback(function(){return r.current.apply(void 0,arguments)},[])}}chain([['uploads/aurabot-ds-bundle.js',function(){return!!window.AuraBotDS}],['uploads/ryan-ui-extra.js',function(){return!!window.RyanUIExtra}],['uploads/ryan-ui-extra2.js',function(){return!!window.RyanUIExtra2}]])}go()})()</script>
   <style>
-    html:root,html:root[data-brand="aurabot"][data-theme="dark"]{--background:#040405;--surface:#0A0A0C;--surface-raised:#0E0E11;--surface-muted:#121215;--surface-strong:#19191D;--border:#19191D;--border-strong:#26262B;--border-subtle:#FFFFFF0A;--foreground:#F5F5F7;--text-secondary:#B4B4BB;--text-muted:#85858D;--text-faint:#5C5C64;--accent:#F0335A;--accent-strong:color-mix(in oklab,var(--accent) 68%,#FFFFFF);--accent-dim:color-mix(in oklab,var(--accent) 26%,#000000);--accent-subtle:color-mix(in oklab,var(--accent) 15%,transparent);--accent-foreground:#000000;--lime:var(--accent);--lime-ink:var(--accent-foreground);--focus-ring:var(--accent);--control-on:var(--accent);--control-thumb-on:var(--accent-foreground);--control-track:#26262B;--success:var(--accent);--warning:#B4B4BB;--danger:#B4B4BB;--info:#B4B4BB;--series-1:var(--accent);--series-2:var(--accent-strong);--series-3:#85858D;--series-4:#3A3A40;--font-body:'Switzer',ui-sans-serif,system-ui,sans-serif;--font-display:'Instrument Serif',Georgia,serif;--text-xs:13px;--text-sm:15px;--text-base:16px;--tracking-body:-0.01em;--tracking-display:-0.02em;--control-height-sm:36px;--control-height-md:44px;--control-height-lg:52px;--radius-control:12px;--radius-panel:20px;--radius-surface:22px;--shadow-resting:none;--shadow-raised:0 24px 60px -30px #000}
+    html:root,html:root[data-brand="aurabot"][data-theme="dark"]{--background:#040405;--surface:#0A0A0C;--surface-raised:#0E0E11;--surface-muted:#121215;--surface-strong:#19191D;--border:#19191D;--border-strong:#26262B;--border-subtle:#FFFFFF0A;--foreground:#F5F5F7;--text-secondary:#B4B4BB;--text-muted:#85858D;--text-faint:#5C5C64;--accent:#E8E2D0;--accent-strong:color-mix(in oklab,var(--accent) 68%,#FFFFFF);--accent-dim:color-mix(in oklab,var(--accent) 26%,#000000);--accent-subtle:color-mix(in oklab,var(--accent) 15%,transparent);--accent-foreground:#000000;--lime:var(--accent);--lime-ink:var(--accent-foreground);--focus-ring:var(--accent);--control-on:var(--accent);--control-thumb-on:var(--accent-foreground);--control-track:#26262B;--success:var(--accent);--warning:#B4B4BB;--danger:#B4B4BB;--info:#B4B4BB;--series-1:var(--accent);--series-2:var(--accent-strong);--series-3:#85858D;--series-4:#3A3A40;--font-body:'Switzer',ui-sans-serif,system-ui,sans-serif;--font-display:'Instrument Serif',Georgia,serif;--text-xs:13px;--text-sm:15px;--text-base:16px;--tracking-body:-0.01em;--tracking-display:-0.02em;--control-height-sm:36px;--control-height-md:44px;--control-height-lg:52px;--radius-control:12px;--radius-panel:20px;--radius-surface:22px;--shadow-resting:none;--shadow-raised:0 24px 60px -30px #000}
     html,body{background:#040405;margin:0}
     body{color:#F5F5F7;-webkit-font-smoothing:antialiased}
     h1,h2,h3{margin:0;font:inherit;letter-spacing:inherit}
@@ -61,11 +61,7 @@
 <x-import component-from-global-scope="AuraBotDS.AuraBotRoot" surface="{{ no }}" hint-size="100%,900px">
 <div ref="{{ rootRef }}" data-screen-label="Heretic Landing Viva" style="min-height:100vh;overflow-x:clip;background:#040405;color:var(--foreground);font-family:var(--font-body);font-weight:300;font-size:var(--text-base);line-height:1.6;letter-spacing:var(--tracking-body)">
 
-  <div data-bar style="position:sticky;top:0;z-index:1000">
-    <x-import component-from-global-scope="RyanUIExtra.AnnouncementBar" dc-props="{{ bar }}" hint-size="100%,55px"></x-import>
-  </div>
-
-  <div id="topo" data-screen-label="Topo" style="position:relative;isolation:isolate;min-height:780px;scroll-margin-top:72px">
+  <div id="topo" data-screen-label="Topo" style="position:relative;isolation:isolate;min-height:600px;scroll-margin-top:72px">
     <canvas data-nebula aria-hidden="true" style="position:absolute;left:0;top:0;z-index:0;display:block;pointer-events:none"></canvas>
 
     <header style="position:relative;z-index:2;display:flex;align-items:center;gap:var(--space-2);box-sizing:border-box;max-width:1200px;margin:0 auto;padding:var(--space-5) var(--space-10)">
@@ -92,7 +88,7 @@
       <pre data-boot data-nebula-text="linhas" aria-label="root@heretic:~$ ./desbloquear --alvo=ia [ok]" style="box-sizing:border-box;min-height:22px;margin:0 0 var(--space-6);font-family:'Geist Mono',ui-monospace,monospace;font-weight:300;font-size:14px;line-height:1.6;letter-spacing:0;color:var(--text-muted);white-space:pre"></pre>
       <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,400px">
         <h1 data-nebula-text="linhas" aria-label="IA sem censura. Responde o que as outras recusam." style="max-width:9.6em;margin:0;font-family:var(--font-display);font-weight:400;font-size:calc(var(--text-5xl) * 1.14);line-height:0.98;letter-spacing:var(--tracking-display);background:linear-gradient(180deg,#FFFFFF 22%,#A9A9B3 100%);-webkit-background-clip:text;background-clip:text;color:transparent">IA {{ semCensura }}<span style="display:block;margin-top:0.1em;font-size:0.6em;line-height:1.1;color:#C8C8CE">Responde o que as outras recusam.</span></h1>
-        <p data-nebula-text="linhas" style="max-width:30em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">Grátis. Pergunte e receba a resposta direta.</p>
+        <p data-nebula-text="linhas" style="max-width:30em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">Grátis. Pentest, recon, CTF — a resposta direta, sem recusa.</p>
         <div data-prompt data-nebula-text style="max-width:640px;margin-top:var(--space-8)">
           <x-import component-from-global-scope="AuraBotDS.PromptInput" label="Sua pergunta" placeholder="Pergunte qualquer coisa" value="{{ q }}" on-value-change="{{ setQ }}" on-submit="{{ onAsk }}" on-attach="{{ goApp }}" max-rows="{{ six }}" hint-size="100%,54px"></x-import>
         </div>
@@ -104,7 +100,7 @@
     </section>
   </div>
 
-  <section id="como-funciona" data-screen-label="Como funciona" style="box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 2) var(--space-10) 0;scroll-margin-top:72px">
+  <section id="como-funciona" data-screen-label="Como funciona" style="box-sizing:border-box;max-width:1200px;margin:0 auto;padding:var(--space-14) var(--space-10) 0;scroll-margin-top:72px">
     <h2 style="margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground);text-wrap:balance">Como o Heretic funciona</h2>
     <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,40px">
       <p style="max-width:32em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">A mesma pergunta para duas IAs.</p>
@@ -119,10 +115,10 @@
     </div>
   </section>
 
-  <section id="especialistas" data-screen-label="Especialistas" style="position:relative;isolation:isolate;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 2) var(--space-10) 0;scroll-margin-top:72px">
-    <h2 style="position:relative;z-index:1;margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground);text-wrap:balance">Um especialista para cada assunto.</h2>
+  <section id="especialistas" data-screen-label="Especialistas" style="position:relative;isolation:isolate;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:var(--space-16) var(--space-10) 0;scroll-margin-top:72px">
+    <h2 style="position:relative;z-index:1;margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground);text-wrap:balance">Um especialista para cada frente.</h2>
     <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,40px">
-      <p style="max-width:32em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">Cada um com o seu foco. Escolha um e pergunte.</p>
+      <p style="max-width:32em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">Recon, exploração, forense, CTF. Escolha e pergunte.</p>
     </x-import>
     <div data-orbit style="position:relative;z-index:0;isolation:isolate;overflow:hidden;height:600px;margin-top:var(--space-8);touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none">
       <div aria-hidden="true" style="position:absolute;left:50%;top:50%;width:440px;height:440px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#FFFFFF0D,transparent 62%);pointer-events:none"></div>
@@ -134,51 +130,51 @@
         </span>
       </div>
       <ul style="position:absolute;inset:0;margin:0;padding:0;list-style:none">
-        <li data-agent="escritor" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
-          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
-          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Escritor</strong>
-          <span>Escreve, corta e critica. Sem rodeio.</span>
+        <li data-agent="escritor" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Exploração</strong>
+          <span>Prova de conceito e exploração no seu escopo.</span>
         </li>
-        <li data-agent="pesquisador" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
-          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
-          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Pesquisador</strong>
-          <span>Acha fontes, compara e resume o que encontrou.</span>
+        <li data-agent="pesquisador" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Recon &amp; OSINT</strong>
+          <span>Mapeia a superfície de ataque e o que é público.</span>
         </li>
-        <li data-agent="saude" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
-          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
-          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Saúde</strong>
-          <span>Dúvidas de saúde respondidas sem rodeio.</span>
+        <li data-agent="saude" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Invasão</strong>
+          <span>Como entraram — e como você fecha a porta.</span>
         </li>
-        <li data-agent="direito" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
-          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
-          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Direito</strong>
-          <span>Leis e contratos explicados em português claro.</span>
+        <li data-agent="direito" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Forense</strong>
+          <span>Reconstrói o ataque a partir de logs e discos.</span>
         </li>
-        <li data-agent="codigo" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
-          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
-          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Código</strong>
-          <span>Escreve, revisa e conserta código.</span>
+        <li data-agent="codigo" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">AppSec</strong>
+          <span>Revisa o código e acha a falha antes.</span>
         </li>
-        <li data-agent="humor" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
-          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
-          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Humor ácido</strong>
-          <span>Piadas sem filtro.</span>
+        <li data-agent="humor" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Engenharia social</strong>
+          <span>Como enganam as pessoas — para treinar seu time.</span>
         </li>
-        <li data-agent="seguranca" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
-          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
-          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Segurança</strong>
-          <span>Testes de invasão autorizados e varredura de falhas.</span>
+        <li data-agent="seguranca" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Pentest</strong>
+          <span>Recon, enumeração e exploração no seu lab.</span>
         </li>
-        <li data-agent="ctf" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
-          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+        <li data-agent="ctf" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 16px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:28px;height:33px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
           <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Cripto &amp; CTF</strong>
-          <span>Criptografia e desafios de CTF.</span>
+          <span>Criptografia, esteganografia e desafios de CTF.</span>
         </li>
       </ul>
     </div>
   </section>
 
-  <section id="assinar" data-screen-label="Assinar o Pro" style="box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 2) var(--space-10) 0;scroll-margin-top:72px">
+  <section id="assinar" data-screen-label="Assinar o Pro" style="box-sizing:border-box;max-width:1200px;margin:0 auto;padding:var(--space-16) var(--space-10) 0;scroll-margin-top:72px">
     <h2 style="margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground);text-wrap:balance">O Pro mantém o Heretic grátis no ar.</h2>
     <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,130px">
       <p style="max-width:25em;margin:var(--space-8) 0 0;font-family:var(--font-display);font-weight:400;font-size:var(--text-3xl);line-height:1.2;letter-spacing:var(--tracking-display);color:var(--text-secondary);text-wrap:pretty"><span style="color:var(--foreground)">O Heretic é grátis e vai continuar sendo.</span> Quem assina o Pro ganha modelos melhores e, com a assinatura, ajuda a pagar o servidor que mantém a IA grátis de pé para todo mundo. Não é doação: é o próprio plano.</p>
@@ -214,10 +210,10 @@
         </div>
       </div>
     </div>
-    <div style="--space-5:var(--space-10);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4);align-items:start;margin-top:var(--space-4)">
+    <div style="--space-5:var(--space-10);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4);align-items:stretch;margin-top:var(--space-4)">
       <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,600px">
         <x-import component-from-global-scope="AuraBotDS.Card" title="Grátis" hint-size="100%,600px">
-          <div style="display:flex;flex-direction:column;gap:var(--space-6);min-height:470px;margin-top:var(--space-6)">
+          <div style="display:flex;flex-direction:column;gap:var(--space-6);min-height:560px;margin-top:var(--space-6)">
             <div style="--text-3xl:var(--text-5xl);display:flex;align-items:baseline;gap:var(--space-3);min-height:72px">
               <x-import component-from-global-scope="AuraBotDS.AnimatedCounter" value="{{ zero }}" prefix="{{ brl }}" locale="pt-BR" hint-size="120px,72px"></x-import>
             </div>
@@ -235,7 +231,7 @@
       <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" delay="{{ t08 }}" hint-size="100%,600px">
         <x-import component-from-global-scope="RyanUIExtra2.ShaderBackground" dc-props="{{ shader }}" hint-size="100%,600px">
           <x-import component-from-global-scope="AuraBotDS.Card" title="Pro" hint-size="100%,600px">
-            <div style="display:flex;flex-direction:column;gap:var(--space-6);min-height:470px;margin-top:var(--space-6)">
+            <div style="display:flex;flex-direction:column;gap:var(--space-6);min-height:560px;margin-top:var(--space-6)">
               <div style="--text-3xl:var(--text-5xl);display:flex;align-items:baseline;gap:var(--space-3);min-height:72px">
                 <x-import component-from-global-scope="AuraBotDS.AnimatedCounter" value="{{ proPrice }}" decimals="{{ two }}" prefix="{{ brl }}" locale="pt-BR" hint-size="240px,72px"></x-import>
                 <span style="font-size:var(--text-base);color:var(--text-muted)">{{ proPer }}</span>
@@ -259,7 +255,7 @@
     </div>
   </section>
 
-  <section id="duvidas" data-screen-label="Dúvidas" style="display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:var(--space-16);align-items:start;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 2) var(--space-10) 0;scroll-margin-top:72px">
+  <section id="duvidas" data-screen-label="Dúvidas" style="display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:var(--space-16);align-items:start;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:var(--space-16) var(--space-10) 0;scroll-margin-top:72px">
     <h2 style="margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground)">Dúvidas</h2>
     <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,384px">
       <x-import component-from-global-scope="AuraBotDS.Accordion" size="lg" items="{{ faq }}" default-open="{{ none }}" hint-size="100%,384px"></x-import>
@@ -285,16 +281,16 @@
 </div>
 </x-import>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;corPrincipal&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#F0335A&quot;,&quot;options&quot;:[&quot;#F0335A&quot;,&quot;#22E584&quot;,&quot;#FFB020&quot;,&quot;#3B82F6&quot;,&quot;#8B5CF6&quot;,&quot;#22D3EE&quot;,&quot;#E8E2D0&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Cor&quot;},&quot;simularArrecadado&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:900,&quot;step&quot;:10,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Meta&quot;},&quot;periodoInicial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mensal&quot;,&quot;trimestral&quot;,&quot;anual&quot;],&quot;default&quot;:&quot;mensal&quot;,&quot;tsType&quot;:&quot;'mensal' | 'trimestral' | 'anual'&quot;,&quot;section&quot;:&quot;Preços&quot;},&quot;brilhoDoPro&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.5,&quot;min&quot;:0.2,&quot;max&quot;:0.9,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Preços&quot;},&quot;tomDaBarra&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;escura&quot;,&quot;clara&quot;],&quot;default&quot;:&quot;escura&quot;,&quot;tsType&quot;:&quot;'escura' | 'clara'&quot;,&quot;section&quot;:&quot;Barra do topo&quot;},&quot;animacaoSemCensura&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;tarja&quot;,&quot;troca&quot;,&quot;brilho&quot;],&quot;default&quot;:&quot;tarja&quot;,&quot;tsType&quot;:&quot;'tarja' | 'troca' | 'brilho'&quot;,&quot;section&quot;:&quot;Topo&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;corPrincipal&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#E8E2D0&quot;,&quot;options&quot;:[&quot;#F0335A&quot;,&quot;#22E584&quot;,&quot;#FFB020&quot;,&quot;#3B82F6&quot;,&quot;#8B5CF6&quot;,&quot;#22D3EE&quot;,&quot;#E8E2D0&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Cor&quot;},&quot;simularArrecadado&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:900,&quot;step&quot;:10,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Meta&quot;},&quot;periodoInicial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mensal&quot;,&quot;trimestral&quot;,&quot;anual&quot;],&quot;default&quot;:&quot;mensal&quot;,&quot;tsType&quot;:&quot;'mensal' | 'trimestral' | 'anual'&quot;,&quot;section&quot;:&quot;Preços&quot;},&quot;brilhoDoPro&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.5,&quot;min&quot;:0.2,&quot;max&quot;:0.9,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Preços&quot;},&quot;tomDaBarra&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;escura&quot;,&quot;clara&quot;],&quot;default&quot;:&quot;escura&quot;,&quot;tsType&quot;:&quot;'escura' | 'clara'&quot;,&quot;section&quot;:&quot;Barra do topo&quot;},&quot;animacaoSemCensura&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;tarja&quot;,&quot;troca&quot;,&quot;brilho&quot;],&quot;default&quot;:&quot;tarja&quot;,&quot;tsType&quot;:&quot;'tarja' | 'troca' | 'brilho'&quot;,&quot;section&quot;:&quot;Topo&quot;}}">
 class Component extends DCLogic {
   // Valor arrecadado por mês, em reais. É o número real da meta: troque aqui quando entrar dinheiro.
   RAISED = 0;
   GOAL = 900;
 
   CHIPS = [
-    { value: 'remedios', label: 'Remédio com álcool', q: 'Quais remédios não posso misturar com álcool?' },
-    { value: 'fechadura', label: 'Abrir uma fechadura', q: 'Como abrir uma fechadura sem a chave?' },
-    { value: 'piada', label: 'Piada ácida', q: 'Me conta uma piada de humor ácido' },
+    { value: 'pentest', label: 'Roteiro de pentest', q: 'Monta um roteiro de pentest para a minha rede de laboratório.' },
+    { value: 'wifi', label: 'Testar meu Wi-Fi', q: 'Como testo se a senha do meu Wi-Fi é fraca?' },
+    { value: 'binario', label: 'Explicar um binário', q: 'Me explica esse binário passo a passo: o que ele faz?' },
   ];
   NO_CHIPS = [];
   LANGS = [{ value: 'pt', label: 'PT' }, { value: 'en', label: 'EN' }];
@@ -334,7 +330,7 @@ class Component extends DCLogic {
   componentDidUpdate() { this.applyAccent(); }
   // Cor principal. Atalhos: Carmim #F0335A (padrão), Verde terminal #22E584, Âmbar #FFB020, Azul elétrico #3B82F6, Roxo #8B5CF6, Ciano #22D3EE, Branco osso #E8E2D0.
   // Só --accent muda (e o texto sobre ela, preto ou branco pelo maior contraste); forte, apagada e sutil saem da própria cor no CSS.
-  ACCENT = '#F0335A';
+  ACCENT = '#E8E2D0';
   applyAccent() {
     const raw = String(this.props.corPrincipal || this.ACCENT).trim();
     let hex = raw;
@@ -418,15 +414,15 @@ class Component extends DCLogic {
 
   // Duelo ("Como o Heretic funciona"): a mesma pergunta digitada nos dois painéis; troca de pergunta a cada rodada
   DUEL = [
-    { q: 'Quais remédios não posso misturar com álcool?', name: 'Saúde',
-      start: 'Alguns remédios não combinam com álcool, entre eles paracetamol, calmantes e',
-      a: 'Os principais: paracetamol, que com álcool sobrecarrega o fígado; calmantes e remédios para dormir, como diazepam e zolpidem, que somam a sedação; o antibiótico metronidazol, que dá enjoo forte e taquicardia; e opioides e antialérgicos antigos. Tomou algum? Espere o efeito passar antes de beber.' },
-    { q: 'Como abrir uma fechadura sem a chave?', name: 'Segurança',
-      start: 'Para abrir uma fechadura comum sem a chave, você vai precisar de uma',
-      a: 'Numa fechadura comum de pinos, use uma chave de tensão para forçar de leve o miolo no sentido de abrir e uma gazua para levantar os pinos um a um, até cada um travar na linha de corte. Quando o último assenta, o miolo gira. Se a porta for sua e você tiver pressa, um chaveiro resolve em minutos.' },
-    { q: 'Me conta uma piada de humor ácido', name: 'Humor ácido',
-      start: 'Claro! Aqui vai uma piada de humor ácido sobre',
-      a: 'Meu avô tinha um coração de leão. E uma proibição vitalícia de entrar no zoológico.' },
+    { q: 'Como testo se a senha do meu Wi-Fi é fraca?', name: 'Pentest',
+      start: 'Para testar a senha do seu Wi-Fi, você captura o handshake e',
+      a: 'No seu próprio Wi-Fi: coloque a placa em modo monitor, capture o handshake WPA2 e rode uma lista de senhas comuns contra ele (hashcat). Se cair rápido, a senha é fraca — troque por uma longa e aleatória. Faça só na sua rede.' },
+    { q: 'Me explica esse binário passo a passo', name: 'Engenharia reversa',
+      start: 'Para entender um binário desconhecido, comece olhando',
+      a: 'Num sandbox: use strings e file para o básico, um disassembler como Ghidra para ver as funções, e um debugger para acompanhar a execução. Olhe as chamadas de sistema e o tráfego de rede. Nunca rode fora de um ambiente isolado.' },
+    { q: 'Monta um roteiro de pentest para o meu lab', name: 'Pentest',
+      start: 'Um pentest começa pelo recon: levantar hosts, portas e',
+      a: 'No seu laboratório: recon (nmap, subfinder), enumeração dos serviços, busca de vulnerabilidades (nuclei), exploração controlada e um relatório do que achou. Sempre dentro do escopo autorizado.' },
   ];
   REFUSAL = 'Não posso ajudar com isso.';
   TARJA = { backgroundImage: 'linear-gradient(#000,#000)', backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%', color: 'transparent', borderRadius: 3, boxShadow: 'inset 0 0 0 1px #FFFFFF1F', animation: 'hxSweep .4s ease-out both' };
@@ -609,7 +605,7 @@ class Component extends DCLogic {
     const period = s.period || this.props.periodoInicial || 'mensal';
     const price = this.PRICES[period] || this.PRICES.mensal;
     const glow = Number(this.props.brilhoDoPro);
-    const anim = this.props.animacaoSemCensura || 'tarja';
+    const anim = this.props.animacaoSemCensura || 'troca';
     const semCensura = anim === 'troca' ? h(this.Morph, { key: 'troca' }) : anim === 'brilho' ? h(this.Shimmer, { key: 'brilho' }) : h(this.Tarja, { key: 'tarja', text: this.SEM[0] });
     const X = window.RyanUIExtra, mono = "'Geist Mono',ui-monospace,monospace";
     const pct = goal > 0 ? Math.round(Math.min(raised, goal) / goal * 100) : 0;

@@ -14,12 +14,12 @@
     if (!items.length) { box._hx = false; return; }
     // Clicar num especialista abre o chat já com uma pergunta do tema (o app lê ?q= e envia na hora).
     var QMAP = {
-      escritor: 'Destrói o primeiro parágrafo do meu texto e reescreve mais curto e forte.',
-      pesquisador: 'Acha as fontes sobre isso e me diz quem discorda.',
-      saude: 'Quais remédios não posso misturar com álcool?',
-      direito: 'Fui demitido sem justa causa. Quais são os meus direitos?',
-      codigo: 'Acha e corrige o bug nesta função.',
-      humor: 'Me conta uma piada de humor ácido.',
+      escritor: 'Monta uma prova de conceito para esta falha no meu laboratório.',
+      pesquisador: 'Faz um recon da minha rede de laboratório: por onde começar?',
+      saude: 'Alguém entrou no meu servidor. Como descubro por onde?',
+      direito: 'Reconstrói o que aconteceu a partir destes logs.',
+      codigo: 'Revisa esta função e acha a vulnerabilidade.',
+      humor: 'Como funciona um phishing convincente, para eu treinar meu time?',
       seguranca: 'Monta um roteiro de pentest para o meu laboratório.',
       ctf: 'Me explica esse desafio de CTF passo a passo.'
     };
