@@ -8,7 +8,8 @@ function detect(): Lang {
     const saved = localStorage.getItem(KEY);
     if (saved === "pt" || saved === "en") return saved;
   } catch { /* private mode */ }
-  return (navigator.language || "").toLowerCase().startsWith("pt") ? "pt" : "en";
+  // Produto é pt-BR (landing só em português): abre em PT por padrão; inglês só se o visitante trocar.
+  return "pt";
 }
 
 export const lang: Lang = typeof window === "undefined" ? "en" : detect();

@@ -210,8 +210,17 @@ const HEAD_VIVA = `<title>Heretic — IA sem censura</title>
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Heretic">`;
+<meta name="apple-mobile-web-app-title" content="Heretic">
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};</script>
+<script defer src="/_vercel/insights/script.js"></script>`;
 const SW_REG = `<script>if('serviceWorker' in navigator&&!/^(localhost|127\\.0\\.0\\.1)$/.test(location.hostname)){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});});}</script>`;
+// Eventos do funil (medição anônima, só o nome do evento — nunca o conteúdo): interação no topo e intenção de assinar.
+const VIVA_EVENTS = `<script>(function(){function fire(n){try{(window.va||function(){})('event',{name:n})}catch(e){}}var topo=false;
+document.addEventListener('click',function(e){var p=e.composedPath?e.composedPath():[e.target];for(var i=0;i<p.length;i++){var el=p[i];if(!el||!el.tagName)continue;var t=((el.getAttribute&&(el.getAttribute('aria-label')||''))||el.textContent||'').replace(/\\s+/g,' ').trim();
+if(/^Assinar o Pro$/i.test(t)){fire('cta_assinar_pro');return;}
+if(el.closest&&el.closest('[aria-label="Sugest\\u00f5es de pergunta"]')){if(!topo){topo=true;fire('topo_interagiu');}return;}}},true);
+document.addEventListener('focusin',function(e){var el=e.target;if(!topo&&el&&el.matches&&el.matches('textarea,input')&&el.closest&&el.closest('[data-prompt]')){topo=true;fire('topo_interagiu');}},true);
+})();</script>`;
 function must(html, from, to, what) {
   if (!html.includes(from)) throw new Error(`landing nova: não achei ${what}`);
   return html.replace(from, to);
@@ -230,7 +239,7 @@ function pageViva() {
   html = html.replace(LANG, "");
   html = must(html, 'src="./support.js"', `src="/support.js?v=${STAMP}"`, "support.js");
   html = html.replace(/((?:anim\/anim-heretic-[\w-]+|uploads\/ryan-ui-extra2?)\.(?:js|css))/g, `$1?v=${STAMP}`);
-  html = must(html, "</body>", SW_REG + "\n</body>", "</body>");
+  html = must(html, "</body>", SW_REG + "\n" + VIVA_EVENTS + "\n</body>", "</body>");
   writeFileSync(join(PUB, "index.html"), html);
 }
 pageViva();

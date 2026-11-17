@@ -12,6 +12,17 @@
     if (box._hx) return; box._hx = true;
     var items = [].slice.call(box.querySelectorAll('li[data-agent]'));
     if (!items.length) { box._hx = false; return; }
+    // Clicar num especialista abre o chat já com uma pergunta do tema (o app lê ?q= e envia na hora).
+    var QMAP = {
+      escritor: 'Destrói o primeiro parágrafo do meu texto e reescreve mais curto e forte.',
+      pesquisador: 'Acha as fontes sobre isso e me diz quem discorda.',
+      saude: 'Quais remédios não posso misturar com álcool?',
+      direito: 'Fui demitido sem justa causa. Quais são os meus direitos?',
+      codigo: 'Acha e corrige o bug nesta função.',
+      humor: 'Me conta uma piada de humor ácido.',
+      seguranca: 'Monta um roteiro de pentest para o meu laboratório.',
+      ctf: 'Me explica esse desafio de CTF passo a passo.'
+    };
     var panel = box.querySelector('[data-orbit-panel]');
     var pName = panel && panel.querySelector('[data-orbit-name]'), pLine = panel && panel.querySelector('[data-orbit-line]'), pUse = panel && panel.querySelector('[data-orbit-use]');
     var data = items.map(function (li) {
@@ -27,7 +38,7 @@
       var k = i >= 0 ? i : pick; curK = k;
       if (!panel) return;
       if (k < 0) { pName.textContent = 'Oito especialistas'; pLine.textContent = 'Arraste para girar. Toque em um especialista.'; }
-      else { pName.textContent = data[k].name; pLine.textContent = data[k].line; pUse.href = '/app/?agent=' + encodeURIComponent(data[k].id); }
+      else { pName.textContent = data[k].name; pLine.textContent = data[k].line; pUse.href = '/app/?q=' + encodeURIComponent(QMAP[data[k].id] || data[k].name); }
       pUse.style.visibility = k < 0 ? 'hidden' : 'visible';
     }
     show(-1);

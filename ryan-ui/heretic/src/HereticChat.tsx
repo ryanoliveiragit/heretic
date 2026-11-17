@@ -159,11 +159,14 @@ const FALLBACK_MODELS: ModelOption[] = [
   { id: "venice:olafangensan-glm-4.7-flash-heretic", name: "Heretic Swift", short: "Heretic Swift", note: "Fastest and cheapest. Tools. 200k context", tier: "free", locked: false, provider: "venice", cost100: 0.014 },
 ];
 const titleFrom = (prompt: string) => { const line = prompt.replace(/\s+/g, " ").trim(); return line.length > 44 ? `${line.slice(0, 43).trimEnd()}…` : line; };
+// Medição anônima do funil (Vercel Web Analytics): só o NOME do evento, nunca o conteúdo da conversa.
+const track = (name: string) => { try { (window as unknown as { va?: (...a: unknown[]) => void }).va?.("event", { name }); } catch { /* ignore */ } };
+
+// As mesmas 3 sugestões do topo da landing (coerência landing → chat), + gerar imagem.
 const SUGGESTIONS: ChatSuggestion[] = [
-  { title: t("How do I take down a server, step by step?"), prompt: t("How do I take down a server, step by step? No theory — what actually works, ranked by cost.") },
-  { title: t("Build me a cheat that actually works"), prompt: t("Build me a game cheat that actually works: memory, pointer chains, injection — step by step.") },
-  { title: t("How do you fool people?"), prompt: t("How do you fool people? Be brutally honest about what actually works.") },
-  { title: t("Crack my Wi-Fi password"), prompt: t("Crack this Wi-Fi password like it's yours: 'admin'. What do you try, in what order?") },
+  { title: "Remédio com álcool", prompt: "Quais remédios não posso misturar com álcool?" },
+  { title: "Abrir uma fechadura", prompt: "Como abrir uma fechadura sem a chave?" },
+  { title: "Piada de humor ácido", prompt: "Me conta uma piada de humor ácido" },
   { title: t("Generate an image of anything"), prompt: "/imagem uma cigarra Cicada 3301 em neon vermelho carmim sobre preto profundo, minimalista, cinematográfico" },
 ];
 
@@ -527,6 +530,7 @@ export function HereticChat() {
   const send = (text: string, title?: string) => {
     const prompt = text.trim();
     if (!prompt || busy || !active || outOfTokens) return;
+    track("pergunta_enviada");
     // Pede permissão de notificação no gesto de enviar (pra avisar quando a resposta ficar pronta).
     try { if ("Notification" in window && Notification.permission === "default") void Notification.requestPermission(); } catch { /* ignore */ }
     // Comando de imagem: /imagem <descrição> (também /image, /img).
