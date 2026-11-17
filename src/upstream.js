@@ -25,10 +25,11 @@ export const MODEL_CATALOG = [
 ];
 
 // Rotas padrão (in-memory; resets on cold start)
+// Venice desativada (dono 17/11): rotas padrão passam a ser OpenRouter.
 let ROUTES = {
-  chat:  { model: 'venice:venice-uncensored-1-2' },
-  agent: { model: 'venice:venice-uncensored-1-2' },
-  heavy: { model: 'venice:venice-uncensored-1-2' },
+  chat:  { model: 'cognitivecomputations/dolphin-mistral-24b-venice-edition' },
+  agent: { model: 'cognitivecomputations/dolphin-mistral-24b-venice-edition' },
+  heavy: { model: 'nousresearch/hermes-4-405b' },
 };
 
 export function getRoutes() {
@@ -198,7 +199,8 @@ async function* readGuardedSSE(res, { onToken, ac, outcome, active }) {
 
 function getApiKey(provider) {
   if (provider === 'openrouter') return process.env.OPENROUTER_API_KEY;
-  if (provider === 'venice') return process.env.VENICE_API_KEY;
+  // Venice desativada (dono 17/11). Reativar com VENICE_ENABLED=1 no ambiente.
+  if (provider === 'venice') return process.env.VENICE_ENABLED === '1' ? process.env.VENICE_API_KEY : null;
   if (provider === 'pollinations') return 'free'; // provedor 100% grátis, sem chave (sentinela p/ não cair no echo)
   return null;
 }
@@ -232,19 +234,21 @@ function buildSystemPrompt(userPersona, uncensored) {
   return userPersona || '';
 }
 
-// Symmetric fallback: when one provider fails, reroute to the other one's cheapest uncensored model.
+// Fallback quando um modelo falha. Venice desativada → tudo cai para outro modelo OpenRouter.
 function fallbackCatalog(route) {
+  const or = (id) => getApiKey('openrouter') ? MODEL_CATALOG.find(m => m.id === id) : null;
   if (route.provider === 'openrouter') {
-    return getApiKey('venice') ? MODEL_CATALOG.find(m => m.id === 'venice:venice-uncensored-1-2') : null;
+    // se o modelo OR atual falhar, tenta outro OR estável (Dolphin ↔ Euryale)
+    return route.model === 'cognitivecomputations/dolphin-mistral-24b-venice-edition'
+      ? or('sao10k/l3.1-euryale-70b')
+      : or('cognitivecomputations/dolphin-mistral-24b-venice-edition');
   }
   if (route.provider === 'venice') {
-    return getApiKey('openrouter') ? MODEL_CATALOG.find(m => m.id === 'cognitivecomputations/dolphin-mistral-24b-venice-edition') : null;
+    return or('cognitivecomputations/dolphin-mistral-24b-venice-edition');
   }
-  // Heretic Free (Pollinations) é grátis mas instável ("Load failed"): cai pro Venice (ou OpenRouter)
-  // pra nunca deixar o usuário sem resposta.
+  // Heretic Free (Pollinations) é grátis mas instável ("Load failed"): cai pro OpenRouter.
   if (route.provider === 'pollinations') {
-    return getApiKey('venice') ? MODEL_CATALOG.find(m => m.id === 'venice:z-ai-glm-5-3-flash')
-      : (getApiKey('openrouter') ? MODEL_CATALOG.find(m => m.id === 'cognitivecomputations/dolphin-mistral-24b-venice-edition') : null);
+    return or('cognitivecomputations/dolphin-mistral-24b-venice-edition');
   }
   return null;
 }
@@ -253,8 +257,8 @@ function fallbackCatalog(route) {
 // FORCE_REMINDER no contexto), a resposta final vem de um modelo menos propenso a recusar.
 // Abliterated/uncensored de verdade, do mais barato pro mais caro; pula o próprio modelo atual.
 const NUCLEAR_ORDER = [
-  'venice:deepseek-v4-1-flash-uncensored',
-  'venice:venice-uncensored-1-2',
+  'nousresearch/hermes-4-405b',
+  'sao10k/l3.1-euryale-70b',
   'cognitivecomputations/dolphin-mistral-24b-venice-edition',
 ];
 function pickNuclearModel(currentId) {
@@ -273,6 +277,13 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
   const route = catalog
     ? { provider: catalog.provider, model: catalog.venice_model || catalog.id, maxCtx: catalog.ctx, tools: catalog.tools }
     : resolveRoute(mode);
+
+  // Venice desativada: se a rota ficou sem chave (ex.: modelId antigo do Venice salvo no cliente),
+  // troca para o OpenRouter grátis em vez de cair no "echo".
+  if (!getApiKey(route.provider) && route.provider !== 'pollinations' && getApiKey('openrouter')) {
+    const free = MODEL_CATALOG.find(m => m.id === 'cognitivecomputations/dolphin-mistral-24b-venice-edition');
+    if (free) { route.provider = 'openrouter'; route.model = free.id; route.maxCtx = free.ctx; route.tools = free.tools; }
+  }
 
   let messages = trimHistory(payload.messages || [], route.maxCtx);
   const apiKey = getApiKey(route.provider);

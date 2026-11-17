@@ -32,10 +32,10 @@ export const PUBLIC_MODELS_RAW = [
   // Dono (16/11): cortado de 14 p/ 4 — "não adianta ter vários e ruins".
   // ── free: 2 opções, ambas boas e baratas ──
   { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', name: 'Heretic Free', short: 'Heretic Free', note: 'Default. Uncensored, reliable, cheap (Dolphin 24B). 128k context', tier: 'free' },
-  { id: 'venice:z-ai-glm-5-3-flash', name: 'Heretic Rapid', short: 'Heretic Rapid', note: 'Smart, detailed, stable. Vision, tools. 1M context', tier: 'free' },
-  { id: 'venice:olafangensan-glm-4.7-flash-heretic', name: 'Heretic Swift', short: 'Heretic Swift', note: 'Fastest and cheapest. Tools. 200k context', tier: 'free' },
+  { id: 'sao10k/l3.1-euryale-70b', name: 'Heretic Rapid', short: 'Heretic Rapid', note: 'Smarter, best value (Euryale 70B). 128k context', tier: 'free' },
+  { id: 'thedrummer/cydonia-24b-v4.1', name: 'Heretic Swift', short: 'Heretic Swift', note: 'Fast and cheap (Cydonia 24B). 128k context', tier: 'free' },
   // ── pro: 2 degraus de potência, cada um com um papel claro ──
-  { id: 'venice:deepseek-v4-1-flash-uncensored', name: 'Heretic Deep', short: 'Heretic Deep', note: 'Reasoning for hard problems. Vision, tools. 1M context', tier: 'pro' },
+  { id: 'anthracite-org/magnum-v4-72b', name: 'Heretic Deep', short: 'Heretic Deep', note: 'Depth for hard problems and writing (Magnum 72B). 32k context', tier: 'pro' },
   { id: 'nousresearch/hermes-4-405b', name: 'Heretic Titan', short: 'Heretic Titan', note: 'Largest model, max capability. 128k context', tier: 'pro' },
 ];
 
