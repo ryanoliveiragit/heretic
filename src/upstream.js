@@ -178,6 +178,9 @@ async function* readGuardedSSE(res, { onToken, ac, outcome, active }) {
       const data = trimmed.slice(6);
       if (data === '[DONE]') { if (pend) yield* release(pend); return; }
       let json; try { json = JSON.parse(data); } catch { continue; }
+      // Fontes da busca web (OpenRouter, plugin web): chegam como anotações url_citation num chunk do stream.
+      const ann = json.choices?.[0]?.delta?.annotations || json.choices?.[0]?.message?.annotations;
+      if (Array.isArray(ann) && ann.length && outcome) outcome.sources = (outcome.sources || []).concat(ann);
       const token = json.choices?.[0]?.delta?.content;
       if (!token) continue;
       if (active && seen.length < DETECT_LIMIT) {
@@ -485,6 +488,8 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
     }
   }
   if (webSearch) systemPrompt += '\n\n## Busca na web ativa\nVocê recebeu resultados de busca da web no contexto. Use-os para dar fatos atuais e LINKS REAIS (repos no GitHub, sites, versões), e cite os links de verdade. Nunca invente URL.';
+  // Avisa o app que a busca web começou (ele mostra "Buscando na web…" até as fontes chegarem).
+  if (webSearch && onWarning) onWarning({ type: 'search', query: String(userQuestion || '').replace(/\s+/g, ' ').trim().slice(0, 120) });
   for (let forces = 0; forces <= MAX_FORCES; forces++) {
     const active = forces < MAX_FORCES; // a última rodada nunca corta: entrega a resposta como sair
     let hitRefusal = false, refusalText = '';
@@ -533,6 +538,19 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
         const outcome = { forced: false, refusalText: '' };
         let roundText = '';
         yield* readGuardedSSE(res, { onToken: (t) => { emitted = true; roundText += t; onToken && onToken(t); }, ac, outcome, active });
+        // Repassa ao app as fontes que a busca web achou (o app mostra os cartões de fontes).
+        if (onWarning && outcome.sources && outcome.sources.length) {
+          const seen = new Set(), sources = [];
+          for (const a of outcome.sources) {
+            const c = a && (a.url_citation || a);
+            const link = c && typeof c.url === 'string' ? c.url : '';
+            if (!/^https?:\/\//i.test(link) || seen.has(link)) continue;
+            seen.add(link);
+            sources.push({ url: link, title: String(c.title || '').slice(0, 160), snippet: String(c.content || '').replace(/\s+/g, ' ').slice(0, 280) });
+            if (sources.length >= 8) break;
+          }
+          if (sources.length) onWarning({ type: 'sources', sources });
+        }
         // Backstop: a regex não pega toda paráfrase → o juiz decide no fim da rodada,
         // desde que ainda haja rodada de sobra para re-executar.
         if (!outcome.forced && active && pickedId !== JUDGE_MODEL) {

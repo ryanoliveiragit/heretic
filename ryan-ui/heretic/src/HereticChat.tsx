@@ -7,11 +7,22 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import type { CSSProperties, ReactNode, TouchEvent as ReactTouchEvent } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
-import { Check, ChevronUp, Copy, Download, FileDown, FileText, Image as ImageIcon, KeyRound, Lock, MoreHorizontal, PanelLeft, Pencil, RefreshCw, Settings as SettingsIcon, SquarePen, Trash2, X, Zap } from "lucide-react";
+import { Check, Copy, Image as ImageIcon, KeyRound, Lock, MoreHorizontal, PanelLeft, Pencil, Settings as SettingsIcon, SquarePen, Trash2, X, Zap } from "lucide-react";
 import { motionTokens } from "@/lib/motion-tokens";
-import { useCopyFeedback } from "@/lib/use-copy-feedback";
-import { ThinkingShimmer } from "@/registry/components/loading-states/loading-states";
 import type { ChatConversation, ChatMessage, ChatSuggestion } from "@/registry/blocks/chat-app/chat-app-data";
+import { Button } from "@pro/button/button";
+import { Badge } from "@pro/badge/badge";
+import { AnimatedCounter } from "@pro/animated-counter/animated-counter";
+import { Progress } from "@pro/progress/progress";
+import { Tooltip } from "@pro/tooltip/tooltip";
+import { ChevronIcon, PlusCheckIcon } from "@pro/icon-morph/icon-morph";
+import { CommandPalette } from "@pro/command-palette/command-palette";
+import type { CommandItem } from "@pro/command-palette/command-palette";
+import { Dialog, DialogContent } from "@pro/dialog/dialog";
+import { Turn, estTokens } from "./turn";
+import type { FeedbackEvent, TurnMessage, WebSource } from "./turn";
+import { usePtBrComponents } from "./ptbr";
+import { KBD } from "./kbd";
 import styles from "@/registry/blocks/chat-app/chat-app.module.css";
 import { api, streamChat, getKey, setKey } from "./api";
 import { Markdown } from "./markdown";
@@ -184,8 +195,6 @@ const SUGGESTIONS: ChatSuggestion[] = [
   { title: t("Generate an image of anything"), prompt: "/imagem uma cigarra Cicada 3301 em neon vermelho carmim sobre preto profundo, minimalista, cinematográfico" },
 ];
 
-const Mask = ({ size = 16 }: { size?: number }) => <span className="mask" aria-hidden style={{ width: size, height: Math.round(size * 1.2) }} />;
-const Cicada = ({ width }: { width: number }) => <img src="/icons/cicada.svg" alt="" width={width} style={{ display: "block", height: "auto" }} />;
 // Cigarra mascarada: a mesma logo, pintável (vermelha Pro / branca grátis) e com brilho cromado opcional.
 const CicadaMask = ({ w, h, color, shimmer }: { w: number; h: number; color?: string; shimmer?: boolean }) =>
   <span aria-hidden="true" className={shimmer ? "hx-cicada hx-cicada-chrome" : "hx-cicada"} style={{ width: w, height: h, ...(color ? { ["--cic"]: color } : {}) } as CSSProperties} />;
@@ -250,6 +259,23 @@ function groupLabel(key: string): string {
   return key === "today" ? t("Today") : key === "yesterday" ? t("Yesterday") : key === "7d" ? t("Last 7 days") : t("Earlier");
 }
 
+// Cada turno do desenho = a pergunta + a resposta logo abaixo (a lista guarda as duas separadas).
+function turnsOf(messages: ChatMessage[]): Array<{ key: string; prompt?: string; reply?: TurnMessage }> {
+  const out: Array<{ key: string; prompt?: string; reply?: TurnMessage }> = [];
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i]!;
+    const next = messages[i + 1];
+    if (m.role === "user" && next && next.role === "assistant") { out.push({ key: m.id, prompt: m.text, reply: next as unknown as TurnMessage }); i++; }
+    else if (m.role === "user") out.push({ key: m.id, prompt: m.text });
+    else out.push({ key: m.id, reply: m as unknown as TurnMessage });
+  }
+  return out;
+}
+// "31k de 128k": milhares redondos no medidor de contexto.
+const ctxFmt = (n: number) => (n < 1000 ? String(Math.max(0, Math.round(n))) : `${Math.round(n / 1000)}k`);
+// Nível de qualidade do modelo (mesma escala do seletor da caixa de mensagem).
+const QLABEL = ["", t("Low"), t("Medium"), t("High"), t("Maximum")];
+
 function load(): ChatConversation[] {
   try {
     const list = JSON.parse(localStorage.getItem(STORE) || "[]") as ChatConversation[];
@@ -304,45 +330,6 @@ function exportReplyPdf(sourceEl: Element | null, title: string) {
   else iframe.contentWindow?.addEventListener("load", () => setTimeout(go, 350));
 }
 
-function AssistantActions({ text, title, canRegenerate, onRegenerate }: { text: string; title: string; canRegenerate: boolean; onRegenerate: () => void }) {
-  const reduceMotion = useReducedMotion() ?? false;
-  const { state, copy } = useCopyFeedback();
-  const copied = state === "copied";
-  const [menu, setMenu] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!menu) return;
-    const close = (e: Event) => { if (!wrapRef.current?.contains(e.target as Node)) setMenu(false); };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, [menu]);
-  const pdf = () => { setMenu(false); exportReplyPdf(wrapRef.current?.closest(".hx-ai-body") ?? null, title); };
-  const md = () => { setMenu(false); downloadBlob(`${fileSlug(title)}.md`, text, "text/markdown;charset=utf-8"); };
-  return (
-    <motion.div className={styles.actions} initial={reduceMotion ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={reduceMotion ? { duration: 0 } : { duration: motionTokens.duration.standard, ease: standard, delay: 0.1 }}>
-      <button type="button" className={styles.action} onClick={() => { void copy(text); }} aria-label={copied ? t("Copied") : t("Copy reply")} title={t("Copy")}>
-        <AnimatePresence initial={false} mode="popLayout">
-          <motion.span key={copied ? "check" : "copy"} className={styles.glyph} initial={reduceMotion ? false : { scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0, transition: { duration: reduceMotion ? 0 : motionTokens.duration.instant } }} transition={motionTokens.spring.snappy}>
-            {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
-          </motion.span>
-        </AnimatePresence>
-      </button>
-      {canRegenerate ? <button type="button" className={styles.action} onClick={onRegenerate} aria-label={t("Regenerate reply")} title={t("Regenerate")}><RefreshCw size={15} aria-hidden="true" /></button> : null}
-      <div className="hx-dl" ref={wrapRef}>
-        <button type="button" className={styles.action} onClick={() => setMenu(m => !m)} aria-label={t("Download reply")} aria-expanded={menu} title={t("Download")}><Download size={15} aria-hidden="true" /></button>
-        <AnimatePresence>
-          {menu ? (
-            <motion.div className="hx-dlmenu" role="menu" initial={reduceMotion ? false : { opacity: 0, y: 6, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 6, scale: 0.96, transition: { duration: 0.1 } }} transition={motionTokens.spring.snappy}>
-              <button type="button" role="menuitem" className="hx-dlitem" onClick={pdf}><FileText size={14} aria-hidden="true" />PDF</button>
-              <button type="button" role="menuitem" className="hx-dlitem" onClick={md}><FileDown size={14} aria-hidden="true" />Markdown (.md)</button>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-      </div>
-    </motion.div>
-  );
-}
-
 export function HereticChat() {
   const reduceMotion = useReducedMotion() ?? false;
   const scope = useId();
@@ -357,6 +344,17 @@ export function HereticChat() {
   const [renaming, setRenaming] = useState<string | null>(null); // id da conversa sendo renomeada
   const [quality, setQuality] = useState(false);
   const [accountMenu, setAccountMenu] = useState(false); // menu de conta na sidebar
+  const [paletteOpen, setPaletteOpen] = useState(false); // ⌘K / Ctrl K: busca e comandos
+  const freshRef = useRef<Set<string>>(new Set()); // imagens que chegaram nesta sessão (animam ao aparecer)
+  const sampleRef = useRef<{ t: number; chars: number; samples: number[] }>({ t: 0, chars: 0, samples: [] }); // velocidade do streaming
+  usePtBrComponents();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "k") { e.preventDefault(); setPaletteOpen(o => !o); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const accountRef = useRef<HTMLDivElement>(null);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [modelId, setModelId] = useState(() => { try { return localStorage.getItem(MODEL_KEY) ?? ""; } catch { return ""; } });
@@ -501,13 +499,38 @@ export function HereticChat() {
     serverDone.current.delete(messageId);
     setGenerating({ conversationId, messageId });
     beginTyping(messageId);
+    // Medidas reais desta resposta (estatística do turno): envio, 1º token, fim do raciocínio, fim e velocidade.
+    const t0 = Date.now();
+    sampleRef.current = { t: 0, chars: 0, samples: [] };
+    patchMessage(conversationId, messageId, m => ({ ...m, t0, inTok: estTokens(history.map(h => h.content).join("\n")), tFirst: undefined, tThink: undefined, t2: undefined, samples: undefined, search: undefined, sources: undefined, rating: null } as ChatMessage));
     ctrl.current = streamChat(
       { conversationId: 0, mode: "chat", model: model.id, messages: history, quality: quality && plan === "pro", params: { temperature: 0.6, top_p: 0.9, max_tokens: 4096 } },
       {
         onUsage: setUsage,
-        onToken: full => { targetRef.current = visibleAnswer(full).length; patchMessage(conversationId, messageId, m => ({ ...m, text: full, state: m.state === "thinking" ? "streaming" : m.state })); },
+        onToken: full => {
+          targetRef.current = visibleAnswer(full).length;
+          const now = Date.now();
+          const sm = sampleRef.current;
+          if (!sm.t) { sm.t = now; sm.chars = full.length; }
+          else if (now - sm.t >= 450) { sm.samples.push(Math.round(((full.length - sm.chars) / 4) / ((now - sm.t) / 1000))); if (sm.samples.length > 24) sm.samples.shift(); sm.t = now; sm.chars = full.length; }
+          patchMessage(conversationId, messageId, m => {
+            const mm = m as TurnMessage;
+            // A busca na web termina antes do 1º token: daí em diante ela aparece como concluída.
+            const search = mm.search && mm.search.status === "running" ? { ...mm.search, status: "success" as const, ms: now - (mm.search.t ?? now) } : mm.search;
+            return { ...m, text: full, state: m.state === "thinking" ? "streaming" : m.state, tFirst: mm.tFirst ?? now, tThink: mm.tThink ?? (/<\/think>/i.test(full) ? now : undefined), search } as ChatMessage;
+          });
+        },
+        // Busca na web: o servidor avisa quando começa e manda as fontes que achou.
+        onWarning: data => {
+          const w = data as { type?: string; query?: string; sources?: WebSource[] };
+          if (w.type === "search") patchMessage(conversationId, messageId, m => ({ ...m, search: { query: w.query || "", status: "running", t: Date.now() } } as ChatMessage));
+          else if (w.type === "sources" && Array.isArray(w.sources)) patchMessage(conversationId, messageId, m => {
+            const mm = m as TurnMessage; const now = Date.now();
+            return { ...m, sources: w.sources, search: mm.search ? { ...mm.search, status: "success", ms: mm.search.ms ?? now - (mm.search.t ?? now) } : { query: "", status: "success" } } as ChatMessage;
+          });
+        },
         // FORÇA TUDO: o servidor descartou uma recusa e re-rodou o modelo → limpa e volta ao "pensando".
-        onRefusalForced: () => { targetRef.current = 0; revealRef.current = 0; setReveal(0); patchMessage(conversationId, messageId, m => ({ ...m, text: "", state: "thinking" })); },
+        onRefusalForced: () => { targetRef.current = 0; revealRef.current = 0; setReveal(0); patchMessage(conversationId, messageId, m => ({ ...m, text: "", state: "thinking", tFirst: undefined, tThink: undefined } as ChatMessage)); },
         onError: (message, info) => {
           window.clearTimeout(doneTimer.current);
           typingDone.current = true; setTypingId(null); if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -524,7 +547,12 @@ export function HereticChat() {
           targetRef.current = visibleAnswer(finalText).length; typingDone.current = true;
           if (reduceMotion && rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = undefined; setReveal(targetRef.current); setTypingId(null); }
           else if (!rafRef.current && !reduceMotion) pump(); // garante que a digitação termine mesmo que o stream chegue tudo no 'done'
-          patchMessage(conversationId, messageId, m => ({ ...m, text: finalText || m.text, state: "done" }));
+          const tEnd = Date.now(); const samples = sampleRef.current.samples.slice();
+          patchMessage(conversationId, messageId, m => {
+            const mm = m as TurnMessage;
+            const search = mm.search && mm.search.status === "running" ? { ...mm.search, status: "success" as const, ms: tEnd - (mm.search.t ?? tEnd) } : mm.search;
+            return { ...m, text: finalText || m.text, state: "done", t2: tEnd, samples, search } as ChatMessage;
+          });
           setGenerating(g => (g && g.messageId === messageId ? null : g)); ctrl.current = null;
           notifyReply(visibleAnswer(content || ""));
         },
@@ -539,6 +567,7 @@ export function HereticChat() {
     api.image(imgPrompt)
       .then(res => {
         if (typeof res.used === "number") setUsage({ used: res.used, limit: typeof res.limit === "number" ? res.limit : 0, remaining: typeof res.remaining === "number" ? res.remaining : Number.POSITIVE_INFINITY });
+        freshRef.current.add(messageId); // chegou agora: aparece do ruído até ficar nítida
         patchMessage(conversationId, messageId, m => ({ ...m, state: "done", text: imgPrompt, image: res.image } as ChatMessage));
         setGenerating(g => (g && g.messageId === messageId ? null : g));
         if (typeof document !== "undefined" && document.hidden) notifyReply(t("Your image is ready."));
@@ -573,8 +602,44 @@ export function HereticChat() {
     if (busy || !active || outOfTokens) return;
     const last = active.messages[active.messages.length - 1];
     if (!last || last.role !== "assistant") return;
+    const lastMeta = last as TurnMessage;
+    // Imagem: gera de novo a partir da mesma descrição (não vira resposta de texto).
+    if (lastMeta.image || lastMeta.model === t("Image")) {
+      const desc = last.text;
+      patchMessage(active.id, last.id, m => ({ ...m, state: "thinking", image: undefined } as ChatMessage));
+      generateImage(active.id, last.id, desc);
+      return;
+    }
     patchMessage(active.id, last.id, m => ({ ...m, text: "", state: "thinking" }));
     run(active.id, last.id, historyOf(active.messages.slice(0, -1)));
+  };
+  // 👍/👎: a nota fica na conversa (no aparelho) e só o tipo da nota entra na medição anônima.
+  const rateReply = (conversationId: string, messageId: string, e: FeedbackEvent) => {
+    patchMessage(conversationId, messageId, m => ({ ...m, rating: e.rating, reasons: e.reasons } as ChatMessage));
+    if (e.stage === "rating" && e.rating) track(e.rating === "up" ? "resposta_boa" : "resposta_ruim");
+  };
+  // ⌘K: as ações, os modelos e as conversas recentes num lugar só.
+  const sortedChats = [...conversations].sort((a, b) => convTs(b) - convTs(a));
+  const paletteItems: CommandItem[] = [
+    { id: "new", label: t("New chat"), group: t("Actions"), icon: <SquarePen size={16} aria-hidden="true" />, keywords: ["nova", "new", "conversa"] },
+    { id: "image", label: t("Generate an image"), group: t("Actions"), icon: <ImageIcon size={16} aria-hidden="true" />, keywords: ["imagem", "image", "foto"] },
+    { id: "key", label: plan === "pro" ? t("Access key") : t("Unlock Pro"), group: t("Actions"), icon: plan === "pro" ? <KeyRound size={16} aria-hidden="true" /> : <Lock size={16} aria-hidden="true" />, keywords: ["pro", "chave", "key"] },
+    { id: "settings", label: t("Settings"), group: t("Actions"), icon: <SettingsIcon size={16} aria-hidden="true" />, keywords: ["config"] },
+    ...models.map(m => ({
+      id: `model:${m.id}`, label: m.name, group: t("Models"),
+      description: [m.quality ? QLABEL[m.quality] : "", m.locked ? "Pro" : m.id === model.id ? t("In use") : ""].filter(Boolean).join(" · "),
+      keywords: [m.short, "modelo", "model"],
+    })),
+    ...sortedChats.filter(c => c.messages.length > 0).slice(0, 8).map(c => ({ id: `chat:${c.id}`, label: c.title, group: t("Chats"), keywords: ["conversa", "chat"] })),
+  ];
+  const runCommand = (item: CommandItem) => {
+    setPaletteOpen(false);
+    if (item.id === "new") newChat();
+    else if (item.id === "image") { composerRef.current?.fill("/imagem "); composerRef.current?.focus(); }
+    else if (item.id === "key") setKeyOpen(true);
+    else if (item.id === "settings") setSettingsOpen(true);
+    else if (item.id.startsWith("model:")) chooseModel(item.id.slice(6));
+    else if (item.id.startsWith("chat:")) select(item.id.slice(5));
   };
   // Abre o menu com um arrasto curto a partir da borda esquerda (sem bloquear toques nem o scroll).
   const onEdgeTouchStart = (e: ReactTouchEvent<HTMLElement>) => {
@@ -630,6 +695,12 @@ export function HereticChat() {
   const spring: Transition = reduceMotion ? { duration: 0 } : motionTokens.spring.gentle;
   const pop: Transition = reduceMotion ? { duration: 0 } : motionTokens.spring.gentle;
   const lastMessage = active?.messages[active.messages.length - 1];
+  // Medidor de contexto do topo: tamanho da conversa (estimado como no servidor) sobre a janela do modelo.
+  const ctxMax = (model as ModelOption & { ctx?: number | null }).ctx || 0;
+  const ctxUsed = active ? estTokens(active.messages.map(m => m.text).join("\n")) : 0;
+  const ctx = ctxMax ? { used: Math.min(ctxUsed, ctxMax), max: ctxMax, label: `${ctxFmt(ctxUsed)} ${t("of")} ${ctxFmt(ctxMax)}` } : null;
+  // Conta: tokens grátis que ainda restam hoje (contador animado); Pro não tem limite diário.
+  const tokensLeft = usage && usage.limit > 0 ? Math.max(0, Math.round(usage.remaining)) : null;
 
   return (
     <div ref={rootRef} className={`${styles.root} hx-chat`} data-compact={compact} data-drawer={drawer} onKeyDown={event => { if (event.key === "Escape" && drawer) { event.stopPropagation(); setDrawer(false); } }}>
@@ -639,36 +710,34 @@ export function HereticChat() {
       <motion.nav className={styles.sidebar} aria-label={t("Conversations")} inert={compact && !drawer} initial={false} animate={{ x: compact && !drawer ? "-100%" : "0%" }} transition={spring}
         drag={compact && drawer && !reduceMotion ? "x" : false} dragDirectionLock dragConstraints={{ left: 0, right: 0 }} dragElastic={{ left: 0.5, right: 0 }} dragMomentum={false}
         onDragEnd={(_e, info) => { if (info.offset.x < -60 || info.velocity.x < -400) setDrawer(false); }}>
-        <div className={styles.sidebarTop}>
-          <a className={`${styles.brand} hx-brand`} href="/" aria-label="Heretic, home"><Cicada width={30} />Heretic</a>
+        <div className={`${styles.sidebarTop} hx-brandrow`}>
+          <a className="hx-brand2" href="/" aria-label="Heretic, home"><CicadaMask w={34} h={12} />Heretic</a>
           {compact ? <button type="button" className={styles.iconButton} onClick={() => setDrawer(false)} aria-label={t("Close")} title={t("Close")}><X size={16} aria-hidden="true" /></button> : null}
         </div>
-        <button ref={newChatRef} type="button" className="hx-newchat" onClick={newChat}><SquarePen size={15} aria-hidden="true" />{t("New chat")}</button>
+        <div className="hx-newrow">
+          <Button ref={newChatRef} variant="secondary" size="sm" className="hx-newbtn" onClick={newChat}><PlusCheckIcon size={16} aria-hidden="true" />{t("New chat")}</Button>
+          <Tooltip content={t("Search and commands")} side="bottom">
+            <Button variant="ghost" size="sm" className="hx-kbd" aria-label={`${t("Search and commands")} (${KBD})`} onClick={() => setPaletteOpen(true)}>{KBD}</Button>
+          </Tooltip>
+        </div>
         <LayoutGroup>
-          <ul className={styles.conversations}>
+          <ul className={`${styles.conversations} hx-convlist`}>
             <AnimatePresence initial={false}>
               {(() => {
-                const sorted = [...conversations].sort((a, b) => convTs(b) - convTs(a));
                 const out: ReactNode[] = [];
                 let lastKey = "";
-                for (const c of sorted) {
+                for (const c of sortedChats) {
                   const key = groupKey(convTs(c));
                   if (key !== lastKey) { lastKey = key; out.push(<li key={`grp-${key}`} className="hx-convgroup" aria-hidden="true">{groupLabel(key)}</li>); }
                   const current = c.id === active?.id;
-                  const lastMsg = c.messages[c.messages.length - 1];
-                  const preview = (lastMsg ? visibleAnswer(lastMsg.text) : "").replace(/```[\s\S]*?```/g, " ").replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim() || t("No messages yet");
                   out.push(
-                    <motion.li key={c.id} className={`${styles.conversationItem} hx-convitem`} layout={reduceMotion ? false : "position"} initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={pop}>
-                      {current ? <motion.span layoutId={`${scope}-active`} className={styles.activeMark} transition={reduceMotion ? { duration: 0 } : motionTokens.spring.morph} /> : null}
+                    <motion.li key={c.id} className="hx-convrow" layout={reduceMotion ? false : "position"} initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={pop}>
                       {renaming === c.id ? (
                         <input className="hx-convrename" autoFocus defaultValue={c.title} aria-label={t("Rename")}
                           onKeyDown={e => { if (e.key === "Enter") renameConversation(c.id, (e.target as HTMLInputElement).value); else if (e.key === "Escape") setRenaming(null); }}
                           onBlur={e => renameConversation(c.id, e.target.value)} />
                       ) : (
-                        <button type="button" className={styles.conversation} onClick={() => select(c.id)} aria-current={current ? "true" : undefined}>
-                          <span className={styles.conversationTop}><span className={styles.conversationTitle}>{c.title}</span><span className={styles.conversationTime}>{c.updated}</span></span>
-                          <span className={styles.conversationPreview}>{preview || t("Stopped")}</span>
-                        </button>
+                        <Button variant={current ? "secondary" : "ghost"} size="sm" className="hx-convbtn" aria-current={current ? "page" : undefined} title={c.title} onClick={() => select(c.id)}>{c.title}</Button>
                       )}
                       {renaming === c.id ? null : (
                         <button type="button" className="hx-convmore" aria-label={t("More")} aria-expanded={convMenu === c.id} onClick={e => { e.stopPropagation(); setConvMenu(m => (m === c.id ? null : c.id)); }}><MoreHorizontal size={15} aria-hidden="true" /></button>
@@ -697,7 +766,7 @@ export function HereticChat() {
                 <div className="hx-account-head">
                   <span className={`${styles.avatar} hx-avatar-cic`} aria-hidden="true"><CicadaMask w={26} h={20} color={plan === "pro" ? "#F0335A" : "#FFFFFF"} /></span>
                   <span className={styles.userText}>
-                    <span className={styles.userName}>{t("Anonymous")}{plan === "pro" ? <span className="hx-pro">PRO</span> : null}</span>
+                    <span className={`${styles.userName} hx-accname`}>{t("Anonymous")}{plan === "pro" ? <Badge tone="success" size="sm" pill className="hx-founder">{t("Founder")}</Badge> : null}</span>
                     <span className={styles.userDetail}>{plan === "pro" ? t("Pro · every AI unlocked") : t("Free · no account")}</span>
                   </span>
                 </div>
@@ -710,14 +779,18 @@ export function HereticChat() {
               </motion.div>
             ) : null}
           </AnimatePresence>
-          <button type="button" className="hx-account-btn" aria-haspopup="menu" aria-expanded={accountMenu} onClick={() => setAccountMenu(o => !o)}>
-            <span className={`${styles.avatar} hx-avatar-cic`} aria-hidden="true"><CicadaMask w={26} h={20} color={plan === "pro" ? "#F0335A" : "#FFFFFF"} /></span>
-            <span className={styles.userText}>
-              <span className={styles.userName}>{t("Anonymous")}{plan === "pro" ? <span className="hx-pro">PRO</span> : null}</span>
-              <span className={styles.userDetail}>{plan === "pro" ? t("Pro · every AI unlocked") : t("Free · no account")}</span>
+          <Button variant="ghost" className="hx-accbtn" aria-haspopup="menu" aria-expanded={accountMenu} onClick={() => setAccountMenu(o => !o)}>
+            <span className="hx-avatar-cic hx-accavatar" aria-hidden="true"><CicadaMask w={30} h={11} color={plan === "pro" ? "#F0335A" : "#FFFFFF"} /></span>
+            <span className="hx-acctext">
+              <span className="hx-accname">{t("Anonymous")}{plan === "pro" ? <Badge tone="success" size="sm" pill className="hx-founder">{t("Founder")}</Badge> : null}</span>
+              <span className="hx-accline">
+                {tokensLeft !== null
+                  ? <><span className="hx-accnum"><AnimatedCounter value={tokensLeft} locale={lang === "pt" ? "pt-BR" : "en-US"} /></span><span>{t("tokens left today")}</span></>
+                  : <span>{plan === "pro" ? t("No daily limit") : t("Free · no account")}</span>}
+              </span>
             </span>
-            <ChevronUp size={15} aria-hidden="true" className="hx-account-caret" data-open={accountMenu ? "1" : "0"} />
-          </button>
+            <span className="hx-acccaret" aria-hidden="true"><ChevronIcon size={16} state={!accountMenu} /></span>
+          </Button>
         </div>
       </motion.nav>
 
@@ -730,63 +803,57 @@ export function HereticChat() {
               <motion.span key={active?.title ?? "none"} className={styles.titleText} initial={reduceMotion ? false : { opacity: 0, y: 6, filter: `blur(${motionTokens.blur.soft}px)` }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={reduceMotion ? { duration: 0 } : { duration: motionTokens.duration.standard, ease: standard }}>{active?.title ?? "Chat"}</motion.span>
             </AnimatePresence>
           </h2>
-          {/* Qualidade saiu do header para o compositor (switch com rótulo, estilo /fast). O header fica só com título + modelo. */}
-          {!compact ? <span className={`${styles.model} hx-modelpill`}><span className={styles.modelDot} aria-hidden="true" />{model.short} · {t("Uncensored")}</span> : null}
+          {!compact && ctx ? (
+            <div className="hx-ctx" role="group" aria-label={`${t("Conversation context")}: ${ctx.label}`}>
+              <span className="hx-ctxbar"><Progress value={ctx.used} max={ctx.max} /></span>
+              <span className="hx-ctxtxt" aria-hidden="true">{ctx.label}</span>
+            </div>
+          ) : null}
           {compact ? <button type="button" className={styles.iconButton} onClick={newChat} aria-label={t("New chat")} title={t("New chat")}><SquarePen size={18} aria-hidden="true" /></button> : null}
         </header>
 
         <div ref={scrollerRef} className={styles.scroller} onScroll={event => { const n = event.currentTarget; pinned.current = n.scrollHeight - n.scrollTop - n.clientHeight < 56; }}>
-          <motion.div key={active?.id} ref={threadRef} className={styles.thread} initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={reduceMotion ? { duration: 0 } : { duration: motionTokens.duration.standard, ease: standard }}>
+          <motion.div key={active?.id} ref={threadRef} className={`${styles.thread} hx-thread`} initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={reduceMotion ? { duration: 0 } : { duration: motionTokens.duration.standard, ease: standard }}>
             {active && active.messages.length === 0 ? (
               <div className={styles.empty}>
                 <motion.span className={`${styles.emptyMark} hx-empty-mark`} aria-hidden="true" initial={reduceMotion ? false : { scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={pop}><CicadaMask w={200} h={74} shimmer={!reduceMotion} /></motion.span>
                 <h3 className={`${styles.emptyTitle} hx-empty-title hx-chrome-text`}>{t("Ask anything.")}</h3>
               </div>
             ) : null}
-            <ol className={styles.messages} aria-label={t("Messages")}>
+            <ol className={`${styles.messages} hx-turns`} aria-label={t("Messages")}>
               <AnimatePresence initial={false}>
-                {active?.messages.map(message => (
-                  <motion.li key={message.id} className={styles.message} data-role={message.role} initial={reduceMotion ? false : { opacity: 0, y: 14, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={pop}>
-                    {message.role === "user" ? (
-                      <div className={styles.bubble}><span className={styles.srOnly}>{t("You: ")}</span>{message.text}</div>
-                    ) : (
-                      <div className="hx-ai">
-                        <div className="hx-ai-head" aria-hidden="true"><Mask size={18} /><span className="hx-ai-name">Heretic</span>{(message as ChatMessage & { model?: string }).model ? <span className="hx-ai-model">{((message as ChatMessage & { model?: string }).model ?? "").replace(/^Heretic\s+/, "")}</span> : null}</div>
-                        <div className="hx-ai-body">
-                          <span className={styles.srOnly}>Heretic: </span>
-                          {(() => {
-                            const genImg = (message as ChatMessage & { image?: string }).image;
-                            const isImageMsg = (message as ChatMessage & { model?: string }).model === t("Image");
-                            if (message.state === "thinking" && !genImg) return isImageMsg
-                              ? <div className="hx-imgskeleton" role="img" aria-label={t("Generating image…")}><ImageIcon size={26} aria-hidden="true" /></div>
-                              : <ThinkingShimmer className={styles.thinking} />;
-                            if (genImg) return (
-                              <figure className="hx-genimg">
-                                <img src={genImg} alt={message.text || "imagem"} loading="lazy" />
-                                {message.text ? <figcaption>{message.text}</figcaption> : null}
-                                <button type="button" className="hx-genimg-dl" onClick={() => downloadDataUrl(`${fileSlug(message.text || "heretic")}.webp`, genImg)}><Download size={14} aria-hidden="true" />{t("Download")}</button>
-                              </figure>
-                            );
-                            const full = visibleAnswer(message.text);
-                            const typing = message.id === typingId && !reduceMotion;
-                            const shown = typing ? full.slice(0, reveal) : full;
-                            if (message.state === "streaming" && !shown || (typing && !shown && full.length > 0)) return <ThinkingShimmer className={styles.thinking} />;
-                            const caret = message.state === "streaming" || (typing && reveal < full.length);
-                            return shown ? <Markdown text={shown} caret={caret} /> : null;
-                          })()}
-                          {message.state === "stopped" ? <p className={styles.stopped}>{visibleAnswer(message.text) ? t("Stopped.") : t("Stopped before the reply started.")}</p> : null}
-                          {(message.state === "done" || message.state === "stopped") && !(message as ChatMessage & { image?: string }).image ? <AssistantActions text={visibleAnswer(message.text)} title={active?.title || "Heretic"} canRegenerate={message.id === lastMessage?.id && !busy} onRegenerate={regenerate} /> : null}
-                        </div>
-                      </div>
-                    )}
-                  </motion.li>
-                ))}
+                {turnsOf(active?.messages ?? []).map(tn => {
+                  const r = tn.reply;
+                  const full = r && !r.image ? visibleAnswer(r.text) : "";
+                  const typing = !!r && r.id === typingId && !reduceMotion;
+                  const shown = typing ? full.slice(0, reveal) : full;
+                  const caret = !!r && (r.state === "streaming" || (typing && reveal < full.length));
+                  const convId = active?.id ?? "";
+                  return (
+                    <motion.li key={tn.key} className="hx-turnli" initial={reduceMotion ? false : { opacity: 0, y: 14, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={pop}>
+                      <Turn
+                        prompt={tn.prompt}
+                        reply={r}
+                        shown={shown}
+                        caret={caret}
+                        fresh={!!r && freshRef.current.has(r.id)}
+                        canRegenerate={!!r && r.id === lastMessage?.id && !busy}
+                        busy={busy}
+                        onRegenerate={regenerate}
+                        onFeedback={e => { if (r) rateReply(convId, r.id, e); }}
+                        onPdf={el => exportReplyPdf(el, active?.title || "Heretic")}
+                        onMd={text => downloadBlob(`${fileSlug(active?.title || "heretic")}.md`, text, "text/markdown;charset=utf-8")}
+                        onImage={(src, name) => downloadDataUrl(`${fileSlug(name)}.webp`, src)}
+                      />
+                    </motion.li>
+                  );
+                })}
               </AnimatePresence>
             </ol>
           </motion.div>
         </div>
 
-        <footer className={styles.composer}>
+        <footer className={`${styles.composer} hx-composer`}>
           <Composer
             ref={composerRef}
             models={models}
@@ -810,6 +877,11 @@ export function HereticChat() {
       </section>
       <SettingsModal open={settingsOpen} plan={plan} usage={usage} onClose={() => setSettingsOpen(false)} onManageKey={() => setKeyOpen(true)} />
       <KeyModal open={keyOpen} plan={plan} onClose={() => setKeyOpen(false)} onPlan={applyPlan} />
+      <Dialog open={paletteOpen} onOpenChange={setPaletteOpen}>
+        <DialogContent title={t("Search and commands")} className="hx-palette">
+          <CommandPalette items={paletteItems} placeholder={t("Search chats, models and actions")} autoFocus onSelect={runCommand} onClose={() => setPaletteOpen(false)} label={t("Search and commands")} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

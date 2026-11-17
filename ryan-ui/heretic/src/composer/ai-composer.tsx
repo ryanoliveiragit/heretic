@@ -51,6 +51,7 @@ import { Tooltip } from "@pro/tooltip/tooltip";
 import { motionTokens } from "@pro/lib/motion-tokens";
 import styles from "./ai-composer.module.css";
 import { t, lang } from "../i18n";
+import { KBD } from "../kbd";
 
 const { spring, duration, ease } = motionTokens;
 /** The block's shared settle: 240ms, no overshoot. */
@@ -1409,7 +1410,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 </motion.span>
               )}
             </AnimatePresence>
-            <span className="hx-cmdk" aria-hidden="true">Cmd+K</span>
+            <span className="hx-cmdk" aria-hidden="true">{KBD}</span>
             <SendButton
               state={state}
               progress={progress}

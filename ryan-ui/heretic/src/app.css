@@ -531,3 +531,61 @@ body, .composer textarea { font-weight: 300; }
 .hx-mermaid svg{max-width:100%;height:auto}
 @keyframes hxDiagIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.hx-mermaid{animation:none}}
+
+/* ===== Chat Pro — desenho "Heretic - Chat Pro" (Claude Design, aprovado 17/11) ===== */
+.hx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+/* Barra lateral: marca, Nova conversa + atalho, grupos e conta */
+.hx-chat>nav{background:#08080A}
+.hx-chat .hx-brandrow{min-height:44px;padding:0 8px}
+.hx-brand2{display:flex;align-items:center;gap:12px;font-family:"Instrument Serif",Georgia,serif;font-size:24px;font-weight:400;line-height:1;letter-spacing:-.01em;color:var(--foreground);text-decoration:none}
+.hx-newrow{display:flex;align-items:center;gap:6px;padding:4px 0 8px}
+.hx-chat .hx-newbtn{flex:1;min-width:0;justify-content:flex-start;gap:8px}
+.hx-chat .hx-kbd{flex:none;font-family:"Geist Mono Variable","Geist Mono",ui-monospace,monospace;font-size:12px;font-weight:400;letter-spacing:.02em;color:var(--text-muted);padding-inline:10px}
+.hx-chat .hx-convlist .hx-convgroup{margin:18px 0 6px;padding:0 12px;font:400 11px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)}
+.hx-chat .hx-convlist .hx-convgroup:first-child{margin-top:6px}
+.hx-convrow{position:relative;list-style:none;min-width:0}
+.hx-chat .hx-convbtn{width:100%;min-width:0;justify-content:flex-start;font-weight:400;padding-inline:12px 34px;overflow:hidden}
+.hx-chat .hx-convbtn [class*="labelSlot"]{width:100%!important;min-width:0;justify-content:flex-start;overflow:hidden}
+.hx-chat .hx-convbtn [class*="labelContent"]{flex:1 1 auto;min-width:0;overflow:hidden}
+.hx-chat .hx-convbtn [class*="labelPhase"]{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.hx-convrow .hx-convmore{top:5px}
+.hx-convrow:hover .hx-convmore,.hx-convrow:focus-within .hx-convmore{opacity:1;background:#17171B}
+.hx-chat .hx-accbtn{width:100%;height:auto;min-height:56px;justify-content:flex-start;gap:12px;padding:10px 12px;text-align:left}
+.hx-chat .hx-accbtn [class*="labelSlot"],.hx-chat .hx-accbtn [class*="labelContent"]{display:flex;align-items:center;gap:12px;width:100%!important;min-width:0}
+.hx-accavatar{display:grid;place-items:center;flex:none;width:32px;height:32px}
+.hx-acctext{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;flex:1}
+.hx-accname{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;line-height:1;color:var(--foreground)}
+.hx-accline{display:flex;align-items:baseline;gap:5px;font-size:13px;font-weight:400;line-height:1;color:var(--text-muted);white-space:nowrap}
+.hx-accnum{--text-3xl:1em;--font-display:var(--font-body);--tracking-display:var(--tracking-body);display:inline-flex;color:var(--text-secondary);font-variant-numeric:tabular-nums}
+.hx-acccaret{display:flex;flex:none;margin-left:auto;color:var(--text-muted)}
+.hx-founder{box-shadow:0 0 0 1px #E8E2D026,0 0 18px -4px #E8E2D066}
+/* Topo: título em serifa + medidor de contexto */
+.hx-chat .hx-header[data-compact="0"]{padding:0 20px 0 32px;min-height:56px;background:#040405}
+.hx-chat .hx-header[data-compact="0"] .hx-title{font-size:24px;letter-spacing:-.01em}
+.hx-ctx{display:flex;align-items:center;gap:10px;flex:none;height:36px;padding:0 10px;border-radius:var(--radius-control)}
+.hx-ctxbar{display:block;width:56px}
+.hx-ctxtxt{font:400 12px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.02em;color:var(--text-secondary);white-space:nowrap}
+/* Conversa: coluna de 760px, turnos com respiro */
+.hx-chat .hx-thread{max-width:808px;padding:40px 24px 64px}
+.hx-chat[data-compact="true"] .hx-thread{padding:20px 16px 40px}
+.hx-chat .hx-composer{max-width:808px;padding:8px 24px 14px}
+.hx-chat[data-compact="true"] .hx-composer{padding:6px 12px calc(10px + env(safe-area-inset-bottom))}
+.hx-chat .hx-turns{gap:56px}
+.hx-chat[data-compact="true"] .hx-turns{gap:40px}
+.hx-turnli{list-style:none;min-width:0}
+.hx-turn{display:grid;gap:16px;min-width:0;color:var(--foreground);font-family:var(--font-body);font-size:var(--text-sm);letter-spacing:var(--tracking-body);line-height:var(--leading-body)}
+.hx-turn-body{position:relative;display:grid;gap:16px;min-width:0;overflow-wrap:anywhere}
+.hx-turn-body>.hx-sr+*{margin-top:0}
+.hx-turn-img{width:min(100%,400px)}
+.hx-turn .hx-stopped{margin:0;color:var(--text-muted);font-size:13px}
+.hx-turn .hx-dl{position:relative;display:inline-flex}
+/* ⌘K: busca e comandos numa janela */
+html .hx-palette{width:min(calc(100vw - 32px),600px)}
+html .hx-palette>div:last-child{padding:10px}
+html .hx-palette [class*="palette"]{border:0;box-shadow:none;background:transparent}
+/* Estatística da resposta: no celular a linha rola de lado em vez de passar da borda */
+.hx-genstats{min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.hx-genstats::-webkit-scrollbar{display:none}
+/* Coluna nunca mais larga que a tela: código comprido rola dentro do bloco, não estica o turno */
+.hx-turn,.hx-reply,.hx-turn-body{grid-template-columns:minmax(0,1fr)}
+.hx-turn-body>*{min-width:0;max-width:100%}
