@@ -7,7 +7,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import type { CSSProperties, ReactNode, TouchEvent as ReactTouchEvent } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
-import { Check, Copy, Download, FileDown, FileText, KeyRound, Lock, MoreHorizontal, PanelLeft, Pencil, RefreshCw, Settings as SettingsIcon, SquarePen, Trash2, X, Zap } from "lucide-react";
+import { Check, ChevronUp, Copy, Download, FileDown, FileText, KeyRound, Lock, MoreHorizontal, PanelLeft, Pencil, RefreshCw, Settings as SettingsIcon, SquarePen, Trash2, X, Zap } from "lucide-react";
 import { motionTokens } from "@/lib/motion-tokens";
 import { useCopyFeedback } from "@/lib/use-copy-feedback";
 import { ThinkingShimmer } from "@/registry/components/loading-states/loading-states";
@@ -342,6 +342,8 @@ export function HereticChat() {
   const [convMenu, setConvMenu] = useState<string | null>(null); // id da conversa com o menu ⋯ aberto
   const [renaming, setRenaming] = useState<string | null>(null); // id da conversa sendo renomeada
   const [quality, setQuality] = useState(false);
+  const [accountMenu, setAccountMenu] = useState(false); // menu de conta na sidebar
+  const accountRef = useRef<HTMLDivElement>(null);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [modelId, setModelId] = useState(() => { try { return localStorage.getItem(MODEL_KEY) ?? ""; } catch { return ""; } });
   const [compact, setCompact] = useState(false);
@@ -351,6 +353,12 @@ export function HereticChat() {
   const threadRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<ComposerHandle>(null);
   const menuRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!accountMenu) return;
+    const onDown = (e: MouseEvent) => { if (accountRef.current && !accountRef.current.contains(e.target as Node)) setAccountMenu(false); };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [accountMenu]);
   const newChatRef = useRef<HTMLButtonElement>(null);
   const ctrl = useRef<AbortController | null>(null);
   const serverDone = useRef<Set<string>>(new Set());
@@ -666,17 +674,34 @@ export function HereticChat() {
             </AnimatePresence>
           </ul>
         </LayoutGroup>
-        <div className={styles.user}>
-          <span className={`${styles.avatar} hx-avatar-cic`} aria-hidden="true"><CicadaMask w={26} h={20} color={plan === "pro" ? "#F0335A" : "#FFFFFF"} /></span>
-          <span className={styles.userText}>
-            <span className={styles.userName}>{t("Anonymous")}{plan === "pro" ? <span className="hx-pro">PRO</span> : null}</span>
-            <span className={styles.userDetail}>{plan === "pro" ? t("Pro · every AI unlocked") : t("Free · no account")}</span>
-          </span>
-          <button type="button" className="hx-keybtn" onClick={() => setSettingsOpen(true)} aria-label={t("Settings")} title={t("Settings")}>
-            <SettingsIcon size={15} aria-hidden="true" />
-          </button>
-          <button type="button" className="hx-keybtn" onClick={() => setKeyOpen(true)} aria-label={plan === "pro" ? t("Access key") : t("Unlock Pro")} title={plan === "pro" ? t("Access key") : t("Unlock Pro")}>
-            {plan === "pro" ? <KeyRound size={15} aria-hidden="true" /> : <Lock size={15} aria-hidden="true" />}
+        <div className={`${styles.user} hx-account`} ref={accountRef}>
+          <AnimatePresence>
+            {accountMenu ? (
+              <motion.div className="hx-account-menu" role="menu"
+                initial={reduceMotion ? false : { opacity: 0, y: 6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, transition: { duration: 0.1 } }} transition={motionTokens.spring.snappy}>
+                <div className="hx-account-head">
+                  <span className={`${styles.avatar} hx-avatar-cic`} aria-hidden="true"><CicadaMask w={26} h={20} color={plan === "pro" ? "#F0335A" : "#FFFFFF"} /></span>
+                  <span className={styles.userText}>
+                    <span className={styles.userName}>{t("Anonymous")}{plan === "pro" ? <span className="hx-pro">PRO</span> : null}</span>
+                    <span className={styles.userDetail}>{plan === "pro" ? t("Pro · every AI unlocked") : t("Free · no account")}</span>
+                  </span>
+                </div>
+                <button type="button" role="menuitem" className="hx-account-item" onClick={() => { setAccountMenu(false); setKeyOpen(true); }}>
+                  {plan === "pro" ? <KeyRound size={15} aria-hidden="true" /> : <Lock size={15} aria-hidden="true" />}<span>{plan === "pro" ? t("Access key") : t("Unlock Pro")}</span>
+                </button>
+                <button type="button" role="menuitem" className="hx-account-item" onClick={() => { setAccountMenu(false); setSettingsOpen(true); }}>
+                  <SettingsIcon size={15} aria-hidden="true" /><span>{t("Settings")}</span>
+                </button>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+          <button type="button" className="hx-account-btn" aria-haspopup="menu" aria-expanded={accountMenu} onClick={() => setAccountMenu(o => !o)}>
+            <span className={`${styles.avatar} hx-avatar-cic`} aria-hidden="true"><CicadaMask w={26} h={20} color={plan === "pro" ? "#F0335A" : "#FFFFFF"} /></span>
+            <span className={styles.userText}>
+              <span className={styles.userName}>{t("Anonymous")}{plan === "pro" ? <span className="hx-pro">PRO</span> : null}</span>
+              <span className={styles.userDetail}>{plan === "pro" ? t("Pro · every AI unlocked") : t("Free · no account")}</span>
+            </span>
+            <ChevronUp size={15} aria-hidden="true" className="hx-account-caret" data-open={accountMenu ? "1" : "0"} />
           </button>
         </div>
       </motion.nav>
