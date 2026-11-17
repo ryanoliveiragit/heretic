@@ -17,6 +17,36 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
   );
 }
 
+// Bloco ```ask: a IA pergunta algo (ex.: "Qual seu SO?") e a 1ª linha vira a pergunta e cada
+// "- opção" vira um botão clicável. Clicar envia a opção como a próxima mensagem (igual aos cards
+// de pergunta do chat). Fica desabilitado enquanto a resposta ainda está chegando (caret).
+function AskBlock({ body, onOption, disabled }: { body: string; onOption?: (v: string) => void; disabled?: boolean }) {
+  const [picked, setPicked] = useState<string | null>(null);
+  const opts: string[] = [];
+  const qLines: string[] = [];
+  for (const raw of body.split("\n")) {
+    const l = raw.trim();
+    if (!l) continue;
+    const mo = /^[-*]\s+(.+)$/.exec(l);
+    if (mo) opts.push((mo[1] ?? "").trim());
+    else if (opts.length === 0) qLines.push(l); // a pergunta vem antes das opções
+  }
+  const question = qLines.join(" ");
+  if (!opts.length) return <CodeBlock code={body} lang="ask" />; // malformado → mostra cru
+  const choose = (v: string) => { if (disabled || picked || !onOption) return; setPicked(v); onOption(v); };
+  return (
+    <div className="md-ask" role="group" aria-label={question || "Opções"}>
+      {question ? <p className="md-ask-q">{inline(question, "ask-q")}</p> : null}
+      <div className="md-ask-opts">
+        {opts.map((o, j) => (
+          <button key={j} type="button" className="md-ask-chip" disabled={disabled || !!picked || !onOption}
+            aria-pressed={picked === o} data-picked={picked === o || undefined} onClick={() => choose(o)}>{o}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function inline(text: string, key = "i"): ReactNode[] {
   const out: ReactNode[] = [];
   const re = /(`[^`]+`)|(\*\*[^*]+\*\*)|(__[^_]+__)|(\*[^*\s][^*]*\*)|(\[[^\]]+\]\((https?:\/\/[^\s)]+)\))/g;
@@ -34,7 +64,7 @@ function inline(text: string, key = "i"): ReactNode[] {
   return out;
 }
 
-export function Markdown({ text, caret }: { text: string; caret?: boolean }) {
+export function Markdown({ text, caret, onOption }: { text: string; caret?: boolean; onOption?: (v: string) => void }) {
   // Normaliza cercas de código: modelos às vezes colam ```bash direto depois do texto ou com o
   // comando na mesma linha, o que quebrava a renderização (crases soltas dentro de listas).
   const src = text.replace(/\r\n?/g, "\n")
@@ -58,6 +88,10 @@ export function Markdown({ text, caret }: { text: string; caret?: boolean }) {
       while (body.length && /^\s*`{1,2}\s*$/.test(body[body.length - 1] ?? "")) body.pop();
       const lang = (fence[1] || "").toLowerCase();
       const bodyText = body.join("\n");
+      // ```ask (e variantes que o modelo às vezes inventa: select/options/escolha/pergunta): pergunta com
+      // opções clicáveis. Só vira card quando há opções "- " de verdade; senão cai pro bloco de código normal.
+      const looksAsk = /^(ask|select|options?|choices?|escolha|op[çc][õo]es|pergunta)$/i.test(lang) && /(^|\n)\s*[-*]\s+\S/.test(bodyText);
+      if (looksAsk) { blocks.push(<AskBlock key={`a${b++}`} body={bodyText} onOption={onOption} disabled={!!caret} />); continue; }
       // Detecta Mermaid pelo CONTEÚDO também: se o modelo esquece a tag ```mermaid e manda só
       // ```+flowchart, ainda desenhamos o diagrama em vez de mostrar o código cru.
       const looksMermaid = /^\s*(?:flowchart|graph)\s+(?:TB|TD|BT|RL|LR)\b/i.test(bodyText)

@@ -110,9 +110,11 @@ export interface TurnProps {
   onPdf: (el: Element | null) => void;
   onMd: (text: string) => void;
   onImage: (src: string, name: string) => void;
+  /** Clique num botão de um bloco ```ask (pergunta com opções) → vira a próxima mensagem. */
+  onOption?: (value: string) => void;
 }
 
-export function Turn({ prompt, reply, shown, caret, fresh, canRegenerate, busy, onRegenerate, onFeedback, onPdf, onMd, onImage }: TurnProps) {
+export function Turn({ prompt, reply, shown, caret, fresh, canRegenerate, busy, onRegenerate, onFeedback, onPdf, onMd, onImage, onOption }: TurnProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const isImage = !!reply && (reply.model === t("Image") || !!reply.image);
   const name = isImage ? "Heretic" : (reply?.model ? (/^Heretic\b/.test(reply.model) ? reply.model : `Heretic ${reply.model}`) : "Heretic");
@@ -159,7 +161,7 @@ export function Turn({ prompt, reply, shown, caret, fresh, canRegenerate, busy, 
           />
         ) : null}
         {call ? <ToolCallGroup calls={[call]} active={search?.status === "running"} /> : null}
-        {shown ? <Markdown text={shown} caret={caret} /> : null}
+        {shown ? <Markdown text={shown} caret={caret} onOption={onOption} /> : null}
         {sources.length ? <SourceCards sources={sources} status="done" total={sources.length} query={search?.query} hideStatus label={t("Sources")} /> : null}
         {stats ? (
           <div className="hx-genstats"><GenerationStats

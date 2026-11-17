@@ -844,6 +844,7 @@ export function HereticChat() {
                         onPdf={el => exportReplyPdf(el, active?.title || "Heretic")}
                         onMd={text => downloadBlob(`${fileSlug(active?.title || "heretic")}.md`, text, "text/markdown;charset=utf-8")}
                         onImage={(src, name) => downloadDataUrl(`${fileSlug(name)}.webp`, src)}
+                        onOption={v => send(v)}
                       />
                     </motion.li>
                   );

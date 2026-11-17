@@ -50,6 +50,8 @@ const SENT: Record<string, string> = {
   "Simulated, nothing was sent.": "Nada foi enviado.", "It helps improve future replies.": "Isso ajuda a melhorar as próximas respostas.",
   "Couldn't save your rating.": "Não deu para salvar a avaliação.", "Couldn't send your feedback.": "Não deu para enviar a avaliação.", "Try again.": "Tente de novo.",
   "Copied.": "Copiado.", "Copied to clipboard.": "Copiado.",
+  "Tell us what was good, or skip.": "Conte o que foi bom ou pule.", "Tell us what went wrong, or skip.": "Conte o que deu errado ou pule.",
+  "Tell us what was good.": "Conte o que foi bom.", "Tell us what went wrong.": "Conte o que deu errado.",
 };
 
 const num = (v: string) => v.replace(/^(\d+)\.(\d+)(m?s)$/, "$1,$2 $3").replace(/^(\d+)(m?s)$/, "$1 $2");
@@ -70,6 +72,8 @@ const RX: Array<[RegExp, (...m: string[]) => string]> = [
   [/^Searching(…|\.\.\.)?$/, () => "Buscando…"],
   [/^Show (\d+) more sources?: (.+)$/, (_m, a, b) => `Mostrar mais ${a} ${a === "1" ? "fonte" : "fontes"}: ${b}`],
   [/^Model: (.+)$/, (_m, a) => `Modelo: ${a}`],
+  [/^Web search: (.+)$/, (_m, a) => `Busca na web: ${a}`],
+  [/^(Done|Running|Error|Failed|Denied), (.+)$/, (_m, a, b) => `${({ Done: "Pronto", Running: "Em andamento", Error: "Erro", Failed: "Falhou", Denied: "Negado" } as Record<string, string>)[a]}, ${b.replace(/(\d+)\.(\d+)s\b/g, "$1,$2 s")}`],
   [/^(\d+) results?$/, (_m, a) => `${a} ${a === "1" ? "resultado" : "resultados"}`],
   [/^Source (\d+): (.+), (.+?)(, opens in a new tab)?$/, (_m, a, b, c, d) => `Fonte ${a}: ${b}, ${c}${d ? ", abre em nova aba" : ""}`],
   [/^Source (\d+)$/, (_m, a) => `Fonte ${a}`],

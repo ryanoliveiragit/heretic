@@ -374,6 +374,17 @@ body, .composer textarea { font-weight: 300; }
 .md .md-pre { overflow-x: auto; padding: 14px 16px; border-radius: 12px; background: #08080A; box-shadow: inset 0 0 0 1px #1F1F24; font: 400 13.5px/1.6 "Geist Mono Variable", ui-monospace, monospace; color: #E6E6EA; }
 .md-caret { display: inline-block; width: .5em; height: 1.05em; margin-left: 2px; vertical-align: -2px; background: var(--accent); animation: hxBlink 1s steps(1) infinite; }
 @keyframes hxBlink { 50% { opacity: 0; } }
+/* ```ask — pergunta da IA com opções clicáveis (ex.: "Qual seu SO?"). */
+.md .md-ask { margin: 14px 0; padding: 14px 15px; border-radius: 12px; background: var(--accent-subtle); box-shadow: inset 0 0 0 1px #ffffff12; }
+.md .md-ask-q { margin: 0 0 11px; font: 500 14px/1.45 var(--font-body); color: var(--foreground); }
+.md .md-ask-q::before { content: "? "; color: var(--accent); font-weight: 600; }
+.md .md-ask-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.md .md-ask-chip { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; min-height: 34px; padding: 6px 14px; border-radius: 9px; background: #141417; box-shadow: inset 0 0 0 1px #2A2A30; color: #E6E6EA; font: 500 13.5px/1.2 var(--font-body); cursor: pointer; transition: transform .16s cubic-bezier(.34,1.56,.64,1), background .16s ease, box-shadow .16s ease, color .16s ease; }
+.md .md-ask-chip:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 14%, #141417); box-shadow: inset 0 0 0 1px var(--accent); transform: translateY(-1px); }
+.md .md-ask-chip:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+.md .md-ask-chip[data-picked] { background: var(--accent); color: var(--accent-foreground); box-shadow: none; }
+.md .md-ask-chip:disabled { cursor: default; }
+.md .md-ask-chip:disabled:not([data-picked]) { opacity: .5; }
 .hx-chat [class*="messages"] { gap: 28px; }
 
 /* EN / PT switch in the sidebar footer */

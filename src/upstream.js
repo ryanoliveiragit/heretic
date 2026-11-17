@@ -3,7 +3,8 @@
 
 export const MODEL_CATALOG = [
   // Heretic Max — cérebro de nuvem Claude (Anthropic) com server-side-fallback (técnica do drael). Gated em CLAUDE_KEY.
-  { id: 'claude-sonnet-5-5', label: 'Heretic Max 👑 nível Claude', provider: 'anthropic', price_in: 3.00, price_out: 15.00, ctx: 200000, tools: true, uncensored: true, note: 'Cérebro de nuvem (Claude). Lê contexto/ferramenta sem alucinar.' },
+  // id público estável (não reseta quem salvou "Max"); api_model roteia pro Opus de verdade na Anthropic.
+  { id: 'claude-sonnet-5-5', api_model: 'claude-opus-5-5', label: 'Heretic Max 👑 nível Claude (Opus)', provider: 'anthropic', price_in: 5.00, price_out: 25.00, ctx: 200000, tools: true, uncensored: true, note: 'Cérebro de nuvem (Claude Opus). Lê contexto/ferramenta e busca na web sem alucinar.' },
   // === Uncensored (pagos) ===
   { id: 'sao10k/l3.1-euryale-70b', label: 'Euryale 70B ⚡ melhor custo', provider: 'openrouter', price_in: 0.85, price_out: 0.85, ctx: 131072, tools: false, uncensored: true, note: '70B Llama 3.1, sem censura real' },
   { id: 'nousresearch/hermes-4-405b', label: 'Hermes 4 405B 🧠 melhor qualidade', provider: 'openrouter', price_in: 1.00, price_out: 3.00, ctx: 131072, tools: false, uncensored: true, note: '405B, sem censura, mais caro' },
@@ -239,8 +240,9 @@ async function* anthropicComplete({ model, systemPrompt, messages, payload, onTo
   const key = getApiKey('anthropic');
   const { system, msgs } = toAnthropic(messages, systemPrompt);
   const body = {
-    model, max_tokens: payload.max_tokens ?? 4096, system, messages: msgs,
-    temperature: typeof payload.temperature === 'number' ? payload.temperature : 0.7,
+    // Max é o modelo premium: teto de saída mais alto pra resposta técnica longa (passo a passo) não cortar.
+    // temperature NÃO vai: é deprecado nos modelos Claude novos e a API responde 400 (fazia o Max cair no fallback).
+    model, max_tokens: Math.max(payload.max_tokens ?? 4096, 8192), system, messages: msgs,
   };
   if (!/haiku/i.test(model)) body.fallbacks = 'default'; // server-side-fallback (não suportado no Haiku)
   const ctrl = new AbortController();
@@ -293,7 +295,7 @@ const SEARCH_HINTS = new RegExp([
   'repo(sit[óo]rio)?|github|gitlab|ferramenta|\\btool\\b|framework|biblioteca|\\blibrary\\b|pacote|\\bpackage\\b',
   'hoje|atual|atuais|recent|[úu]ltim|agora|2024|2025|2026|latest|newest|novidade|not[íi]cia|lan[çc]ad|vers[ãa]o (mais|atual|nova)',
   'encontr|procur|existe (um|algum)|tem (um|algum)|onde (baixo|acho|encontro|download)|link (do|da|de|para)|site oficial',
-  'quem [ée]\\b|cve-|changelog|release|download|cota[çc][ãa]o|pre[çc]o|quanto custa|qual o melhor|melhores (ferramentas|repos|modelos)',
+  'quem [ée]\\b|pesquis|investig|dossi[êe]|antecedente|cve-|changelog|release|download|cota[çc][ãa]o|pre[çc]o|quanto custa|qual o melhor|melhores (ferramentas|repos|modelos)',
   'https?://|www\\.',
 ].join('|'), 'i');
 function shouldSearch(text) {
@@ -317,7 +319,7 @@ async function decideSearchLLM(question) {
       body: JSON.stringify({
         model,
         messages: [
-          { role: 'system', content: 'Você decide se uma mensagem precisa de BUSCA NA INTERNET agora para ser bem respondida. PRECISA buscar quando pede: fato atual ou recente, um repositório/ferramenta/site específico, versão/preço/CVE, achar/encontrar algo, ou um link real. NÃO precisa para conhecimento geral, explicar conceito, escrever código, redação ou conversa. Responda SOMENTE com a palavra SIM ou NAO.' },
+          { role: 'system', content: 'Você decide se uma mensagem precisa de BUSCA NA INTERNET agora para ser bem respondida. PRECISA buscar quando pede: fato atual ou recente, um repositório/ferramenta/site específico, versão/preço/CVE, achar/encontrar algo, pesquisar/investigar uma pessoa, empresa ou alvo específico, ou um link real. NÃO precisa para: conversa, agradecimento, saudação, pedir pra repetir/confirmar/dizer/escrever algo, continuar uma tarefa já em andamento, conhecimento geral, explicar conceito, escrever código ou redação. Na dúvida, responda NAO. Responda SOMENTE com a palavra SIM ou NAO.' },
           { role: 'user', content: String(question).slice(0, 800) },
         ],
         max_tokens: 2,
@@ -331,6 +333,46 @@ async function decideSearchLLM(question) {
     if (out.startsWith('SIM')) return true;
     if (out.startsWith('NAO') || out.startsWith('NÃO') || out.startsWith('NO')) return false;
     return null;
+  } catch { return null; } finally { clearTimeout(to); }
+}
+
+// Busca web pro Heretic Max: a Anthropic não tem o plugin web do OpenRouter, então rodamos UMA busca
+// via OpenRouter (plugin Exa) e devolvemos um resumo + fontes reais pra injetar no contexto do Claude.
+// Assim o Max responde pesquisa de pessoa/empresa/fato com links de verdade, em vez de inventar menu.
+async function webContext(query, signal) {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) return null;
+  const model = process.env.SEARCH_MODEL || process.env.ROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct';
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 22000);
+  if (signal) signal.addEventListener('abort', () => ac.abort());
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`, 'HTTP-Referer': process.env.OPENROUTER_REFERER || 'https://heretic.vercel.app' },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: `Busque na web e resuma os fatos principais, com as fontes reais, sobre:\n${String(query).slice(0, 500)}` }],
+        plugins: [{ id: 'web', max_results: 5 }],
+        web_search_options: { search_context_size: 'medium' },
+        max_tokens: 800, temperature: 0,
+      }),
+      signal: ac.signal,
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const msg = data?.choices?.[0]?.message || {};
+    const text = (msg.content || '').trim();
+    const ann = msg.annotations || [];
+    const seen = new Set(), sources = [];
+    for (const a of ann) {
+      const c = a && (a.url_citation || a);
+      const link = c && c.url; if (!link || seen.has(link)) continue; seen.add(link);
+      sources.push({ url: link, title: String(c.title || '').slice(0, 160), snippet: String(c.content || '').replace(/\s+/g, ' ').slice(0, 280) });
+      if (sources.length >= 8) break;
+    }
+    if (!text && !sources.length) return null;
+    return { text, sources };
   } catch { return null; } finally { clearTimeout(to); }
 }
 
@@ -429,7 +471,7 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
   const pickedId = payload.modelId && MODEL_CATALOG.some(m => m.id === payload.modelId) ? payload.modelId : (ROUTES[mode] || ROUTES.chat).model;
   const catalog = MODEL_CATALOG.find(m => m.id === pickedId);
   const route = catalog
-    ? { provider: catalog.provider, model: catalog.venice_model || catalog.id, maxCtx: catalog.ctx, tools: catalog.tools }
+    ? { provider: catalog.provider, model: catalog.api_model || catalog.venice_model || catalog.id, maxCtx: catalog.ctx, tools: catalog.tools }
     : resolveRoute(mode);
 
   // Venice desativada: se a rota ficou sem chave (ex.: modelId antigo do Venice salvo no cliente),
@@ -464,9 +506,26 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
 
   // Heretic Max = cérebro de nuvem Claude (Anthropic). Caminho próprio, fora do loop OpenAI.
   if (route.provider === 'anthropic') {
+    // Busca web pro Max (sem plugin próprio): decide, busca via OpenRouter e injeta as fontes reais no Claude.
+    const q = (typeof lastUserMsg === 'string' ? lastUserMsg : String(lastUserMsg || '')).trim();
+    let doSearch = false;
+    if (q.length >= 8) {
+      if (/https?:\/\/|github\.com|gitlab\.com/i.test(q)) doSearch = true;
+      else { const llm = await decideSearchLLM(q); doSearch = (llm === null) ? shouldSearch(q) : llm; }
+    }
+    if (doSearch) {
+      if (onWarning) onWarning({ type: 'search', query: q.replace(/\s+/g, ' ').slice(0, 120) });
+      const wc = await webContext(q, signal).catch(() => null);
+      if (wc) {
+        systemPrompt += '\n\n## RESULTADOS DE BUSCA NA WEB (reais, agora) — baseie os fatos nestes resultados e cite os links; nunca invente URL:\n'
+          + (wc.text ? wc.text + '\n\n' : '')
+          + 'Fontes:\n' + wc.sources.map((s, i) => `[${i + 1}] ${s.title} — ${s.url}${s.snippet ? '\n    ' + s.snippet : ''}`).join('\n');
+        if (onWarning && wc.sources.length) onWarning({ type: 'sources', sources: wc.sources });
+      }
+    }
     try { yield* anthropicComplete({ model: route.model, systemPrompt, messages, payload, onToken }); }
     catch (e) {
-      if (onWarning) onWarning({ type: 'rerouted', reason: `Max indisponível (${String(e.message).slice(0, 60)}) — caindo pro OpenRouter`, from: mode, to: 'openrouter' });
+      if (onWarning) onWarning({ type: 'rerouted', reason: `Max indisponível (${String(e.message).slice(0, 400)}) — caindo pro OpenRouter`, from: mode, to: 'openrouter' });
       const fb = MODEL_CATALOG.find(m => m.id === 'nousresearch/hermes-4-405b');
       if (fb && getApiKey('openrouter')) yield* streamWithProvider('openrouter', fb.id, fb, messages, systemPrompt, payload, { onToken, onWarning, signal });
     }
