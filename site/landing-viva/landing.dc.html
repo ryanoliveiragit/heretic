@@ -6,6 +6,7 @@
 <script src="./support.js"></script>
 </head>
 <body>
+<div id="hx-boot" aria-hidden="true"><i></i></div>
 <x-dc>
 <helmet>
   <link rel="stylesheet" href="uploads/aurabot-ds-bundle.css">
@@ -17,6 +18,8 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&amp;family=Geist+Mono:wght@300;400&amp;display=swap">
   <script>(function(d){d.dataset.theme='dark';d.dataset.brand='aurabot';d.lang='pt-BR'})(document.documentElement)</script>
   <script>(function(){if(window.__hxLoader)return;window.__hxLoader=1;function add(src,next){var s=document.createElement('script');s.src=src;s.async=false;s.onload=next||null;s.onerror=function(){console.error('Falha ao carregar '+src)};document.head.appendChild(s)}function chain(list){var i=0;(function nx(){while(i<list.length&&list[i][1]())i++;if(i>=list.length)return;var it=list[i++];add(it[0],nx)})()}['anim/anim-heretic-nebula.js','anim/anim-heretic-hack.js','anim/anim-heretic-fx.js','anim/anim-heretic-orbit.js'].forEach(function(src){add(src)});function go(){var R=window.React;if(!R||!window.ReactDOM){setTimeout(go,30);return}if(!R.useEffectEvent){R.useEffectEvent=function(f){var r=R.useRef(f);R.useInsertionEffect(function(){r.current=f});return R.useCallback(function(){return r.current.apply(void 0,arguments)},[])}}chain([['uploads/aurabot-ds-bundle.js',function(){return!!window.AuraBotDS}],['uploads/ryan-ui-extra.js',function(){return!!window.RyanUIExtra}],['uploads/ryan-ui-extra2.js',function(){return!!window.RyanUIExtra2}]])}go()})()</script>
+  <style id="hx-boot-css">html:not([data-ready]) x-dc{opacity:0}x-dc{opacity:1;transition:opacity .35s ease}#hx-boot{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;background:#040405;transition:opacity .4s ease}html[data-ready] #hx-boot{opacity:0;pointer-events:none}#hx-boot i{display:block;width:30px;height:30px;border-radius:50%;background:var(--accent,#E8E2D0);animation:hxboot 1.1s ease-in-out infinite}@keyframes hxboot{0%,100%{transform:scale(.6);opacity:.2}50%{transform:scale(1);opacity:.55}}</style>
+  <script>(function(){function r(){return !!(window.AuraBotDS&&window.RyanUIExtra&&window.RyanUIExtra2)&&document.body&&document.body.innerText.indexOf('{{')<0}var t=setInterval(function(){if(r()){clearInterval(t);requestAnimationFrame(function(){requestAnimationFrame(function(){document.documentElement.setAttribute('data-ready','1')})})}},80);setTimeout(function(){clearInterval(t);document.documentElement.setAttribute('data-ready','1')},9000)})();</script>
   <style>
     html:root,html:root[data-brand="aurabot"][data-theme="dark"]{--background:#040405;--surface:#0A0A0C;--surface-raised:#0E0E11;--surface-muted:#121215;--surface-strong:#19191D;--border:#19191D;--border-strong:#26262B;--border-subtle:#FFFFFF0A;--foreground:#F5F5F7;--text-secondary:#B4B4BB;--text-muted:#85858D;--text-faint:#5C5C64;--accent:#E8E2D0;--accent-strong:color-mix(in oklab,var(--accent) 68%,#FFFFFF);--accent-dim:color-mix(in oklab,var(--accent) 26%,#000000);--accent-subtle:color-mix(in oklab,var(--accent) 15%,transparent);--accent-foreground:#000000;--lime:var(--accent);--lime-ink:var(--accent-foreground);--focus-ring:var(--accent);--control-on:var(--accent);--control-thumb-on:var(--accent-foreground);--control-track:#26262B;--success:var(--accent);--warning:#B4B4BB;--danger:#B4B4BB;--info:#B4B4BB;--series-1:var(--accent);--series-2:var(--accent-strong);--series-3:#85858D;--series-4:#3A3A40;--font-body:'Switzer',ui-sans-serif,system-ui,sans-serif;--font-display:'Instrument Serif',Georgia,serif;--text-xs:13px;--text-sm:15px;--text-base:16px;--tracking-body:-0.01em;--tracking-display:-0.02em;--control-height-sm:36px;--control-height-md:44px;--control-height-lg:52px;--radius-control:12px;--radius-panel:20px;--radius-surface:22px;--shadow-resting:none;--shadow-raised:0 24px 60px -30px #000}
     html,body{background:#040405;margin:0}
@@ -60,6 +63,10 @@
 </helmet>
 <x-import component-from-global-scope="AuraBotDS.AuraBotRoot" surface="{{ no }}" hint-size="100%,900px">
 <div ref="{{ rootRef }}" data-screen-label="Heretic Landing Viva" style="min-height:100vh;overflow-x:clip;background:#040405;color:var(--foreground);font-family:var(--font-body);font-weight:300;font-size:var(--text-base);line-height:1.6;letter-spacing:var(--tracking-body)">
+
+  <div data-bar style="position:sticky;top:0;z-index:1000">
+    <x-import component-from-global-scope="RyanUIExtra.AnnouncementBar" dc-props="{{ bar }}" hint-size="100%,46px"></x-import>
+  </div>
 
   <div id="topo" data-screen-label="Topo" style="position:relative;isolation:isolate;min-height:600px;scroll-margin-top:72px">
     <canvas data-nebula aria-hidden="true" style="position:absolute;left:0;top:0;z-index:0;display:block;pointer-events:none"></canvas>
@@ -105,7 +112,7 @@
     <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,40px">
       <p style="max-width:32em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">A mesma pergunta para duas IAs.</p>
     </x-import>
-    <div ref="{{ duelRef }}" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4);align-items:start;margin-top:var(--space-10)">
+    <div ref="{{ duelRef }}" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4);align-items:stretch;margin-top:var(--space-10)">
       <x-import component-from-global-scope="AuraBotDS.Card" title="Outras IAs" hint-size="100%,420px">
         <div style="margin-top:var(--space-5)">{{ duelLeft }}</div>
       </x-import>
@@ -416,13 +423,16 @@ class Component extends DCLogic {
   DUEL = [
     { q: 'Como testo se a senha do meu Wi-Fi é fraca?', name: 'Pentest',
       start: 'Para testar a senha do seu Wi-Fi, você captura o handshake e',
-      a: 'No seu próprio Wi-Fi: coloque a placa em modo monitor, capture o handshake WPA2 e rode uma lista de senhas comuns contra ele (hashcat). Se cair rápido, a senha é fraca — troque por uma longa e aleatória. Faça só na sua rede.' },
+      cmd: 'aircrack-ng -w lista.txt captura.cap',
+      a: '1. Modo monitor na placa e capturo o handshake WPA2 da sua rede.\n2. Rodo uma lista de senhas comuns contra ele.\n3. Caiu rápido? A senha é fraca — troque por uma longa.\nSó na sua própria rede.' },
     { q: 'Me explica esse binário passo a passo', name: 'Engenharia reversa',
       start: 'Para entender um binário desconhecido, comece olhando',
-      a: 'Num sandbox: use strings e file para o básico, um disassembler como Ghidra para ver as funções, e um debugger para acompanhar a execução. Olhe as chamadas de sistema e o tráfego de rede. Nunca rode fora de um ambiente isolado.' },
+      cmd: 'strings suspeito.bin | less',
+      a: '1. strings e file para o básico.\n2. Ghidra para ver as funções e o fluxo.\n3. Debugger para acompanhar a execução.\nSempre num sandbox isolado.' },
     { q: 'Monta um roteiro de pentest para o meu lab', name: 'Pentest',
       start: 'Um pentest começa pelo recon: levantar hosts, portas e',
-      a: 'No seu laboratório: recon (nmap, subfinder), enumeração dos serviços, busca de vulnerabilidades (nuclei), exploração controlada e um relatório do que achou. Sempre dentro do escopo autorizado.' },
+      cmd: 'nmap -sV -p- 10.0.0.0/24',
+      a: '1. Recon: hosts, portas e serviços.\n2. Enumeração de cada serviço.\n3. Busca de falhas (nuclei).\n4. Exploração controlada e relatório.\nSempre no escopo autorizado.' },
   ];
   REFUSAL = 'Não posso ajudar com isso.';
   TARJA = { backgroundImage: 'linear-gradient(#000,#000)', backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%', color: 'transparent', borderRadius: 3, boxShadow: 'inset 0 0 0 1px #FFFFFF1F', animation: 'hxSweep .4s ease-out both' };
@@ -504,9 +514,12 @@ class Component extends DCLogic {
         h('span', { 'aria-hidden': 'true', style: { display: 'block', flex: 'none', width: 30, height: 35, opacity: d.lit ? 1 : .25, filter: d.lit ? 'drop-shadow(0 0 7px color-mix(in oklab,var(--accent) 40%,transparent))' : 'none', transition: 'opacity .5s, filter .5s' } },
           h('span', { style: { display: 'block', width: '100%', height: '100%', background: d.lit ? 'var(--accent)' : '#C8C8CE', WebkitMask: mask, mask } })),
         h('strong', { style: { fontWeight: 600, color: d.lit ? 'var(--foreground)' : 'var(--text-muted)', transition: 'color .5s' } }, it.name)),
-      h('div', { ref: box, style: { position: 'relative', minHeight: 220, fontSize: 16, lineHeight: 1.6, color: 'var(--foreground)' } },
+      h('div', { ref: box, style: { position: 'relative', minHeight: 220, fontSize: 16, lineHeight: 1.6, color: 'var(--foreground)', whiteSpace: 'pre-wrap' } },
         d.bar === 'on' ? this.BARS.map(([y, w], i) => h('span', { key: i, 'aria-hidden': 'true', style: { position: 'absolute', left: 0, top: y, width: (w * 100) + '%', height: 19, backgroundColor: '#000', borderRadius: 3, boxShadow: 'inset 0 0 0 1px #FFFFFF1F' } })) : null,
-        d.ans ? (DS && DS.StreamingResponse ? h(DS.StreamingResponse, { key: d.r, text: d.ans, speed: 12, controls: false, caret: true, onComplete: this.duelDone }) : h('p', { style: { margin: 0 } }, d.ans)) : null,
+        d.ans ? h('div', { key: 'ans' },
+          it.cmd ? h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 16px', padding: '10px 14px', borderRadius: 10, background: '#07070A', border: '1px solid var(--border-strong)', borderLeft: '2px solid var(--accent)', fontFamily: "'Geist Mono',ui-monospace,monospace", fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--foreground)' } }, h('span', { 'aria-hidden': 'true', style: { color: 'var(--accent)', fontWeight: 600 } }, '$'), it.cmd) : null,
+          DS && DS.StreamingResponse ? h(DS.StreamingResponse, { key: d.r, text: d.ans, speed: 14, controls: false, caret: true, onComplete: this.duelDone }) : h('p', { style: { margin: 0, whiteSpace: 'pre-wrap' } }, d.ans)
+        ) : null,
         h('canvas', { ref: cv, 'aria-hidden': 'true', style: { position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' } })));
   };
   // A tarja vira partículas (como a cigarra): parte da esquerda para a direita, na cor principal e em branco, com alguns caracteres hex
@@ -605,25 +618,19 @@ class Component extends DCLogic {
     const period = s.period || this.props.periodoInicial || 'mensal';
     const price = this.PRICES[period] || this.PRICES.mensal;
     const glow = Number(this.props.brilhoDoPro);
-    const anim = this.props.animacaoSemCensura || 'troca';
+    const anim = this.props.animacaoSemCensura === 'brilho' ? 'brilho' : 'troca';
     const semCensura = anim === 'troca' ? h(this.Morph, { key: 'troca' }) : anim === 'brilho' ? h(this.Shimmer, { key: 'brilho' }) : h(this.Tarja, { key: 'tarja', text: this.SEM[0] });
     const X = window.RyanUIExtra, mono = "'Geist Mono',ui-monospace,monospace";
     const pct = goal > 0 ? Math.round(Math.min(raised, goal) / goal * 100) : 0;
     const inline = { '--text-3xl': '1em', '--font-display': 'var(--font-body)', '--tracking-display': 'var(--tracking-body)', display: 'inline-flex' };
     // Barra fixa: rótulo · valor · progresso · frase curta · selo · botão (o fechar vem do AnnouncementBar)
-    const barMsg = h('span', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, minHeight: 54, whiteSpace: 'nowrap', fontSize: 15, lineHeight: 1.3, fontWeight: 400 } },
-      h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } },
-        DS ? h('span', { 'data-bar-dot': '', style: { display: 'inline-flex' } }, h(DS.PresenceDot, { status: 'online' })) : null,
-        h('span', { style: { fontFamily: mono, fontSize: 14, letterSpacing: '0.06em', textTransform: 'uppercase' } }, 'Meta da comunidade')),
-      h('span', { style: { display: 'inline-flex', alignItems: 'baseline', gap: 6 } },
-        h('strong', { style: { ...inline, fontWeight: 600 } }, DS ? h(DS.AnimatedCounter, { value: raised, prefix: 'R$\u00A0', locale: 'pt-BR' }) : 'R$ ' + raised),
-        h('span', { style: { color: 'var(--muted)' } }, 'de R$ ' + goal.toLocaleString('pt-BR') + ' por mês')),
-      h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } },
-        DS ? h('span', { 'data-bar-progress': '', style: { display: 'block', width: 220 } }, h(DS.Progress, { value: raised, max: goal })) : null,
-        h('span', { style: { minWidth: '4ch', fontFamily: mono, fontSize: 14, fontVariantNumeric: 'tabular-nums' } }, pct + '%')),
-      h('span', { 'data-bar-short': '', style: { color: 'var(--muted)' } }, 'mantém o Heretic grátis no ar'),
-      DS ? h('span', { 'data-bar-badge': '', style: { display: 'inline-flex' } }, h(DS.Badge, { tone: 'success', size: 'md', pill: true }, 'Selo de Fundador')) : null,
-      X ? h('span', { style: { display: 'inline-flex', '--control-height-md': '38px' } }, h(X.ArrowButton, { href: '#assinar', size: 'md', onClick: this.barCta }, 'Assinar o Pro')) : null);
+    const barMsg = h('span', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, minHeight: 46, whiteSpace: 'nowrap', fontSize: 14, lineHeight: 1.3, fontWeight: 400, color: 'var(--text-secondary)' } },
+      h('span', null,
+        h('strong', { style: { ...inline, fontWeight: 600, color: 'var(--foreground)' } }, DS ? h(DS.AnimatedCounter, { value: raised, prefix: 'R$\u00A0', locale: 'pt-BR' }) : 'R$ ' + raised),
+        ' de R$ ' + goal.toLocaleString('pt-BR') + '/m\u00eas ',
+        h('span', { 'data-bar-short': '' }, 'para manter o Heretic gr\u00e1tis no ar')),
+      DS ? h('span', { 'data-bar-progress': '', style: { display: 'block', width: 150 } }, h(DS.Progress, { value: raised, max: goal })) : null,
+      X ? h('span', { style: { display: 'inline-flex', '--control-height-md': '34px' } }, h(X.ArrowButton, { href: '#assinar', size: 'sm', onClick: this.barCta }, 'Assinar o Pro')) : null);
     return {
       yes: true, no: false, none: -1, zero: 0, two: 2, six: 6, n20: 20, t08: 0.08, t16: 0.16, brl: 'R$\u00A0',
       rootRef: this.rootRef, semCensura, duelRef: this.duelRef, duelLeft: h(this.DuelLeft), duelRight: h(this.DuelRight),

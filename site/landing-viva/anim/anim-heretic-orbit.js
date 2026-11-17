@@ -57,7 +57,7 @@
         // o renderizador da página reaplica estilos: reforça a cada quadro
         if (d.desc && d.desc.style.display !== 'none') d.desc.style.display = 'none';
         if (d.nameEl) d.nameEl.style.display = narrow ? 'none' : '';
-        d.li.style.padding = narrow ? '6px' : '';
+        d.li.style.padding = narrow ? '6px' : '8px 20px 8px 14px';
         d.li.style.transform = 'translate(' + (cx + x).toFixed(1) + 'px,' + (cy + y).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (on ? s * 1.08 : s).toFixed(3) + ')';
         d.li.style.opacity = (on ? 1 : .38 + depth * .62).toFixed(3);
         d.li.style.zIndex = String(Math.round(depth * 100) + (on ? 200 : 0));
