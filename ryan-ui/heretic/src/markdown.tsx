@@ -54,14 +54,17 @@ export function Markdown({ text, caret }: { text: string; caret?: boolean }) {
       let closed = false;
       while (i < lines.length) { if (/^\s*```/.test((lines[i] ?? ""))) { closed = true; break; } body.push((lines[i++] ?? "")); }
       if (closed) i++;
+      // Modelos às vezes fecham a cerca com 1–2 crases soltas (em vez de ```); limpa a sobra pra não "abrir" o bloco.
+      while (body.length && /^\s*`{1,2}\s*$/.test(body[body.length - 1] ?? "")) body.pop();
       const lang = (fence[1] || "").toLowerCase();
       const bodyText = body.join("\n");
       // Detecta Mermaid pelo CONTEÚDO também: se o modelo esquece a tag ```mermaid e manda só
       // ```+flowchart, ainda desenhamos o diagrama em vez de mostrar o código cru.
       const looksMermaid = /^\s*(?:flowchart|graph)\s+(?:TB|TD|BT|RL|LR)\b/i.test(bodyText)
         || /^\s*(?:sequenceDiagram|mindmap|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|journey|gitGraph|timeline|quadrantChart|pie\b)/i.test(bodyText);
-      // Diagrama só quando o bloco fechou (evita renderizar Mermaid incompleto durante o streaming).
-      if ((lang === "mermaid" || looksMermaid) && closed) blocks.push(<Mermaid key={`m${b++}`} code={bodyText} />);
+      // Renderiza o diagrama quando o bloco fechou OU quando a resposta terminou (!caret), mesmo com cerca malformada.
+      // Durante o streaming (caret) espera fechar pra não piscar Mermaid incompleto.
+      if ((lang === "mermaid" || looksMermaid) && (closed || !caret)) blocks.push(<Mermaid key={`m${b++}`} code={bodyText} />);
       else blocks.push(<CodeBlock key={`c${b++}`} code={bodyText} lang={fence[1] || undefined} />);
       continue;
     }
