@@ -1,5 +1,5 @@
 // Monta public/ para o deploy:
-//   /            landing desktop (código exportado do Claude Design)
+//   /            landing desktop nova (site/landing-viva, exportada do Claude Design)
 //   /m.html      landing celular
 //   /app/        chat (React + ryan-ui, build do Vite)
 //   PWA: manifest, service worker, ícones.
@@ -196,14 +196,51 @@ function page(src, out, toMobile) {
   html = html.replace(/src="(\/?)((?:heretic-[\w-]+|support|cursor)\.js)"/g, (m, sl, f) => `src="${sl}${f}?v=${STAMP}"`);
   writeFileSync(join(PUB, out), green(html));
 }
-page("landing.dc.html", "index.html", true);
+// Landing desktop nova ("Heretic - Landing Viva", exportada do Claude Design em 16/11): página limpa e completa,
+// então NÃO recebe os enxertos da landing antiga (HEAD, DARKNESS, WIRE, i18n/fx/flow/sections). A de celular segue a antiga.
+const VIVA = join(SITE, "landing-viva");
+const DS_DIR = "_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f";
+cpSync(join(VIVA, "anim"), join(PUB, "anim"), { recursive: true });
+for (const f of ["ryan-ui-extra.js", "ryan-ui-extra.css", "ryan-ui-extra2.js", "ryan-ui-extra2.css"]) cpSync(join(VIVA, "extra", f), join(PUB, "uploads", f));
+const HEAD_VIVA = `<title>Heretic — IA sem censura</title>
+<meta name="description" content="IA sem censura, grátis para todo mundo. Sem conta, sem e-mail.">
+<meta name="theme-color" content="#040405">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Heretic">`;
+const SW_REG = `<script>if('serviceWorker' in navigator&&!/^(localhost|127\\.0\\.0\\.1)$/.test(location.hostname)){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});});}</script>`;
+function must(html, from, to, what) {
+  if (!html.includes(from)) throw new Error(`landing nova: não achei ${what}`);
+  return html.replace(from, to);
+}
+function pageViva() {
+  let html = readFileSync(join(VIVA, "landing.dc.html"), "utf8");
+  html = must(html, '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' + HEAD_VIVA + "\n" + redirect(true), "a meta viewport");
+  html = must(html, "<html>", '<html lang="pt-BR" data-brand="aurabot" data-theme="dark" style="background:#040405">', "<html>");
+  // o pacote do design system é o mesmo arquivo que já vai em /_ds (conferido byte a byte): não duplicar 13 MB
+  if (!html.includes("uploads/aurabot-ds-bundle.js")) throw new Error("landing nova: não achei o pacote do design system");
+  html = html.replaceAll("uploads/aurabot-ds-bundle.css", `${DS_DIR}/_ds_bundle.css`).replaceAll("uploads/aurabot-ds-bundle.js", `${DS_DIR}/_ds_bundle.js`);
+  // seletor PT/EN: ainda não existe versão em inglês desta página; sai até existir (um controle que não faz nada é pior)
+  const LANG = /\s*<div style="--control-height-sm:28px;display:flex;margin-right:var\(--space-2\)">\s*<x-import component-from-global-scope="AuraBotDS\.SegmentedControl" label="Idioma"[^>]*><\/x-import>\s*<\/div>/;
+  if (!LANG.test(html)) throw new Error("landing nova: não achei o seletor de idioma");
+  html = html.replace(LANG, "");
+  html = must(html, 'src="./support.js"', `src="/support.js?v=${STAMP}"`, "support.js");
+  html = html.replace(/((?:anim\/anim-heretic-[\w-]+|uploads\/ryan-ui-extra2?)\.(?:js|css))/g, `$1?v=${STAMP}`);
+  html = must(html, "</body>", SW_REG + "\n</body>", "</body>");
+  writeFileSync(join(PUB, "index.html"), html);
+}
+pageViva();
 page("mobile.dc.html", "m.html", false);
 if (existsSync(join(LAND, "heretic-cpu.js"))) writeFileSync(join(PUB, "heretic-cpu.js"), themed(readFileSync(join(LAND, "heretic-cpu.js"), "utf8").replace(/#6C3BFF/gi, "#F5F5F7")));
 writeFileSync(join(PUB, "heretic-sculptures.js"), themed(readFileSync(join(LAND, "heretic-sculptures.js"), "utf8")));
 // módulo opcional "user" que as páginas do Claude Design tentam importar
 writeFileSync(join(PUB, "user"), "/* vazio */\n");
 
-for (const f of ["index.html", "m.html", "app/index.html", "sw.js", "manifest.webmanifest", "support.js"]) {
+for (const f of ["index.html", "m.html", "app/index.html", "sw.js", "manifest.webmanifest", "support.js", "anim/anim-heretic-nebula.js", "uploads/ryan-ui-extra.js", "uploads/ryan-ui-extra2.js", "uploads/logo-cicada.png", "uploads/mascara-especialista.png", DS_DIR + "/_ds_bundle.js"]) {
   if (!existsSync(join(PUB, f))) throw new Error(`faltou ${f}`);
 }
 console.log("site pronto em public/");

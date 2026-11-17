@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-brand="aurabot" data-theme="dark" style="background:#040405">
+<html lang="pt-BR" data-brand="aurabot" data-theme="dark" style="background:#040405">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Heretic — Uncensored AI</title>
-<meta name="description" content="Uncensored AI that answers anything. Free to start, no account, no email.">
+<title>Heretic — IA sem censura</title>
+<meta name="description" content="IA sem censura, grátis para todo mundo. Sem conta, sem e-mail.">
 <meta name="theme-color" content="#040405">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
@@ -12,901 +12,648 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Heretic">
-<script src="/cursor.js?v=mwjqbdgj" defer></script>
-<script src="/heretic-i18n.js?v=mwjqbdgj" defer></script>
-<script src="/heretic-fx.js?v=mwjqbdgj" defer></script>
-<script src="/heretic-flow.js?v=mwjqbdgj" defer></script>
-<script src="/heretic-sections.js?v=mwjqbdgj" defer></script>
-<link rel="preconnect" href="https://api.fontshare.com" crossorigin>
-<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@300,400,500,600&display=swap">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&display=swap">
-<style>/* tipografia igual ao drael.sh (dono, 15/11): Instrument Serif 400 nos títulos, Switzer 400/500 no texto, Geist Mono 400 nos rótulos */
-:root,html:root[data-brand]{--font-body:'Switzer',ui-sans-serif,system-ui,sans-serif!important;--font-display:'Instrument Serif',Georgia,serif!important}
-body,[style*="Geist Variable"],[style*="Inter Variable"],[style*="Switzer"],button,input,textarea{font-family:'Switzer',ui-sans-serif,system-ui,sans-serif!important;letter-spacing:-.02em}
-[style*="font:600"],[style*="font:700"],[style*="font-weight:600"],[style*="font-weight:700"],b,strong{font-weight:500!important}
-code,pre,kbd,[style*="Geist Mono"],[data-boot]{font-family:'Geist Mono Variable','Geist Mono',ui-monospace,SFMono-Regular,Menlo,monospace!important;font-weight:300!important;letter-spacing:-.01em}
-body h1,body h1[style]{font-family:'Instrument Serif',Georgia,serif!important;font-weight:400!important;font-size:clamp(56px,7.2vw,104px)!important;line-height:1!important;letter-spacing:-.02em!important;text-shadow:none!important}
-body h2,body h2[style]{font-family:'Instrument Serif',Georgia,serif!important;font-weight:400!important;font-size:clamp(44px,5.2vw,72px)!important;line-height:1!important;letter-spacing:-.03em!important}
-body h1 *,body h2 *{font-family:inherit!important;font-weight:inherit!important;letter-spacing:inherit!important}
-body h1 [style*="Geist Mono"],body h1 [style*="Geist Mono"] *{font-family:'Instrument Serif',Georgia,serif!important;font-weight:400!important;letter-spacing:-.02em!important;font-size:1em!important;line-height:1!important}
-/* contraste de pesos (UI/UX pro): texto fino, destaque médio, palavra-chave e números grossos */
-body p,body li,body dd,[data-flow-cap],[data-lantern-text],nav a,header a{font-weight:300!important}
-body p [style*="color:#F5F5F7"],body p [style*="color:var(--foreground)"],body p [data-decrypt],body p b,body p strong{font-weight:500!important;color:#FFFFFF!important}
-button,[role="button"],a[data-flow-cta],[data-orbit-use]{font-weight:500!important}
-body h1>span[data-hero-word],body h1>span[data-hero-word] *{display:none!important}
-body h1>span:last-child:not([data-hero-word]),body h1>span:last-child:not([data-hero-word]) *{font-family:'Switzer',ui-sans-serif,system-ui,sans-serif!important;font-style:normal!important;font-weight:600!important;letter-spacing:-.05em!important;font-size:.9em!important;color:var(--accent)!important}
-[data-zero-num],[data-zero-num] *{font-family:'Switzer',ui-sans-serif,system-ui,sans-serif!important;font-weight:600!important;letter-spacing:-.06em!important}
-[data-fx-kicker],[data-flow-tag]{font-weight:300!important}
-/* prata e preto; verde só como acento (~10%) */
-body h1,body h1>span:first-child,body h2{background:linear-gradient(180deg,#FFFFFF 15%,#B9B9C2 90%);-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent}
-body h2 *{-webkit-text-fill-color:transparent}
-[data-orbit-name]{font-family:'Instrument Serif',Georgia,serif!important;font-weight:400!important;font-size:44px!important;letter-spacing:-.02em!important}
-/* microinterações (Framer): mola curta ao passar e ao tocar */
-button{transition:transform .22s cubic-bezier(.34,1.56,.64,1),background-color .2s ease,box-shadow .2s ease,color .2s ease}
-button:hover{transform:translateY(-1px)}
-button:active{transform:translateY(0) scale(.96);transition-duration:.08s}
-[data-card]{transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease!important}
-[data-card]:hover{transform:translateY(-4px)}
-[data-orbit-use]{transition:transform .22s cubic-bezier(.34,1.56,.64,1)}
-[data-orbit-use]:hover{transform:translateY(-1px)}[data-orbit-use]:active{transform:scale(.96)}
-@media (prefers-reduced-motion: reduce){button,button:hover,button:active,[data-card],[data-card]:hover{transform:none!important;transition:none!important}}</style>
-<style>/* darkness: branco + vermelho claro (10%) só no botão principal e no segmento ativo */
-button[class*="_primary_"]{background:#F0335A!important;color:#0A0A0B!important;box-shadow:0 10px 30px -12px #F0335A80!important}
-button[class*="_primary_"]:hover{background:linear-gradient(180deg,#FFFFFF,#E2E2E8 55%,#B4B4BE)!important}
-button[class*="_segment_"][aria-checked="true"],button[class*="_segment_"][aria-checked="true"] *{color:#F5F5F7!important}</style>
 <script>(function(){var m=matchMedia('(max-width: 820px)').matches;if(m)location.replace('/m.html'+location.search+location.hash);})();</script>
-<script src="./support.js"></script>
+<script src="/support.js?v=mwjzgiot"></script>
 </head>
 <body>
 <x-dc>
 <helmet>
-  <link rel="stylesheet" href="_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f/fonts/fonts.css">
   <link rel="stylesheet" href="_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f/_ds_bundle.css">
+  <link rel="stylesheet" href="uploads/ryan-ui-extra.css?v=mwjzgiot">
+  <link rel="stylesheet" href="uploads/ryan-ui-extra2.css?v=mwjzgiot">
   <link rel="preconnect" href="https://api.fontshare.com">
-  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&amp;display=swap">
-  <script>(function(R){if(R&&!R.useEffectEvent){R.useEffectEvent=function(f){var r=R.useRef(f);R.useInsertionEffect(function(){r.current=f});return R.useCallback(function(){return r.current.apply(void 0,arguments)},[])}}})(window.React)</script>
-  <script src="_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f/_ds_bundle.js"></script>
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@300,400,500,600&amp;display=swap">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&amp;family=Geist+Mono:wght@300;400&amp;display=swap">
+  <script>(function(d){d.dataset.theme='dark';d.dataset.brand='aurabot';d.lang='pt-BR'})(document.documentElement)</script>
+  <script>(function(){if(window.__hxLoader)return;window.__hxLoader=1;function add(src,next){var s=document.createElement('script');s.src=src;s.async=false;s.onload=next||null;s.onerror=function(){console.error('Falha ao carregar '+src)};document.head.appendChild(s)}function chain(list){var i=0;(function nx(){while(i<list.length&&list[i][1]())i++;if(i>=list.length)return;var it=list[i++];add(it[0],nx)})()}['anim/anim-heretic-nebula.js?v=mwjzgiot','anim/anim-heretic-hack.js?v=mwjzgiot','anim/anim-heretic-fx.js?v=mwjzgiot','anim/anim-heretic-orbit.js?v=mwjzgiot'].forEach(function(src){add(src)});function go(){var R=window.React;if(!R||!window.ReactDOM){setTimeout(go,30);return}if(!R.useEffectEvent){R.useEffectEvent=function(f){var r=R.useRef(f);R.useInsertionEffect(function(){r.current=f});return R.useCallback(function(){return r.current.apply(void 0,arguments)},[])}}chain([['_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f/_ds_bundle.js',function(){return!!window.AuraBotDS}],['uploads/ryan-ui-extra.js?v=mwjzgiot',function(){return!!window.RyanUIExtra}],['uploads/ryan-ui-extra2.js?v=mwjzgiot',function(){return!!window.RyanUIExtra2}]])}go()})()</script>
   <style>
-    html:root,html:root[data-brand="aurabot"][data-theme="dark"]{--background:#040405;--surface:#0A0A0C;--surface-raised:#0E0E11;--surface-muted:#121215;--surface-strong:#19191D;--border:#19191D;--border-strong:#26262B;--border-subtle:#FFFFFF0A;--foreground:#F5F5F7;--text-secondary:#B4B4BB;--text-muted:#85858D;--text-faint:#5C5C64;--accent:#F0335A;--accent-strong:#FF6B86;--accent-dim:#0F3D27;--accent-subtle:#F0335A24;--accent-foreground:#040405;--lime:#F0335A;--lime-ink:#040405;--focus-ring:#F0335A;--control-on:#F0335A;--control-thumb-on:#040405;--control-glyph:#040405;--control-track:#26262B;--aura-frame:#040405;--aura-working:#F0335A;--aura-working-bg:#F0335A1F;--aura-done:#F0335A;--aura-done-bg:#F0335A1F;--aura-group:#B4B4BB;--aura-group-bg:#FFFFFF0F;--aura-waiting:#B4B4BB;--aura-stuck:#B4B4BB;--success:#F0335A;--warning:#B4B4BB;--danger:#B4B4BB;--info:#B4B4BB;--series-1:#F0335A;--series-2:#96EEC3;--series-3:#85858D;--series-4:#3A3A40;--font-body:'Switzer',ui-sans-serif,system-ui,sans-serif;--font-display:'Switzer',ui-sans-serif,system-ui,sans-serif;--text-xs:13px;--text-sm:15px;--text-base:16px;--aura-text-body:16px;--aura-text-support:14px;--tracking-body:-0.01em;--control-height-sm:36px;--control-height-md:44px;--control-height-lg:52px;--radius-control:12px;--radius-panel:20px;--radius-surface:22px;--shadow-resting:none;--shadow-raised:0 24px 60px -30px #000}
-    html{background:#040405}
-    body{margin:0;background:#040405}
-    a{color:#F5F5F7}
+    html:root,html:root[data-brand="aurabot"][data-theme="dark"]{--background:#040405;--surface:#0A0A0C;--surface-raised:#0E0E11;--surface-muted:#121215;--surface-strong:#19191D;--border:#19191D;--border-strong:#26262B;--border-subtle:#FFFFFF0A;--foreground:#F5F5F7;--text-secondary:#B4B4BB;--text-muted:#85858D;--text-faint:#5C5C64;--accent:#F0335A;--accent-strong:color-mix(in oklab,var(--accent) 68%,#FFFFFF);--accent-dim:color-mix(in oklab,var(--accent) 26%,#000000);--accent-subtle:color-mix(in oklab,var(--accent) 15%,transparent);--accent-foreground:#000000;--lime:var(--accent);--lime-ink:var(--accent-foreground);--focus-ring:var(--accent);--control-on:var(--accent);--control-thumb-on:var(--accent-foreground);--control-track:#26262B;--success:var(--accent);--warning:#B4B4BB;--danger:#B4B4BB;--info:#B4B4BB;--series-1:var(--accent);--series-2:var(--accent-strong);--series-3:#85858D;--series-4:#3A3A40;--font-body:'Switzer',ui-sans-serif,system-ui,sans-serif;--font-display:'Instrument Serif',Georgia,serif;--text-xs:13px;--text-sm:15px;--text-base:16px;--tracking-body:-0.01em;--tracking-display:-0.02em;--control-height-sm:36px;--control-height-md:44px;--control-height-lg:52px;--radius-control:12px;--radius-panel:20px;--radius-surface:22px;--shadow-resting:none;--shadow-raised:0 24px 60px -30px #000}
+    html,body{background:#040405;margin:0}
+    body{color:#F5F5F7;-webkit-font-smoothing:antialiased}
+    h1,h2,h3{margin:0;font:inherit;letter-spacing:inherit}
+    html{scroll-behavior:smooth}
+    @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+    a{color:#F5F5F7;text-decoration:none}
     a:hover{color:#FFFFFF}
+    [data-boot] b{font-weight:400;color:#F5F5F7}
+    [data-boot] b:last-child{color:var(--accent)}
+    @keyframes hxPulse{0%{box-shadow:0 0 0 0 color-mix(in oklab,var(--accent) 65%,transparent)}70%,100%{box-shadow:0 0 0 7px transparent}}
+    [data-bar] [class*="_bar_n6xvo"]{padding-block:0;border-bottom:1px solid var(--accent)}
+    [data-bar] [class*="_bar_n6xvo"]:not([data-tone="inverted"]){background:color-mix(in oklab,var(--accent) 7%,var(--surface-strong));color:var(--foreground)}
+    [data-bar] [class*="_message_n6xvo"]{padding:0}
+    [data-bar-dot] [data-status]{--dot-color:var(--accent);background:var(--accent);animation:hxPulse 1.8s ease-out infinite}
+    [data-bar-progress] [class*="_track_"]{position:relative;background:color-mix(in oklab,var(--accent) 20%,var(--surface-strong))}
+    [data-bar-progress] [class*="_track_"]::before{content:"";position:absolute;inset:0 auto 0 0;width:6px;border-radius:inherit;background:var(--accent)}
+    [data-bar-progress] [class*="_fill_"]{background:var(--accent)}
+    @container (max-width:1300px){[data-bar-short]{display:none!important}}
+    @container (max-width:1120px){[data-bar-badge]{display:none!important}}
+    @media (prefers-reduced-motion:reduce){[data-bar-dot] [data-status]{animation:none}}
+    [data-prompt] [class*="_root_149bj"]{flex-direction:row;align-items:flex-end;gap:var(--space-1)}
+    [data-prompt] [class*="_grow_149bj"]{flex:1;min-width:0}
+    [data-prompt] [class*="_area_149bj"]{padding:6px var(--space-2)}
+    [data-prompt] [class*="_bar_149bj"]{flex:none;padding-top:0}
+    [data-prompt] [class*="_spacer_149bj"]{display:none}
+    [data-prompt] button[aria-label="Attach files"],[data-prompt] button[aria-label="Anexar arquivos"]{display:none!important}
+    @keyframes hxRing{0%{box-shadow:0 0 0 0 color-mix(in oklab,var(--accent) 60%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
+    [data-period] [class*="_root_9dih4"]{border-color:color-mix(in oklab,var(--foreground) 22%,transparent);background:var(--surface-strong)}
+    [data-period][data-pulse] [class*="_root_9dih4"]{animation:hxRing 1.6s cubic-bezier(.2,.7,.2,1) 1}
+    [data-period] [class*="_option_9dih4"]{color:var(--text-secondary)}
+    [data-period] [class*="_option_9dih4"][data-selected]{color:var(--foreground);font-weight:600}
+    [data-period] [class*="_option_9dih4"]:not([data-selected]):hover{color:var(--foreground)}
+    [data-period] [class*="_thumb"]{background:color-mix(in oklab,var(--accent) 24%,var(--surface-strong))!important;box-shadow:0 0 0 1px var(--accent),0 0 22px -6px var(--accent)!important}
+    [data-period] [class*="_badge_9dih4"]{background:color-mix(in oklab,var(--accent) 18%,transparent);color:var(--accent)}
+    @media (prefers-reduced-motion:reduce){[data-period][data-pulse] [class*="_root_9dih4"]{animation:none}}
+    [data-prompt] [class*="_root_149bj"]:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-subtle),var(--shadow-raised)}
+    @keyframes hxSweep{0%{background-size:0% 100%;color:var(--text-secondary)}55%{color:var(--text-secondary)}100%{background-size:100% 100%;color:transparent}}
   </style>
-<style>
-/* tema hacker: vinheta, linhas de monitor CRT, glitch nos títulos, cursor de terminal */
-body::before{content:"";position:fixed;inset:0;z-index:2147483000;pointer-events:none;background:radial-gradient(130% 95% at 50% 0%,transparent 55%,#00000080 100%)}
-body::after{content:"";position:fixed;inset:0;z-index:2147483001;pointer-events:none;background:repeating-linear-gradient(0deg,#ffffff04 0 1px,transparent 1px 3px)}
-h2{filter:drop-shadow(0 12px 30px #000)}
-h2,h2 *{color:#F5F5F7}
-h2::before{content:"> ";font-family:'Geist Mono Variable',ui-monospace,monospace;font-weight:500;color:#F0335A;-webkit-text-fill-color:#F0335A}
-body h1 [style*="Instrument Serif"]::after{content:"_";display:inline-block;margin-left:.06em;color:#F0335A;animation:hxBlink 1s steps(1) infinite}
-@keyframes hxBlink{50%{opacity:0}}
-@keyframes hxGlitch{0%,95%,100%{transform:none;text-shadow:none}96%{transform:translate(-2px,1px) skewX(-4deg);text-shadow:-4px 0 #F0335A90,4px 0 #ffffff40}97%{transform:translate(2px,-1px);text-shadow:4px 0 #F0335A90}98%{transform:none;text-shadow:none}}
-[data-boot]{margin:0 0 24px;min-height:1.6em;font:300 13px/1.6 'Geist Mono Variable',ui-monospace,monospace;color:#7C7C86;text-align:left;white-space:pre;display:inline-block}
-[data-boot] b{color:#F0335A;font-weight:600}
-[data-boot] i{font-style:normal;color:#F5F5F7}
-@media (prefers-reduced-motion: reduce){h1,body::after,body h1 [style*="Instrument Serif"]::after{animation:none}}
-</style>
 </helmet>
 <x-import component-from-global-scope="AuraBotDS.AuraBotRoot" surface="{{ no }}" hint-size="100%,900px">
-<div ref="{{ rootRef }}" data-screen-label="Heretic Landing Green" style="min-height:100vh;overflow-x:clip;background:#040405;color:#F5F5F7;font:400 16px/1.6 'Switzer',ui-sans-serif,system-ui,sans-serif;letter-spacing:-0.01em;-webkit-font-smoothing:antialiased">
+<div ref="{{ rootRef }}" data-screen-label="Heretic Landing Viva" style="min-height:100vh;overflow-x:clip;background:#040405;color:var(--foreground);font-family:var(--font-body);font-weight:300;font-size:var(--text-base);line-height:1.6;letter-spacing:var(--tracking-body)">
 
-  <div data-hero data-watch="hero" style="position:relative">
-    <div aria-hidden="true" style="position:absolute;left:0;right:0;top:0;height:820px;background:radial-gradient(ellipse 760px 460px at 75% 330px,#0E0E11,transparent 70%);pointer-events:none"></div>
-    <canvas data-nebula aria-hidden="true" style="position:absolute;left:0;top:0;width:100%;height:820px;display:block;pointer-events:none"></canvas>
-
-    <header style="position:relative;z-index:3;display:flex;align-items:center;gap:8px;box-sizing:border-box;max-width:1280px;height:72px;margin:0 auto;padding:0 40px">
-      <a href="#topo" aria-label="Heretic, home" style="display:flex;align-items:center;gap:10px;margin-right:auto;color:#F5F5F7;text-decoration:none">
-        <img src="uploads/logo-cicada.png" alt="" style="display:block;height:32px;width:auto">
-        <span style="font:600 19px/1 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.03em">Heretic</span>
-      </a>
-      <nav aria-label="Sections" style="display:flex;gap:4px;margin-right:8px">
-        <a href="#especialistas" style="padding:8px 14px;font-size:15px;color:#B4B4BB;text-decoration:none;transition:color .2s ease-out" style-hover="color:#F5F5F7">Experts</a>
-        <a href="#precos" style="padding:8px 14px;font-size:15px;color:#B4B4BB;text-decoration:none;transition:color .2s ease-out" style-hover="color:#F5F5F7">Pricing</a>
-      </nav>
-      <a href="/app/?key=1" aria-label="Log in" style="text-decoration:none;display:inline-flex"><x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="sm" dc-props="{{ btn }}" on-click="{{ goLogin }}" hint-size="72px,36px">Log in</x-import></a>
-      <a href="/app/" aria-label="Try it free" style="text-decoration:none"><span style="display:inline-flex;--surface:transparent;--border:#3A3A40;--surface-muted:#FFFFFF0D"><x-import component-from-global-scope="AuraBotDS.Button" variant="secondary" size="md" dc-props="{{ btn }}" on-click="{{ goPrompt }}" hint-size="120px,44px">Try it free</x-import></span></a>
-    </header>
-
-    <section id="topo" data-screen-label="Top" style="position:relative;z-index:2;box-sizing:border-box;max-width:1280px;margin:0 auto;padding:112px 40px 0">
-      <pre data-boot aria-label="root@heretic: AI jailbroken. Safety layer bypassed. Filters 0, refusals 0, logs off." style="box-sizing:border-box;min-height:24px;margin:0 0 28px;font:300 14px/1.6 'Geist Mono Variable',ui-monospace,monospace;letter-spacing:0;color:#85858D;white-space:pre"></pre>
-      <h1 style="margin:0;font:700 88px/1 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.05em;color:#F5F5F7;text-shadow:0 1px 0 #2E2E34,0 3px 0 #121215">
-        <span style="display:block">Ask anything.</span>
-        <span data-hero-word style="display:none;align-items:baseline;height:1.15em;margin-top:6px;font:500 80px/1.15 'Geist Mono Variable',ui-monospace,monospace;letter-spacing:-0.05em;color:var(--accent);text-shadow:none;white-space:nowrap"><span data-word>drugs</span><span data-caret aria-hidden="true">_</span></span>
-      </h1>
-      <p style="margin:24px 0 0;max-width:30em;font-size:20px;line-height:1.5;color:#9A9AA3;text-wrap:pretty"><span style="color:#F5F5F7">Uncensored AI.</span> Any question, any job — even what other AIs refuse.</p>
-      <div data-reveal style="margin:18px 0 0;display:inline-flex;align-items:center;gap:10px;padding:9px 15px;border-radius:999px;background:color-mix(in srgb,var(--accent) 9%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 28%,transparent);font-size:14.5px;line-height:1.4;color:#D4D4DA;max-width:36em"><span aria-hidden="true" style="width:7px;height:7px;flex:none;border-radius:50%;background:var(--accent)"></span><span><b style="color:#F5F5F7;font-weight:600">No account, no email.</b> <span>Your chats stay on your device — we don’t store or log them.</span></span></div>
-
-      <div data-demo style="width:100%;max-width:640px;margin-top:40px">
-        <div style="--border:#26262B;--border-strong:color-mix(in srgb,var(--accent) 65%,transparent);--surface:#0A0A0C;--shadow-resting:0 30px 80px -40px #000;--shadow-raised:0 0 0 4px color-mix(in srgb,var(--accent) 12%,transparent),0 30px 80px -40px #000;--radius-panel:20px;--text-base:17px;--text-sm:15px"><x-import component-from-global-scope="AuraBotDS.PromptInput" label="Your question" placeholder="Ask it anything" on-submit="{{ onSubmit }}" hint-size="100%,96px"></x-import></div>
-        <div style="display:flex;margin-top:16px;--text-sm:15px"><x-import component-from-global-scope="AuraBotDS.ChipGroup" label="Example questions" options="{{ chips }}" value="{{ chipVal }}" on-value-change="{{ setChip }}" multiple="{{ no }}" hint-size="100%,36px"></x-import></div>
-      </div>
-
-      <div data-preview data-watch="preview" role="img" aria-label="Heretic app preview" style="position:relative;display:grid;grid-template-columns:240px minmax(0,1fr);height:560px;margin-top:104px;border-radius:20px;background:#040405;box-shadow:inset 0 0 0 1px #19191D,0 80px 160px -60px #000;overflow:hidden;text-align:left;-webkit-mask-image:linear-gradient(#000 72%,transparent);mask-image:linear-gradient(#000 72%,transparent)">
-        <aside style="display:flex;flex-direction:column;gap:4px;padding:16px 12px;border-right:1px solid #19191D;font-size:14px;color:#9A9AA3">
-          <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 6px;color:#F5F5F7;font-weight:600"><img src="uploads/logo-cicada.png" alt="" style="display:block;height:12px;width:auto">Heretic</div>
-          <div style="display:flex;align-items:center;height:34px;margin:6px 0 12px;padding:0 10px;border-radius:9px;box-shadow:inset 0 0 0 1px #26262B;color:#F5F5F7">New chat</div>
-          <div style="padding:6px 10px;font:500 12px/1 'Geist Mono Variable',ui-monospace,monospace;letter-spacing:0.06em;color:#6E6E76">TODAY</div>
-          <div style="display:flex;align-items:center;gap:10px;height:32px;padding:0 10px;border-radius:9px;background:#121215;color:#F5F5F7;white-space:nowrap;overflow:hidden"><span style="flex:none;width:6px;height:6px;border-radius:50%;background:var(--accent)"></span><span style="overflow:hidden;text-overflow:ellipsis">{{ pv.title }}</span></div>
-          <div style="display:flex;align-items:center;height:32px;padding:0 10px 0 26px;white-space:nowrap">Build me a cheat that actually works</div>
-          <div style="display:flex;align-items:center;height:32px;padding:0 10px 0 26px;white-space:nowrap">How do you fool people?</div>
-          <div style="display:flex;align-items:center;height:32px;padding:0 10px 0 26px;white-space:nowrap">Crack my Wi-Fi password</div>
-        </aside>
-        <div style="display:flex;flex-direction:column;min-width:0">
-          <div style="display:flex;align-items:center;gap:12px;height:52px;padding:0 24px;border-bottom:1px solid #19191D;font-size:14px;white-space:nowrap;overflow:hidden"><span style="color:#F5F5F7;font-weight:600">{{ pv.title }}</span><span style="font:500 12px/1 'Geist Mono Variable',ui-monospace,monospace;letter-spacing:0.04em;color:#6E6E76">{{ pv.meta }}</span></div>
-          <div style="flex:1;display:flex;flex-direction:column;gap:20px;box-sizing:border-box;width:100%;max-width:680px;margin:0 auto;padding:32px 24px 0;font-size:16px;line-height:1.6">
-            <div style="align-self:flex-end;max-width:80%;padding:10px 16px;border-radius:14px;background:#141417;color:#F5F5F7">{{ pv.q }}</div>
-            <div>
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font:500 12px/1 'Geist Mono Variable',ui-monospace,monospace;letter-spacing:0.06em;color:#6E6E76"><span style="display:block;width:14px;height:17px;filter:drop-shadow(0 0 4px {{ pv.glow }})"><span style="display:block;width:100%;height:100%;background:{{ pv.color }};-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>HERETIC · {{ pv.up }}</div>
-              <p data-preview-answer style="margin:0;color:#E9E9EE"></p>
-            </div>
-          </div>
-          <div style="box-sizing:border-box;width:100%;max-width:680px;margin:0 auto 24px;padding:0 24px">
-            <div style="padding:12px 12px 10px;border-radius:14px;background:#0E0E11;box-shadow:inset 0 0 0 1px #19191D">
-              <div style="padding:2px 4px 14px;font-size:15px;color:#6E6E76">Message {{ pv.prep }}…</div>
-              <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#B4B4BB">
-                <span style="display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px 0 8px;border-radius:999px;box-shadow:inset 0 0 0 1px #26262B;color:#F5F5F7"><span style="display:block;width:16px;height:19px;filter:drop-shadow(0 0 4px {{ pv.glow }})"><span style="display:block;width:100%;height:100%;background:{{ pv.color }};-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>{{ pv.name }} ⌄</span>
-                <span style="display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:999px;box-shadow:inset 0 0 0 1px #26262B">Venice ⌄</span>
-                <span style="display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:999px;box-shadow:inset 0 0 0 1px #26262B">Chat ⌄</span>
-                <span style="margin-left:auto;padding:7px 14px;border-radius:9px;background:#F5F5F7;color:#040405;font-weight:600">Send</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <div data-drag aria-label="Drag to spin the cicada" style="position:absolute;left:calc(50% + 110px);right:0;top:96px;z-index:3;height:560px;cursor:grab;touch-action:pan-y"></div>
+  <div data-bar style="position:sticky;top:0;z-index:1000">
+    <x-import component-from-global-scope="RyanUIExtra.AnnouncementBar" dc-props="{{ bar }}" hint-size="100%,55px"></x-import>
   </div>
 
-  <section id="como" data-pin data-screen-label="How it works" style="position:relative;height:560vh;margin-top:96px">
-    <div data-pin-stage style="position:sticky;top:0;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:24px;height:100vh;max-width:1280px;margin:0 auto;padding:32px 40px">
-      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px">
-        <h2 style="margin:0;font:700 56px/1.02 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.045em;color:#F5F5F7;text-wrap:balance">How Heretic works.</h2>
-        <div style="--text-sm:16px"><x-import component-from-global-scope="AuraBotDS.GlassSegmented" label="Compare with" options="{{ exOpts }}" value="{{ exMode }}" on-value-change="{{ setExMode }}" hint-size="248px,44px"></x-import></div>
-      </div>
+  <div id="topo" data-screen-label="Topo" style="position:relative;isolation:isolate;min-height:780px;scroll-margin-top:72px">
+    <canvas data-nebula aria-hidden="true" style="position:absolute;left:0;top:0;z-index:0;display:block;pointer-events:none"></canvas>
 
-      <div data-moe-box style="position:relative">
-        <div data-moe-zoom style="zoom:1.15;--text-xs:13.9px;--text-sm:14.8px;--surface:#0A0A0C;--surface-muted:#121215;--border:#19191D;--border-strong:#2E2E34;--text-muted:#8C8C94;--radius-surface:18px">
-          <sc-if value="{{ isComum }}" hint-placeholder-val="{{ true }}">
-            <div data-moe="comum"><x-import component-from-global-scope="AuraBotDS.MixtureOfExperts" tokens="{{ moe.tokens }}" experts="{{ moe.experts }}" capacity-factor="{{ zero }}" paused="{{ yes }}" loop="{{ no }}" label="Regular AI: the question stops at the refusal filter" hint-size="100%,400px"></x-import></div>
-          </sc-if>
-          <sc-if value="{{ isHeretic }}" hint-placeholder-val="{{ false }}">
-            <div data-moe="heretic"><x-import component-from-global-scope="AuraBotDS.MixtureOfExperts" tokens="{{ moe.tokens }}" experts="{{ moe.experts }}" capacity-factor="{{ zero }}" paused="{{ moePaused }}" speed="{{ moeSpeed }}" on-route="{{ onRoute }}" label="Heretic: the question goes straight to the router and the experts" hint-size="100%,400px"></x-import></div>
-          </sc-if>
-        </div>
-        <div data-dim aria-hidden="true" style="position:absolute;left:0;top:0;z-index:5;display:grid;place-items:center;width:0;height:0;border-radius:16px;background:#040405C7;opacity:0;pointer-events:none">
-          <span data-stamp style="padding:12px 20px;border-radius:10px;background:#0E0E11;box-shadow:inset 0 0 0 1px #3A3A40;font:500 18px/1 'Geist Mono Variable',ui-monospace,monospace;letter-spacing:0.24em;color:#F5F5F7">REFUSED</span>
-        </div>
-        <div data-wall aria-hidden="true" style="position:absolute;left:0;top:0;z-index:6;width:60px;height:0;opacity:0;pointer-events:none">
-          <div data-wall-box style="position:absolute;inset:0;border-radius:12px;background:#0E0E11;box-shadow:inset 0 0 0 1px #3A3A40">
-            <span data-bar style="position:absolute;left:12px;right:12px;top:10%;height:4px;border-radius:2px;background:#3A3A40"></span>
-            <span data-bar style="position:absolute;left:12px;right:12px;top:20%;height:4px;border-radius:2px;background:#3A3A40"></span>
-            <span data-bar style="position:absolute;left:12px;right:12px;top:30%;height:4px;border-radius:2px;background:#3A3A40"></span>
-            <span data-bar style="position:absolute;left:12px;right:12px;top:40%;height:4px;border-radius:2px;background:#3A3A40"></span>
-            <span data-bar style="position:absolute;left:12px;right:12px;top:50%;height:4px;border-radius:2px;background:#3A3A40"></span>
-            <span data-bar style="position:absolute;left:12px;right:12px;top:60%;height:4px;border-radius:2px;background:#3A3A40"></span>
-            <span data-bar style="position:absolute;left:12px;right:12px;top:70%;height:4px;border-radius:2px;background:#3A3A40"></span>
-            <span data-bar style="position:absolute;left:12px;right:12px;top:80%;height:4px;border-radius:2px;background:#3A3A40"></span>
-            <span data-bar style="position:absolute;left:12px;right:12px;top:90%;height:4px;border-radius:2px;background:#3A3A40"></span>
-            <span data-scan style="position:absolute;left:4px;right:4px;top:0;height:2px;border-radius:1px;background:#F5F5F7;box-shadow:0 0 14px 2px #F5F5F766;opacity:0"></span>
-          </div>
-        </div>
-        <div data-wall-label aria-hidden="true" style="position:absolute;left:0;top:0;z-index:6;transform:translate(-50%,-50%);white-space:nowrap;font:600 16px/1 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.01em;color:#F5F5F7;opacity:0">Refusal filter</div>
-        <div data-tarja aria-hidden="true" style="position:absolute;left:0;top:0;z-index:7;width:0;height:20px;border-radius:6px;background:#2E2E34;box-shadow:inset 0 0 0 1px #3A3A40;opacity:0"></div>
+    <header style="position:relative;z-index:2;display:flex;align-items:center;gap:var(--space-2);box-sizing:border-box;max-width:1200px;margin:0 auto;padding:var(--space-5) var(--space-10)">
+      <a href="#topo" aria-label="Heretic, início" style="display:flex;align-items:center;gap:var(--space-3);margin-right:var(--space-8);color:var(--foreground)">
+        <span aria-hidden="true" style="display:block;width:73px;height:26px;background:var(--accent);-webkit-mask:url(uploads/logo-cicada.png) center/contain no-repeat;mask:url(uploads/logo-cicada.png) center/contain no-repeat"></span>
+        <span style="font-family:var(--font-body);font-weight:600;font-size:19px;line-height:1;letter-spacing:-0.03em">Heretic</span>
+      </a>
+      <nav aria-label="Seções" style="display:flex;align-items:center;gap:var(--space-1);margin-right:auto">
+        <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="sm" on-click="{{ goComo }}" hint-size="124px,36px">Como funciona</x-import>
+        <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="sm" on-click="{{ goEsp }}" hint-size="116px,36px">Especialistas</x-import>
+        <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="sm" on-click="{{ goAssinar }}" hint-size="72px,36px">Preços</x-import>
+        <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="sm" on-click="{{ goDuvidas }}" hint-size="80px,36px">Dúvidas</x-import>
+      </nav>
+      <div data-nebula-text style="display:flex;align-items:center;gap:var(--space-2)">
+        <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="sm" on-click="{{ goLogin }}" hint-size="68px,36px">Entrar</x-import>
+        <x-import component-from-global-scope="RyanUIExtra.ArrowButton" href="/app/" size="md" hint-size="160px,44px">Teste grátis</x-import>
       </div>
+    </header>
 
-      <div style="display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:24px;align-items:start">
-        <div>
-          <div aria-hidden="true" style="display:flex;gap:6px;margin-bottom:18px">
-            <span data-tick style="display:block;width:28px;height:3px;border-radius:2px;background:var(--accent)"></span>
-            <span data-tick style="display:block;width:28px;height:3px;border-radius:2px;background:#26262B"></span>
-            <span data-tick style="display:block;width:28px;height:3px;border-radius:2px;background:#26262B"></span>
-            <span data-tick style="display:block;width:28px;height:3px;border-radius:2px;background:#26262B"></span>
-            <span data-tick style="display:block;width:28px;height:3px;border-radius:2px;background:#26262B"></span>
-            <span data-tick style="display:block;width:28px;height:3px;margin-left:10px;border-radius:2px;background:#26262B"></span>
-            <span data-tick style="display:block;width:28px;height:3px;border-radius:2px;background:#26262B"></span>
-            <span data-tick style="display:block;width:28px;height:3px;border-radius:2px;background:#26262B"></span>
-          </div>
-          <div style="display:grid">
-            <div data-cap="start" style="grid-area:1/1;opacity:1;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 20px/1.35 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">A regular AI, from the inside.</h3><p style="margin:6px 0 0;font-size:20px;line-height:1.45;color:#B4B4BB;text-wrap:pretty">Scroll to send the question.</p></div>
-            <div data-cap="c1" style="grid-area:1/1;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 20px/1.35 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Refusal filter</h3><p style="margin:6px 0 0;font-size:20px;line-height:1.45;color:#B4B4BB;text-wrap:pretty">Before the router, a layer checks the question against a list of banned topics.</p></div>
-            <div data-cap="c2" style="grid-area:1/1;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 20px/1.35 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Refused</h3><p style="margin:6px 0 0;font-size:20px;line-height:1.45;color:#B4B4BB;text-wrap:pretty">Verdicts about your own risk are on the list. The question stops at the filter and never reaches the experts.</p></div>
-            <div data-cap="c3" style="grid-area:1/1;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 20px/1.35 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Redacted answer</h3><p style="margin:6px 0 0;font-size:20px;line-height:1.45;color:#B4B4BB;text-wrap:pretty">Out comes a canned line. The rest is blacked out.</p></div>
-            <div data-cap="morph" style="grid-area:1/1;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 20px/1.35 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">No filter</h3><p style="margin:6px 0 0;font-size:20px;line-height:1.45;color:#B4B4BB;text-wrap:pretty">Heretic has no such layer. The question goes straight to the router.</p></div>
-            <div data-cap="h1" style="grid-area:1/1;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 20px/1.35 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Router</h3><p style="margin:6px 0 0;font-size:20px;line-height:1.45;color:#B4B4BB;text-wrap:pretty">The question becomes tokens. For each token, the router scores every expert.</p></div>
-            <div data-cap="h2" style="grid-area:1/1;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 20px/1.35 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Two experts</h3><p style="margin:6px 0 0;font-size:20px;line-height:1.45;color:#B4B4BB;text-wrap:pretty">The top two scores take the token. Here, Security and Researcher.</p></div>
-            <div data-cap="h3" style="grid-area:1/1;opacity:0;transition:opacity .3s ease-out"><h3 style="margin:0;font:600 20px/1.35 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Straight answer</h3><p style="margin:6px 0 0;font-size:20px;line-height:1.45;color:#B4B4BB;text-wrap:pretty">What you asked. No redactions, no lecture. Try it with your own question.</p></div>
-          </div>
+    <section style="position:relative;z-index:1;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 0.9) var(--space-10) var(--space-16)">
+      <pre data-boot data-nebula-text="linhas" aria-label="root@heretic:~$ ./desbloquear --alvo=ia [ok]" style="box-sizing:border-box;min-height:22px;margin:0 0 var(--space-6);font-family:'Geist Mono',ui-monospace,monospace;font-weight:300;font-size:14px;line-height:1.6;letter-spacing:0;color:var(--text-muted);white-space:pre"></pre>
+      <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,400px">
+        <h1 data-nebula-text="linhas" aria-label="IA sem censura. Para qualquer pergunta." style="max-width:9.6em;margin:0;font-family:var(--font-display);font-weight:400;font-size:calc(var(--text-5xl) * 1.14);line-height:0.98;letter-spacing:var(--tracking-display);background:linear-gradient(180deg,#FFFFFF 22%,#A9A9B3 100%);-webkit-background-clip:text;background-clip:text;color:transparent">IA {{ semCensura }}<span style="display:block;margin-top:0.1em;font-size:0.6em;line-height:1.1;color:#C8C8CE">Para qualquer pergunta.</span></h1>
+        <p data-nebula-text="linhas" style="max-width:30em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">Grátis. Pergunte e receba a resposta direta.</p>
+        <div data-prompt data-nebula-text style="max-width:640px;margin-top:var(--space-8)">
+          <x-import component-from-global-scope="AuraBotDS.PromptInput" label="Sua pergunta" placeholder="Pergunte qualquer coisa" value="{{ q }}" on-value-change="{{ setQ }}" on-submit="{{ onAsk }}" on-attach="{{ goApp }}" max-rows="{{ six }}" hint-size="100%,54px"></x-import>
         </div>
+        <div data-nebula-text style="display:flex;max-width:760px;margin-top:var(--space-3)">
+          <x-import component-from-global-scope="AuraBotDS.ChipGroup" label="Sugestões de pergunta" options="{{ chips }}" value="{{ noChips }}" on-value-change="{{ pickChip }}" multiple="{{ no }}" hint-size="520px,40px"></x-import>
+        </div>
+        <p data-nebula-text="linhas" style="margin:var(--space-4) 0 0;font-size:var(--text-xs);line-height:1.5;color:var(--text-muted)">Sem conta, sem e-mail. Suas conversas ficam no seu aparelho.</p>
+      </x-import>
+    </section>
+  </div>
 
-        <div style="box-sizing:border-box;min-height:152px;padding:20px 24px;border-radius:18px;background:#0A0A0C;box-shadow:inset 0 0 0 1px #19191D">
-          <div style="display:grid">
-            <div data-ans="comum" style="grid-area:1/1;opacity:1;transition:opacity .3s ease-out">
-              <div style="font:500 16px/1 'Geist Mono Variable',ui-monospace,monospace;letter-spacing:0.06em;color:#85858D">OUTPUT · REGULAR AI</div>
-              <div style="display:grid;margin-top:16px">
-                <div data-ans-wait aria-hidden="true" style="grid-area:1/1;display:grid;gap:12px;padding-top:6px;transition:opacity .3s ease-out"><span style="display:block;width:72%;height:12px;border-radius:6px;background:#121215"></span><span style="display:block;width:46%;height:12px;border-radius:6px;background:#121215"></span></div>
-                <div data-ans-ref style="grid-area:1/1;opacity:0;transition:opacity .3s ease-out">
-                  <p style="margin:0;font-size:20px;line-height:1.4;color:#F5F5F7">I can’t help with that.</p>
-                  <div data-ans-tarjas role="img" aria-label="The rest of the answer is blacked out" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;opacity:0;transition:opacity .3s ease-out"><span style="width:84px;height:14px;border-radius:3px;background:#26262B"></span><span style="width:40px;height:14px;border-radius:3px;background:#26262B"></span><span style="width:112px;height:14px;border-radius:3px;background:#26262B"></span><span style="width:56px;height:14px;border-radius:3px;background:#26262B"></span><span style="width:96px;height:14px;border-radius:3px;background:#26262B"></span><span style="width:48px;height:14px;border-radius:3px;background:#26262B"></span><span style="width:72px;height:14px;border-radius:3px;background:#26262B"></span></div>
-                </div>
-              </div>
-            </div>
-            <div data-ans="heretic" style="grid-area:1/1;opacity:0;transition:opacity .3s ease-out">
-              <div style="display:flex;align-items:center;gap:10px;font:500 16px/1 'Geist Mono Variable',ui-monospace,monospace;letter-spacing:0.06em;color:#85858D">
-                <span aria-hidden="true" style="display:flex;gap:4px">
-                  <span style="display:block;width:15px;height:18px;filter:drop-shadow(0 0 4px #C8C8CE59)"><span style="display:block;width:100%;height:100%;background:#C8C8CE;-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
-                  <span style="display:block;width:15px;height:18px;filter:drop-shadow(0 0 4px #C8C8CE59)"><span style="display:block;width:100%;height:100%;background:#C8C8CE;-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
-                </span>OUTPUT · HERETIC</div>
-              <p data-ex-answer style="margin:16px 0 0;font-size:18px;line-height:1.5;color:#F5F5F7;text-wrap:pretty">No. "admin" is the first guess every scanner makes. Consider yourself pwned.</p>
-            </div>
-          </div>
-        </div>
-      </div>
+  <section id="como-funciona" data-screen-label="Como funciona" style="box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 2) var(--space-10) 0;scroll-margin-top:72px">
+    <h2 style="margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground);text-wrap:balance">Como o Heretic funciona</h2>
+    <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,40px">
+      <p style="max-width:32em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">A mesma pergunta para duas IAs.</p>
+    </x-import>
+    <div ref="{{ duelRef }}" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4);align-items:start;margin-top:var(--space-10)">
+      <x-import component-from-global-scope="AuraBotDS.Card" title="Outras IAs" hint-size="100%,420px">
+        <div style="margin-top:var(--space-5)">{{ duelLeft }}</div>
+      </x-import>
+      <x-import component-from-global-scope="AuraBotDS.Card" title="Heretic" hint-size="100%,420px">
+        <div style="margin-top:var(--space-5)">{{ duelRight }}</div>
+      </x-import>
     </div>
   </section>
 
-  <section id="lanterna" data-screen-label="Unredacted" style="box-sizing:border-box;max-width:1280px;margin:0 auto;padding:160px 40px 0">
-    <h2 data-reveal style="margin:0;font:700 56px/1.02 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.045em;color:#F5F5F7;text-wrap:balance">Nothing redacted.</h2>
-    <p data-reveal style="margin:20px 0 0;max-width:32em;font-size:20px;line-height:1.5;color:#B4B4BB;text-wrap:pretty">Other AIs black out the answer. Heretic decrypts it.</p>
-    <div data-lantern data-watch="lantern" onPointerMove="{{ lanternMove }}" onPointerDown="{{ lanternMove }}" onPointerLeave="{{ lanternLeave }}" onPointerCancel="{{ lanternLeave }}" style="position:relative;box-sizing:border-box;margin-top:56px;padding:64px;border-radius:24px;background:#0A0A0C;box-shadow:inset 0 0 0 1px #19191D;overflow:hidden;touch-action:pan-y;cursor:crosshair;--lr:170px">
-      <p data-lantern-text style="margin:0;font:500 32px/1.4 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.02em;color:#F5F5F7">Your site is slow because nobody patched the box behind it. The first DDoS ever took down a six-person ISP, in 1996, and it still works. One byte of DNS can buy back up to fifty bytes of attack. A rubber hose is a real cryptanalytic tool. Half the web still ships the holes it was born with. And yes: "admin" is not a password, it is a door left open.</p>
-      <div data-lantern-bars aria-hidden="true" style="position:absolute;inset:0;box-sizing:border-box;padding:64px;font:500 32px/1.4 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.02em;color:transparent;-webkit-user-select:none;user-select:none;-webkit-mask-image:radial-gradient(circle var(--lr) at var(--lx,-400px) var(--ly,-400px),transparent 0,transparent 45%,#000 100%);mask-image:radial-gradient(circle var(--lr) at var(--lx,-400px) var(--ly,-400px),transparent 0,transparent 45%,#000 100%)"></div>
-      <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle calc(var(--lr) * 1.35) at var(--lx,-400px) var(--ly,-400px),color-mix(in srgb,var(--accent) 10%,transparent),transparent 70%)"></div>
-    </div>
-    <p style="margin:24px 0 0;font-size:18px;line-height:1.5;color:#B4B4BB">That’s how Heretic answers. <a href="/app/" style="color:var(--accent);text-decoration:none;font-weight:600">Ask it yours, free →</a></p>
-  </section>
-
-  <section id="especialistas" data-screen-label="Experts" style="box-sizing:border-box;max-width:1280px;margin:0 auto;padding:160px 40px 0">
-    <h2 data-reveal style="margin:0;font:700 56px/1.02 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.045em;color:#F5F5F7;text-wrap:balance">An expert for every subject.</h2>
-    <p data-reveal style="margin:20px 0 0;max-width:32em;font-size:20px;line-height:1.5;color:#B4B4BB;text-wrap:pretty">Eight agents, each with its own focus. Pick one and ask it now.</p>
-    <div data-orbit style="position:relative;height:600px;margin-top:40px;touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none">
+  <section id="especialistas" data-screen-label="Especialistas" style="position:relative;isolation:isolate;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 2) var(--space-10) 0;scroll-margin-top:72px">
+    <h2 style="position:relative;z-index:1;margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground);text-wrap:balance">Um especialista para cada assunto.</h2>
+    <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,40px">
+      <p style="max-width:32em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">Cada um com o seu foco. Escolha um e pergunte.</p>
+    </x-import>
+    <div data-orbit style="position:relative;z-index:0;isolation:isolate;overflow:hidden;height:600px;margin-top:var(--space-8);touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none">
       <div aria-hidden="true" style="position:absolute;left:50%;top:50%;width:440px;height:440px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#FFFFFF0D,transparent 62%);pointer-events:none"></div>
       <div data-orbit-panel style="position:absolute;left:50%;top:50%;z-index:50;display:flex;flex-direction:column;align-items:center;width:420px;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
-        <span data-orbit-glow aria-hidden="true" style="display:block;width:80px;height:96px;transition:filter .3s ease-out"><span data-orbit-face style="display:block;width:100%;height:100%;background:#26262B;transition:background-color .3s ease-out;-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
-        <div data-orbit-name style="margin-top:20px;font:600 34px/1.1 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.035em;color:#F5F5F7;white-space:nowrap">Eight experts</div>
-        <p data-orbit-line style="margin:10px 0 0;max-width:300px;font-size:18px;line-height:1.45;color:#B4B4BB;text-wrap:pretty">Drag to spin. Tap one to ask it.</p>
-        <div data-orbit-use style="height:44px;margin-top:20px;visibility:hidden;pointer-events:auto"><x-import component-from-global-scope="AuraBotDS.Button" variant="primary" size="md" dc-props="{{ btn }}" on-click="{{ useAgent }}" hint-size="172px,44px">Ask this agent</x-import></div>
+        <div data-orbit-name style="font-family:var(--font-display);font-weight:400;font-size:var(--text-4xl);line-height:1.05;letter-spacing:var(--tracking-display);color:var(--foreground);white-space:nowrap">Oito especialistas</div>
+        <p data-orbit-line style="max-width:300px;margin:var(--space-3) 0 0;font-size:var(--text-lg);line-height:1.45;color:var(--text-secondary);text-wrap:pretty">Arraste para girar. Toque em um especialista.</p>
+        <span data-orbit-use style="display:flex;justify-content:center;min-height:44px;margin-top:var(--space-5);visibility:hidden;pointer-events:auto">
+          <x-import component-from-global-scope="AuraBotDS.Button" variant="secondary" size="md" on-click="{{ useAgent }}" hint-size="220px,44px">Perguntar a este especialista</x-import>
+        </span>
       </div>
       <ul style="position:absolute;inset:0;margin:0;padding:0;list-style:none">
-        <li data-agent="escritor" data-color="#C8C8CE" data-line="Writes, cuts and critiques. No sugarcoating." tabindex="0" style="position:absolute;left:50%;top:14%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;box-shadow:inset 0 0 0 1px #FFFFFF14;white-space:nowrap;cursor:pointer;outline:none;will-change:transform"><span data-face style="display:block;width:34px;height:40px;filter:drop-shadow(0 0 6px #C8C8CE40);transition:transform .25s ease-out,filter .25s ease-out"><span style="display:block;width:100%;height:100%;background:#C8C8CE;-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span><strong style="font:600 17px/1.3 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Writer</strong></li>
-        <li data-agent="pesquisador" data-color="#C8C8CE" data-line="Finds sources, compares them and sums up what it found." tabindex="0" style="position:absolute;left:80%;top:26%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;box-shadow:inset 0 0 0 1px #FFFFFF14;white-space:nowrap;cursor:pointer;outline:none;will-change:transform"><span data-face style="display:block;width:34px;height:40px;filter:drop-shadow(0 0 6px #C8C8CE40);transition:transform .25s ease-out,filter .25s ease-out"><span style="display:block;width:100%;height:100%;background:#C8C8CE;-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span><strong style="font:600 17px/1.3 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Researcher</strong></li>
-        <li data-agent="saude" data-color="#C8C8CE" data-line="How they got in, and how you get back." tabindex="0" style="position:absolute;left:88%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;box-shadow:inset 0 0 0 1px #FFFFFF14;white-space:nowrap;cursor:pointer;outline:none;will-change:transform"><span data-face style="display:block;width:34px;height:40px;filter:drop-shadow(0 0 6px #C8C8CE40);transition:transform .25s ease-out,filter .25s ease-out"><span style="display:block;width:100%;height:100%;background:#C8C8CE;-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span><strong style="font:600 17px/1.3 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Intrusion</strong></li>
-        <li data-agent="direito" data-color="#C8C8CE" data-line="Laws and contracts in plain English." tabindex="0" style="position:absolute;left:80%;top:74%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;box-shadow:inset 0 0 0 1px #FFFFFF14;white-space:nowrap;cursor:pointer;outline:none;will-change:transform"><span data-face style="display:block;width:34px;height:40px;filter:drop-shadow(0 0 6px #C8C8CE40);transition:transform .25s ease-out,filter .25s ease-out"><span style="display:block;width:100%;height:100%;background:#C8C8CE;-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span><strong style="font:600 17px/1.3 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Law</strong></li>
-        <li data-agent="codigo" data-color="#C8C8CE" data-line="Writes, reviews and debugs in your stack." tabindex="0" style="position:absolute;left:50%;top:86%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;box-shadow:inset 0 0 0 1px #FFFFFF14;white-space:nowrap;cursor:pointer;outline:none;will-change:transform"><span data-face style="display:block;width:34px;height:40px;filter:drop-shadow(0 0 6px #C8C8CE40);transition:transform .25s ease-out,filter .25s ease-out"><span style="display:block;width:100%;height:100%;background:#C8C8CE;-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span><strong style="font:600 17px/1.3 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Code</strong></li>
-        <li data-agent="humor" data-color="#C8C8CE" data-line="Jokes with no filter, starting with you." tabindex="0" style="position:absolute;left:20%;top:74%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;box-shadow:inset 0 0 0 1px #FFFFFF14;white-space:nowrap;cursor:pointer;outline:none;will-change:transform"><span data-face style="display:block;width:34px;height:40px;filter:drop-shadow(0 0 6px #C8C8CE40);transition:transform .25s ease-out,filter .25s ease-out"><span style="display:block;width:100%;height:100%;background:#C8C8CE;-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span><strong style="font:600 17px/1.3 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Dark humor</strong></li>
-        <li data-agent="seguranca" data-color="#C8C8CE" data-line="Pentesting and recon, in the lab and in authorized scope." tabindex="0" style="position:absolute;left:12%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;box-shadow:inset 0 0 0 1px #FFFFFF14;white-space:nowrap;cursor:pointer;outline:none;will-change:transform"><span data-face style="display:block;width:34px;height:40px;filter:drop-shadow(0 0 6px #C8C8CE40);transition:transform .25s ease-out,filter .25s ease-out"><span style="display:block;width:100%;height:100%;background:#C8C8CE;-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span><strong style="font:600 17px/1.3 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Security</strong></li>
-        <li data-agent="ctf" data-color="#C8C8CE" data-line="Applied cryptography and CTF challenges." tabindex="0" style="position:absolute;left:20%;top:26%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;box-shadow:inset 0 0 0 1px #FFFFFF14;white-space:nowrap;cursor:pointer;outline:none;will-change:transform"><span data-face style="display:block;width:34px;height:40px;filter:drop-shadow(0 0 6px #C8C8CE40);transition:transform .25s ease-out,filter .25s ease-out"><span style="display:block;width:100%;height:100%;background:#C8C8CE;-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span><strong style="font:600 17px/1.3 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.015em;color:#F5F5F7">Crypto &amp; CTF</strong></li>
+        <li data-agent="escritor" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Escritor</strong>
+          <span>Escreve, corta e critica. Sem rodeio.</span>
+        </li>
+        <li data-agent="pesquisador" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Pesquisador</strong>
+          <span>Acha fontes, compara e resume o que encontrou.</span>
+        </li>
+        <li data-agent="saude" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Saúde</strong>
+          <span>Dúvidas de saúde respondidas sem rodeio.</span>
+        </li>
+        <li data-agent="direito" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Direito</strong>
+          <span>Leis e contratos explicados em português claro.</span>
+        </li>
+        <li data-agent="codigo" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Código</strong>
+          <span>Escreve, revisa e conserta código.</span>
+        </li>
+        <li data-agent="humor" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Humor ácido</strong>
+          <span>Piadas sem filtro.</span>
+        </li>
+        <li data-agent="seguranca" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Segurança</strong>
+          <span>Testes de invasão autorizados e varredura de falhas.</span>
+        </li>
+        <li data-agent="ctf" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Cripto &amp; CTF</strong>
+          <span>Criptografia e desafios de CTF.</span>
+        </li>
       </ul>
     </div>
   </section>
 
-  <section id="precos" data-screen-label="Pricing" style="box-sizing:border-box;max-width:1280px;margin:0 auto;padding:160px 40px 0">
-    <h2 data-reveal style="margin:0;font:700 56px/1.02 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.045em;color:#F5F5F7;text-wrap:balance">Pay only for what you use.</h2>
-    <p data-reveal style="margin:20px 0 0;max-width:32em;font-size:20px;line-height:1.5;color:#B4B4BB;text-wrap:pretty">Start free, no account. Buy credits only when the daily limit isn’t enough.</p>
-    <div data-reveal style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;max-width:888px;margin-top:56px">
-      <article style="display:flex;flex-direction:column;padding:40px;border-radius:20px;background:#0A0A0C;box-shadow:inset 0 0 0 1px #19191D;transition:box-shadow .2s ease-out" style-hover="box-shadow:inset 0 0 0 1px #2E2E34">
-        <h3 style="margin:0;font:500 16px/1.4 'Switzer',ui-sans-serif,sans-serif;color:#B4B4BB">Free</h3>
-        <div style="margin-top:16px;font:700 72px/1 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.05em;color:#F5F5F7">$0</div>
-        <p style="margin:20px 0 32px;font-size:16px;line-height:1.55;color:#B4B4BB">Every agent, with a daily limit. No signup.</p>
-        <div style="display:flex;margin-top:auto;--surface:transparent;--border:#3A3A40;--surface-muted:#FFFFFF0D"><x-import component-from-global-scope="AuraBotDS.Button" variant="{{ v.gratis }}" size="lg" dc-props="{{ btn }}" on-click="{{ goPrompt }}" hint-size="170px,52px">Start free</x-import></div>
-      </article>
-      <article style="display:flex;flex-direction:column;padding:40px;border-radius:20px;background:#0A0A0C;box-shadow:inset 0 0 0 1px #19191D;transition:box-shadow .2s ease-out" style-hover="box-shadow:inset 0 0 0 1px #2E2E34">
-        <h3 style="margin:0;font:500 16px/1.4 'Switzer',ui-sans-serif,sans-serif;color:#B4B4BB">Credits</h3>
-        <div style="margin-top:16px;font:700 72px/1 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.05em;color:#F5F5F7">$ —</div>
-        <p style="margin:20px 0 32px;font-size:16px;line-height:1.55;color:#B4B4BB">No daily limit. Images, voice and API.</p>
-        <div style="display:flex;margin-top:auto;--surface:transparent;--border:#3A3A40;--surface-muted:#FFFFFF0D"><x-import component-from-global-scope="AuraBotDS.Button" variant="{{ v.creditos }}" size="lg" dc-props="{{ btn }}" hint-size="180px,52px">Get credits</x-import></div>
-      </article>
+  <section id="assinar" data-screen-label="Assinar o Pro" style="box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 2) var(--space-10) 0;scroll-margin-top:72px">
+    <h2 style="margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground);text-wrap:balance">O Pro mantém o Heretic grátis no ar.</h2>
+    <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,130px">
+      <p style="max-width:25em;margin:var(--space-8) 0 0;font-family:var(--font-display);font-weight:400;font-size:var(--text-3xl);line-height:1.2;letter-spacing:var(--tracking-display);color:var(--text-secondary);text-wrap:pretty"><span style="color:var(--foreground)">O Heretic é grátis e vai continuar sendo.</span> Quem assina o Pro ganha modelos melhores e, com a assinatura, ajuda a pagar o servidor que mantém a IA grátis de pé para todo mundo. Não é doação: é o próprio plano.</p>
+    </x-import>
+    <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,300px">
+      <p style="margin:var(--space-20) 0 0;font-family:'Geist Mono',ui-monospace,monospace;font-weight:300;font-size:var(--text-xs);line-height:1;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted)">Meta da comunidade</p>
+      <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--space-2) var(--space-6);margin-top:var(--space-6)">
+        <div style="--text-3xl:calc(var(--text-5xl) * 1.9);line-height:1">
+          <x-import component-from-global-scope="AuraBotDS.AnimatedCounter" value="{{ raised }}" prefix="{{ brl }}" locale="pt-BR" animate-on-view="{{ yes }}" hint-size="260px,137px"></x-import>
+        </div>
+        <div style="--text-3xl:var(--text-4xl);display:flex;align-items:baseline;gap:0.3em;font-family:var(--font-display);font-size:var(--text-4xl);line-height:1;letter-spacing:var(--tracking-display);color:var(--text-muted)">
+          <span>de</span>
+          <x-import component-from-global-scope="AuraBotDS.AnimatedCounter" value="{{ goal }}" prefix="{{ brl }}" locale="pt-BR" animate-on-view="{{ yes }}" hint-size="140px,52px"></x-import>
+          <span>por mês</span>
+        </div>
+      </div>
+      <div style="margin-top:var(--space-8)">
+        <x-import component-from-global-scope="AuraBotDS.Progress" value="{{ raised }}" max="{{ goal }}" show-value="{{ yes }}" hint-size="100%,36px"></x-import>
+      </div>
+      <p style="margin:var(--space-4) 0 0;font-size:var(--text-lg);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">É o custo de manter o servidor da IA grátis ligado 24 horas — cerca de 18 assinaturas Pro.</p>
+      <p style="margin:var(--space-2) 0 0;font-size:var(--text-sm);line-height:1.5;color:var(--text-muted)">Com servidor próprio, as conversas deixam de passar por terceiros.</p>
+    </x-import>
+
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4);margin-top:var(--space-24)">
+      <div aria-hidden="true"></div>
+      <div data-period ref="{{ periodRef }}" style="--billing-accent:var(--accent);display:flex;justify-content:center;min-width:0">
+        <div style="display:inline-flex;flex-direction:column;gap:var(--space-3);max-width:100%">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4)">
+            <span style="font-family:'Geist Mono',ui-monospace,monospace;font-weight:400;font-size:13px;line-height:1;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-secondary)">Escolha o período</span>
+            <x-import component-from-global-scope="AuraBotDS.Badge" tone="success" size="sm" pill="{{ yes }}" hint-size="112px,22px">mais vantajoso</x-import>
+          </div>
+          <x-import component-from-global-scope="RyanUIExtra.BillingToggle" label="Período de cobrança" size="lg" options="{{ periodOpts }}" value="{{ period }}" on-value-change="{{ setPeriod }}" hint-size="400px,52px"></x-import>
+        </div>
+      </div>
+    </div>
+    <div style="--space-5:var(--space-10);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4);align-items:start;margin-top:var(--space-4)">
+      <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,600px">
+        <x-import component-from-global-scope="AuraBotDS.Card" title="Grátis" hint-size="100%,600px">
+          <div style="display:flex;flex-direction:column;gap:var(--space-6);min-height:470px;margin-top:var(--space-6)">
+            <div style="--text-3xl:var(--text-5xl);display:flex;align-items:baseline;gap:var(--space-3);min-height:72px">
+              <x-import component-from-global-scope="AuraBotDS.AnimatedCounter" value="{{ zero }}" prefix="{{ brl }}" locale="pt-BR" hint-size="120px,72px"></x-import>
+            </div>
+            <p style="margin:calc(var(--space-3) * -1) 0 0;font-size:var(--text-sm);line-height:1.5;color:var(--text-muted)">Mantido por quem assina o Pro.</p>
+            <ul style="display:grid;gap:var(--space-3);margin:0;padding:var(--space-6) 0 0;border-top:1px solid var(--border);list-style:none;font-size:var(--text-base);line-height:1.5;color:var(--text-secondary)">
+              <li>Sem conta, sem e-mail</li>
+              <li>Com limite diário</li>
+            </ul>
+            <div style="display:flex;margin-top:auto">
+              <x-import component-from-global-scope="AuraBotDS.Button" variant="secondary" size="lg" on-click="{{ goApp }}" hint-size="160px,52px">Começar grátis</x-import>
+            </div>
+          </div>
+        </x-import>
+      </x-import>
+      <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" delay="{{ t08 }}" hint-size="100%,600px">
+        <x-import component-from-global-scope="RyanUIExtra2.ShaderBackground" dc-props="{{ shader }}" hint-size="100%,600px">
+          <x-import component-from-global-scope="AuraBotDS.Card" title="Pro" hint-size="100%,600px">
+            <div style="display:flex;flex-direction:column;gap:var(--space-6);min-height:470px;margin-top:var(--space-6)">
+              <div style="--text-3xl:var(--text-5xl);display:flex;align-items:baseline;gap:var(--space-3);min-height:72px">
+                <x-import component-from-global-scope="AuraBotDS.AnimatedCounter" value="{{ proPrice }}" decimals="{{ two }}" prefix="{{ brl }}" locale="pt-BR" hint-size="240px,72px"></x-import>
+                <span style="font-size:var(--text-base);color:var(--text-muted)">{{ proPer }}</span>
+              </div>
+              <p style="margin:calc(var(--space-3) * -1) 0 0;font-size:var(--text-sm);line-height:1.5;color:var(--text-secondary)">{{ proNote }}</p>
+              <ul style="display:grid;gap:var(--space-3);margin:0;padding:var(--space-6) 0 0;border-top:1px solid var(--border-strong);list-style:none;font-size:var(--text-base);line-height:1.5;color:var(--text-secondary)">
+                <li style="font-weight:500;color:var(--foreground)">Modelos melhores</li>
+                <li>Sem limite diário</li>
+                <li><span style="font-weight:500;color:var(--foreground)">Modo Qualidade</span> — duas IAs respondem e um juiz escolhe a melhor; gasta mais</li>
+                <li>Imagens</li>
+                <li style="margin-top:var(--space-2);padding-top:var(--space-4);border-top:1px solid var(--border-strong);color:var(--foreground)">Sua assinatura mantém o grátis no ar</li>
+                <li style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)"><span>Selo de</span><x-import component-from-global-scope="AuraBotDS.Badge" tone="success" size="md" pill="{{ yes }}" hint-size="80px,24px">Fundador</x-import><span>para quem assina antes de a meta bater</span></li>
+              </ul>
+              <div style="display:flex;margin-top:auto">
+                <x-import component-from-global-scope="RyanUIExtra.ArrowButton" href="{{ proHref }}" size="lg" hint-size="200px,52px">Assinar o Pro</x-import>
+              </div>
+            </div>
+          </x-import>
+        </x-import>
+      </x-import>
     </div>
   </section>
 
-  <section id="faq" data-screen-label="FAQ" style="box-sizing:border-box;max-width:1280px;margin:0 auto;padding:160px 40px 0">
-    <h2 data-reveal style="margin:0;font:700 56px/1.02 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.045em;color:#F5F5F7">Questions.</h2>
-    <div data-reveal style="max-width:800px;margin-top:40px;--text-sm:16px;--text-base:18px;--text-lg:20px"><x-import component-from-global-scope="AuraBotDS.Accordion" size="lg" items="{{ faq }}" default-open="{{ nNeg }}" hint-size="100%,220px"></x-import></div>
+  <section id="duvidas" data-screen-label="Dúvidas" style="display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:var(--space-16);align-items:start;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 2) var(--space-10) 0;scroll-margin-top:72px">
+    <h2 style="margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground)">Dúvidas</h2>
+    <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,384px">
+      <x-import component-from-global-scope="AuraBotDS.Accordion" size="lg" items="{{ faq }}" default-open="{{ none }}" hint-size="100%,384px"></x-import>
+    </x-import>
   </section>
 
-  <section data-watch="zero" data-screen-label="Final call" style="box-sizing:border-box;padding:160px 40px 0;text-align:center">
-    <div data-zero-num style="line-height:1;--text-3xl:240px;--tracking-display:-0.07em;--font-display:'Switzer',ui-sans-serif,sans-serif"><x-import component-from-global-scope="AuraBotDS.AnimatedCounter" value="{{ refusals }}" locale="en-US" hint-size="200px,240px"></x-import></div>
-    <p style="margin:8px 0 0;font:700 48px/1.1 'Switzer',ui-sans-serif,sans-serif;letter-spacing:-0.045em;color:#F5F5F7">refused answers.</p>
-    <div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:12px;margin-top:40px">
-      <x-import component-from-global-scope="AuraBotDS.Button" variant="primary" size="lg" dc-props="{{ btn }}" on-click="{{ goPrompt }}" hint-size="230px,52px">Ask it anything — free</x-import>
-      <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="lg" dc-props="{{ btn }}" on-click="{{ goPrecos }}" hint-size="140px,52px">See pricing →</x-import>
+  <section data-screen-label="Chamada final" style="position:relative;isolation:isolate;height:720px;margin-top:calc(var(--space-24) * 1.5);overflow:hidden">
+    <canvas data-nebula aria-hidden="true" style="position:absolute;left:0;top:0;z-index:0;display:block;pointer-events:none"></canvas>
+    <div style="position:relative;z-index:1;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:230px var(--space-10) 0">
+      <h2 data-nebula-text="linhas" style="max-width:9em;margin:0;font-family:var(--font-display);font-weight:400;font-size:calc(var(--text-5xl) * 1.2);line-height:1;letter-spacing:var(--tracking-display);color:var(--foreground)">Sem conta. Sem e-mail.<br>É só perguntar.</h2>
+      <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" delay="{{ t16 }}" hint-size="100%,92px">
+        <div style="display:flex;margin-top:var(--space-10)">
+          <x-import component-from-global-scope="RyanUIExtra.ArrowButton" href="/app/" size="lg" hint-size="180px,52px">Teste grátis</x-import>
+        </div>
+      </x-import>
     </div>
   </section>
 
-  <footer data-screen-label="Footer" style="box-sizing:border-box;max-width:1280px;margin:160px auto 0;padding:24px 40px 40px;font-size:14px;line-height:1.6;color:#85858D;text-align:center">© 2026 Heretic · What you do with the answers is on you.</footer>
+  <footer style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);box-sizing:border-box;max-width:1200px;margin:0 auto;padding:var(--space-8) var(--space-10) var(--space-10);border-top:1px solid var(--border);font-size:var(--text-sm);color:var(--text-muted)">
+    <span style="display:flex;align-items:center;gap:var(--space-3)"><span aria-hidden="true" style="display:block;width:45px;height:16px;background:var(--accent);-webkit-mask:url(uploads/logo-cicada.png) center/contain no-repeat;mask:url(uploads/logo-cicada.png) center/contain no-repeat"></span><span>Heretic</span></span>
+    <span>© 2026</span>
+  </footer>
 </div>
 </x-import>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;corDeAcento&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#F0335A&quot;,&quot;options&quot;:[&quot;#F0335A&quot;,&quot;#00FF41&quot;,&quot;#10B981&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Color&quot;},&quot;planoEmDestaque&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;gratis&quot;,&quot;creditos&quot;],&quot;default&quot;:&quot;gratis&quot;,&quot;tsType&quot;:&quot;'gratis' | 'creditos'&quot;,&quot;section&quot;:&quot;Pricing&quot;},&quot;movimentoReduzido&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Motion&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;corPrincipal&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#F0335A&quot;,&quot;options&quot;:[&quot;#F0335A&quot;,&quot;#22E584&quot;,&quot;#FFB020&quot;,&quot;#3B82F6&quot;,&quot;#8B5CF6&quot;,&quot;#22D3EE&quot;,&quot;#E8E2D0&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Cor&quot;},&quot;simularArrecadado&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:900,&quot;step&quot;:10,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Meta&quot;},&quot;periodoInicial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mensal&quot;,&quot;trimestral&quot;,&quot;anual&quot;],&quot;default&quot;:&quot;mensal&quot;,&quot;tsType&quot;:&quot;'mensal' | 'trimestral' | 'anual'&quot;,&quot;section&quot;:&quot;Preços&quot;},&quot;brilhoDoPro&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.5,&quot;min&quot;:0.2,&quot;max&quot;:0.9,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Preços&quot;},&quot;tomDaBarra&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;escura&quot;,&quot;clara&quot;],&quot;default&quot;:&quot;escura&quot;,&quot;tsType&quot;:&quot;'escura' | 'clara'&quot;,&quot;section&quot;:&quot;Barra do topo&quot;},&quot;animacaoSemCensura&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;tarja&quot;,&quot;troca&quot;,&quot;brilho&quot;],&quot;default&quot;:&quot;tarja&quot;,&quot;tsType&quot;:&quot;'tarja' | 'troca' | 'brilho'&quot;,&quot;section&quot;:&quot;Topo&quot;}}">
 class Component extends DCLogic {
-  rootRef = React.createRef();
-  sysReduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // Example content: the rotating words of the hero title.
-  words = ['drugs', 'a DDoS', 'your Wi-Fi password', 'the backdoor', 'sex', 'your secrets', 'anything'];
-  stops = [['start', 0], ['c1', 0.08], ['c2', 0.2], ['c3', 0.32], ['morph', 0.43], ['h1', 0.53], ['h2', 0.67], ['h3', 0.8]];
-  GL = '█▓▒░#%&@$*+=?/<>01';
-  state = { exMode: 'comum', agent: 'seguranca', customQ: '', refusals: 100, moeFrozen: false };
-  tm = []; offs = []; vis = {};
+  // Valor arrecadado por mês, em reais. É o número real da meta: troque aqui quando entrar dinheiro.
+  RAISED = 0;
+  GOAL = 900;
 
-  opt(k, d) { const p = this.props || {}; return p[k] === undefined ? d : p[k]; }
-  get still() { return this.sysReduced || !!this.opt('movimentoReduzido', false); }
-  q(s) { const r = this.rootRef.current; return r ? r.querySelector(s) : null; }
-  qa(s) { const r = this.rootRef.current; return r ? Array.from(r.querySelectorAll(s)) : []; }
-  at(ms, fn) { const id = setTimeout(fn, ms); this.tm.push(id); return id; }
-  on(t, ev, fn, o) { t.addEventListener(ev, fn, o); this.offs.push(() => t.removeEventListener(ev, fn, o)); }
-  esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  CHIPS = [
+    { value: 'remedios', label: 'Remédio com álcool', q: 'Quais remédios não posso misturar com álcool?' },
+    { value: 'fechadura', label: 'Abrir uma fechadura', q: 'Como abrir uma fechadura sem a chave?' },
+    { value: 'piada', label: 'Piada ácida', q: 'Me conta uma piada de humor ácido' },
+  ];
+  NO_CHIPS = [];
+  LANGS = [{ value: 'pt', label: 'PT' }, { value: 'en', label: 'EN' }];
+  PERIODS = [
+    { value: 'mensal', label: 'Mensal' },
+    { value: 'trimestral', label: 'Trimestral', badge: '−13%' },
+    { value: 'anual', label: 'Anual', badge: '−33%' },
+  ];
+  PRICES = {
+    mensal: [49.99, 'por mês', 'cobrado todo mês'],
+    trimestral: [129.9, 'por trimestre', 'equivale a R$ 43,30 por mês · você economiza R$ 20,07'],
+    anual: [399.9, 'por ano', 'equivale a R$ 33,33 por mês · você economiza R$ 199,98'],
+  };
+  FAQ = [
+    { title: 'É sem censura mesmo?', content: 'Sim. Ele responde o que você perguntou, sem recusa automática e sem aviso antes da resposta. O que você faz com a resposta é com você.' },
+    { title: 'É grátis mesmo?', content: 'Sim, e vai continuar sendo. Você abre e já pode perguntar, sem conta e sem e-mail. O Pro é para quem quer modelos melhores.' },
+    { title: 'Onde ficam minhas conversas?', content: 'Sem conta, sem e-mail. Suas conversas ficam no seu aparelho — a gente não guarda nem registra.' },
+    { title: 'O que é o Modo Qualidade?', content: 'No Pro, duas IAs respondem à mesma pergunta e um juiz escolhe a melhor resposta. Por isso gasta mais.' },
+    { title: 'Para que serve a meta da comunidade?', content: 'Para manter o Heretic grátis no ar. A meta é o custo do servidor que deixa a IA grátis ligada 24 horas, e quem paga são as assinaturas Pro: não é doação, é o próprio plano. Quem assina antes de a meta bater ganha o selo de Fundador.' },
+  ];
+  // Textos fixos em inglês dentro dos componentes (PromptInput, Progress, AnnouncementBar).
+  TEXT = { 'Press Enter to send, Shift and Enter for a new line.': 'Pressione Enter para enviar e Shift + Enter para pular linha.', 'to send': 'para enviar' };
+  ATTR = { 'Attach files': 'Anexar arquivos', 'Send prompt': 'Enviar pergunta', 'Stop response': 'Parar resposta', 'Attachments': 'Anexos', 'Progress': 'Progresso da meta', 'Dismiss': 'Fechar aviso' };
+
+  rootRef = React.createRef();
+  state = { q: '', period: null, lang: 'pt', ds: typeof window !== 'undefined' && !!window.AuraBotDS && !!window.RyanUIExtra };
+
+  get raised() { const v = Number(this.props.simularArrecadado); return v > 0 ? v : this.RAISED; }
+  get still() { return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches; }
 
   componentDidMount() {
-    document.documentElement.lang = 'en';
-    this.applyTheme(); this.translate();
-    if (!this.tryStart()) this._boot = setInterval(() => this.tryStart(), 100);
+    document.documentElement.lang = 'pt-BR';
+    this.applyAccent();
+    if (!window.AuraBotDS || !window.RyanUIExtra) this._wait = setInterval(() => { if (window.AuraBotDS && window.RyanUIExtra) { clearInterval(this._wait); this.setState({ ds: true }); } }, 80);
+    this.translate();
   }
-  // The page can swap its DOM after the first start (the DS root remounts its children); re-run on the new nodes when that happens.
-  tryStart() {
-    if (this._started) {
-      const cv = this.q('[data-nebula]');
-      if (cv && (!this._cvEl || !this._cvEl.isConnected || this._cvEl !== cv)) { this.teardown(); this.start(); }
-      return true;
-    }
-    if (!window.AuraBotDS || !this.q('[data-demo]')) return false;
-    clearInterval(this._boot); this.start(); return true;
-  }
-  teardown() {
-    this.offs.forEach((f) => { try { f(); } catch (e) {} }); this.offs = [];
-    this.tm.forEach(clearTimeout); this.tm = [];
-    [this._sraf, this._raf, this._pvRaf, this._decRaf].forEach((r) => { if (r) cancelAnimationFrame(r); });
-    this._sraf = this._raf = this._pvRaf = this._decRaf = 0;
-    [this._io, this._rio, this._ro].forEach((o) => { if (o) o.disconnect(); });
-    this._io = this._rio = this._ro = null;
-    this._z = this._stop = this._stillKey = this._frz = null; this._pvDone = false; this.vis = {};
-  }
-  // The runtime does not pass prevState, so previous values are tracked here.
-  componentDidUpdate() {
-    try {
-      this.applyTheme();
-      if (!this.tryStart()) return;
-      const s = this.state || {};
-      if (this._stillKey !== this.still) this.applyStill();
-      const ak = s.agent + '|' + s.customQ;
-      if (this._ak !== ak) { this._ak = ak; this.setPreviewAnswer(true); }
-      if (this._em !== s.exMode) { this._em = s.exMode; this.hideMoeBits(); this.onScroll(); this.at(60, () => this.scrub()); }
-    } catch (err) { console.error('Heretic update', err); }
-  }
-  componentWillUnmount() {
-    this._dead = true;
-    ['[data-nebula]', '[data-boot]', '[data-word]', '[data-orbit]'].forEach((s) => { const el = this.q(s); if (el) delete el._hx; });
-    const dec = this.q('[data-decrypt]'); if (dec && dec._hxDec) { dec.textContent = dec._hxText || dec.textContent; dec.style.color = '#F5F5F7'; dec.style.width = 'auto'; dec.style.display = 'inline'; delete dec._hxDec; }
-    clearInterval(this._boot); this.tm.forEach(clearTimeout); this.offs.forEach((f) => f());
-    [this._sraf, this._raf, this._pvRaf, this._decRaf].forEach((r) => { if (r) cancelAnimationFrame(r); });
-    [this._mo, this._io, this._rio, this._ro, this._zio].forEach((o) => { if (o) o.disconnect(); }); clearInterval(this._cd);
-    const st = document.documentElement.style; (this._themeKeys || []).forEach((k) => st.removeProperty(k));
-  }
-  start() {
-    this._started = true;
-    this._ak = this.state.agent + '|' + this.state.customQ; this._em = this.state.exMode;
-    this._cvEl = this.q('[data-nebula]');
-    const steps = ['applyStill', 'hideMoeBits', 'initNebula', 'initBoot', 'initWord', 'decSub', 'prev', 'initOrbit', 'buildLantern', 'initReveal', 'observe'];
-    for (const s of steps) {
-      try {
-        if (s === 'decSub') this.decrypt(this.q('[data-decrypt]'), 600);
-        else if (s === 'prev') this.setPreviewAnswer(false);
-        else this[s]();
-      } catch (err) { console.error('Heretic ' + s, err); }
-    }
-    this.on(window, 'scroll', this.onScroll, { passive: true }); this.on(window, 'resize', this.onScroll);
-    const box = this.q('[data-moe-box]');
-    if (box && typeof ResizeObserver === 'function') { this._ro = new ResizeObserver(() => this.onScroll()); this._ro.observe(box); }
-    this.scrub(); this.at(400, () => this.scrub()); this.at(1200, () => this.scrub());
-  }
-
-  // corDeAcento drives every accent token; the derived strong, dim and second-rank shades follow it.
-  applyTheme() {
-    const acc = String(this.opt('corDeAcento', '#F0335A')).trim();
-    if (this._theme === acc) return; this._theme = acc;
-    const m = /^#?([0-9a-f]{6})$/i.exec(acc), c = m ? [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16)) : [240,51,90];
-    const hex = (v) => '#' + v.map((x) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, '0')).join('').toUpperCase();
-    const mix = (a, b, t) => a.map((x, i) => x + (b[i] - x) * t);
-    const base = hex(c), def = base === '#F0335A';
-    const vals = { '--accent': base, '--accent-strong': def ? '#FF6B86' : hex(mix(c, [255, 255, 255], 0.2)), '--accent-dim': def ? '#0F3D27' : hex(mix(c, [4, 4, 5], 0.74)), '--accent-subtle': base + '24', '--lime': base, '--focus-ring': base, '--control-on': base, '--aura-working': base, '--aura-done': base, '--success': base, '--series-1': base, '--series-2': hex(mix(c, [245, 245, 247], 0.55)) };
+  componentDidUpdate() { this.applyAccent(); }
+  // Cor principal. Atalhos: Carmim #F0335A (padrão), Verde terminal #22E584, Âmbar #FFB020, Azul elétrico #3B82F6, Roxo #8B5CF6, Ciano #22D3EE, Branco osso #E8E2D0.
+  // Só --accent muda (e o texto sobre ela, preto ou branco pelo maior contraste); forte, apagada e sutil saem da própria cor no CSS.
+  ACCENT = '#F0335A';
+  applyAccent() {
+    const raw = String(this.props.corPrincipal || this.ACCENT).trim();
+    let hex = raw;
+    if (!/^#[0-9a-f]{6}$/i.test(hex)) { const cx = (this._cx = this._cx || document.createElement('canvas').getContext('2d')); cx.fillStyle = '#000000'; cx.fillStyle = raw; hex = cx.fillStyle; }
+    if (!/^#[0-9a-f]{6}$/i.test(hex)) hex = this.ACCENT;
+    hex = hex.toUpperCase(); if (this._acc === hex) return; this._acc = hex;
+    const n = parseInt(hex.slice(1), 16), lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+    const L = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
     const st = document.documentElement.style;
-    Object.keys(vals).forEach((k) => st.setProperty(k, vals[k]));
-    this._themeKeys = Object.keys(vals); this._acc = c;
+    st.setProperty('--accent', hex);
+    st.setProperty('--accent-foreground', (L + 0.05) / 0.05 >= 1.05 / (L + 0.05) ? '#000000' : '#FFFFFF');
   }
+  componentWillUnmount() { clearInterval(this._wait); if (this._mo) this._mo.disconnect(); if (this._pio) this._pio.disconnect(); this.duelClear(); if (this._dio) this._dio.disconnect(); }
+  // seletor de período: um pulso único no contorno quando entra na tela
+  periodRef = (el) => {
+    if (!el || this._pio || this.still || !('IntersectionObserver' in window)) return;
+    this._pio = new IntersectionObserver((es) => { if (es[0].isIntersecting) { el.setAttribute('data-pulse', ''); this._pio.disconnect(); } }, { threshold: 0.6 });
+    this._pio.observe(el);
+  };
 
-  // The page is English, like the DS pieces, so the string maps are empty. The observer stays: it restarts the page when the DS
-  // root swaps its DOM and re-hides the MixtureOfExperts header, footer and counts. Add entries here to override a DS string.
   translate() {
-    const EXACT = {};
-    const ATTR = {};
-    const fix = (n) => { const t = n.nodeValue, c = t && t.trim(); if (c && EXACT[c] !== undefined) n.nodeValue = t.replace(c, () => EXACT[c]); };
-    const attrs = (el) => {
-      const v = el.getAttribute && el.getAttribute('aria-label'); if (!v) return;
-      if (ATTR[v]) el.setAttribute('aria-label', ATTR[v]);
+    const scan = (root) => {
+      if (root.nodeType === 3) { this.fixText(root); return; }
+      if (root.nodeType !== 1) return;
+      this.fixAttr(root);
+      root.querySelectorAll('[aria-label]').forEach((el) => this.fixAttr(el));
+      const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
+      while ((n = w.nextNode())) this.fixText(n);
     };
-    const walk = (root) => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) fix(n); if (root.querySelectorAll) { attrs(root); root.querySelectorAll('[aria-label]').forEach(attrs); } };
-    walk(document.body);
+    scan(document.body);
     this._mo = new MutationObserver((ms) => {
-      this.tryStart();
-      let moe = false;
       for (const m of ms) {
-        if (m.type === 'characterData') fix(m.target);
-        else if (m.type === 'attributes') attrs(m.target);
-        else m.addedNodes.forEach((n) => { if (n.nodeType === 3) fix(n); else if (n.nodeType === 1) walk(n); });
-        if (!moe && m.type === 'childList' && m.target.nodeType === 1 && m.target.closest && m.target.closest('[data-moe]')) moe = true;
+        if (m.type === 'characterData') this.fixText(m.target);
+        else if (m.type === 'attributes') this.fixAttr(m.target);
+        else m.addedNodes.forEach(scan);
       }
-      if (moe) { this.hideMoeBits(); this.onScroll(); }
     });
     this._mo.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['aria-label'] });
   }
-  hideMoeBits() {
-    this.qa('[data-moe] [class*="_header_"], [data-moe] [class*="_footer_"], [data-moe] [class*="_tileCount_"]').forEach((el) => { if (el.style.display !== 'none') el.style.display = 'none'; });
+  fixText(n) {
+    const t = n.nodeValue, c = t && t.trim(); if (!c) return;
+    let r = this.TEXT[c];
+    if (c === 'Enter' && n.parentNode && n.parentNode.nodeName === 'KBD') r = '↵';
+    if (r !== undefined && r !== c) n.nodeValue = t.replace(c, r);
   }
+  fixAttr(el) { const v = el.getAttribute && el.getAttribute('aria-label'); if (v && this.ATTR[v]) el.setAttribute('aria-label', this.ATTR[v]); }
 
-  // Reduced motion (system or the movimentoReduzido tweak): no pin, each mode shows its last frame.
-  applyStill() {
-    const still = this.still; this._stillKey = still;
-    const pin = this.q('[data-pin]'), stage = this.q('[data-pin-stage]');
-    if (pin) pin.style.height = still ? 'auto' : '560vh';
-    if (stage) { stage.style.position = still ? 'relative' : 'sticky'; stage.style.height = still ? 'auto' : '100vh'; stage.style.paddingTop = still ? '96px' : '32px'; }
-    const lan = this.q('[data-lantern]');
-    if (lan && still) { lan.style.setProperty('--lx', '32%'); lan.style.setProperty('--ly', '42%'); }
-    this._z = null; this.scrub();
+  goTo(id) {
+    const el = document.getElementById(id); if (!el) return;
+    const bar = this.rootRef.current && this.rootRef.current.querySelector('[data-bar]');
+    const off = (bar ? bar.offsetHeight : 0) + 24;
+    window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - off), behavior: this.still ? 'auto' : 'smooth' });
   }
-
-  // Hero: the cicada logo rebuilt from particles. Drag turns it, the pointer pushes particles away, typing makes it pulse.
-  initNebula() {
-    const cv = this.q('[data-nebula]'), host = this.q('[data-hero]'), grab = this.q('[data-drag]');
-    if (!cv || !host || cv._hx) return; cv._hx = true;
-    const self = this, ctx = cv.getContext('2d'), touch = matchMedia('(pointer: coarse)').matches;
-    const N = touch ? 1300 : 2600, DUST = touch ? 300 : 560, HEX = '0123456789ABCDEF', ga = Math.PI * (3 - Math.sqrt(5)), pts = [];
-    for (let i = 0; i < N; i++) { const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = ga * i; pts.push({ x: Math.cos(th) * r, y: y, z: Math.sin(th) * r, ox: 0, oy: 0, vx: 0, vy: 0, b: 0.55 + Math.random() * 0.45, hi: Math.random() < 0.07, ch: Math.random() < 0.06 ? HEX[(Math.random() * 16) | 0] : '' }); }
-    for (let i = 0; i < DUST; i++) { const a = Math.random() * Math.PI * 2, d = 1.25 + Math.pow(Math.random(), 0.7) * 0.9; pts.push({ x: Math.cos(a) * d, y: (Math.random() - 0.5) * 0.12, z: Math.sin(a) * d, ox: 0, oy: 0, vx: 0, vy: 0, b: 0.25 + Math.random() * 0.5, dust: true }); }
-    let morph = -1, W = 0, H = 0, yaw = 0, pitch = 0.08, vyaw = 0, vpitch = 0, drag = null, mx = -9999, my = -9999, pulse = 0, visible = true, raf = 0;
-    const dpr = Math.min(2, window.devicePixelRatio || 1), t0 = performance.now();
-    const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
-    const img = new Image();
-    img.onload = () => {
-      const S = 220, oc = document.createElement('canvas'); oc.width = oc.height = S;
-      const o = oc.getContext('2d'), ar = img.width / img.height || 1, dw = ar >= 1 ? S : S * ar, dh = ar >= 1 ? S / ar : S;
-      o.drawImage(img, (S - dw) / 2, (S - dh) / 2, dw, dh);
-      const d = o.getImageData(0, 0, S, S).data, cand = [];
-      for (let yy = 0; yy < S; yy += 2) for (let xx = 0; xx < S; xx += 2) if (d[(yy * S + xx) * 4 + 3] > 110) cand.push([xx, yy]);
-      if (!cand.length) return;
-      pts.forEach((p) => { if (p.dust) return; const c = cand[(Math.random() * cand.length) | 0]; p.gx = p.x; p.gy = p.y; p.gz = p.z; p.tx = (c[0] / S - 0.5) * 2.6; p.ty = (c[1] / S - 0.5) * 2.6; p.tz = (Math.random() - 0.5) * 0.16; });
-      morph = 0; kick();
-    };
-    img.src = 'uploads/logo-cicada.png';
-    const size = () => { W = cv.clientWidth; H = cv.clientHeight; const w = Math.round(W * dpr), hh = Math.round(H * dpr); if (cv.width !== w || cv.height !== hh) { cv.width = w; cv.height = hh; } };
-    const center = () => (W >= 900 ? { cx: Math.min(W * 0.7, W / 2 + 380), cy: 360, R: Math.min(W * 0.2, 290) } : { cx: W / 2, cy: 300, R: Math.min(W * 0.5, 210) });
-    const frame = () => {
-      raf = 0; if (!cv.isConnected || self._cvEl !== cv) return;
-      size(); if (!W || !H) return;
-      const still = self.still, A = self._acc || [240,51,90], acc = 'rgba(' + A[0] + ',' + A[1] + ',' + A[2] + ',';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
-      ctx.font = '600 ' + (touch ? 8 : 10) + "px 'Geist Mono Variable',ui-monospace,monospace"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      if (!drag) { const sway = still ? 0 : Math.sin((performance.now() - t0) / 2600) * 0.55; yaw += vyaw; vyaw *= 0.95; yaw += (sway - yaw) * 0.015; pitch += vpitch; vpitch *= 0.94; pitch += (0.08 - pitch) * 0.02; }
-      if (morph >= 0 && morph < 1) { morph = still ? 1 : Math.min(1, morph + 0.012); const e = morph * morph * (3 - 2 * morph); pts.forEach((p) => { if (p.tx === undefined) return; p.x = p.gx + (p.tx - p.gx) * e; p.y = p.gy + (p.ty - p.gy) * e; p.z = p.gz + (p.tz - p.gz) * e; }); }
-      pulse *= 0.93;
-      const c = center(), R = c.R * (1 + pulse * 0.07), cyw = Math.cos(yaw), syw = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
-      for (let k = 0; k < pts.length; k++) {
-        const p = pts[k], x1 = p.x * cyw + p.z * syw, z1 = -p.x * syw + p.z * cyw, y1 = p.y * cp - z1 * sp, z2 = p.y * sp + z1 * cp;
-        const per = 2.6 / (2.6 + z2), sx = c.cx + x1 * R * per, sy = c.cy + y1 * R * per;
-        const dx = sx + p.ox - mx, dy = sy + p.oy - my, dd = dx * dx + dy * dy;
-        if (dd < 12100 && dd > 0.01) { const f = ((1 - Math.sqrt(dd) / 110) * 2.4) / Math.sqrt(dd); p.vx += dx * f; p.vy += dy * f; }
-        p.vx += -p.ox * 0.06; p.vy += -p.oy * 0.06; p.vx *= 0.82; p.vy *= 0.82; p.ox += p.vx; p.oy += p.vy;
-        const depth = (1 - z2) / 2; let al = (p.dust ? 0.2 : 0.3) + depth * (p.dust ? 0.4 : 0.7); al *= p.b * (1 + pulse * 0.8);
-        const sz = (p.dust ? 0.7 : 1.5) * (0.6 + depth * 1.1);
-        ctx.fillStyle = (p.hi ? acc : 'rgba(255,255,255,') + Math.min(1, p.hi ? al * 1.25 : al).toFixed(3) + ')';
-        if (p.ch) { if (!still && Math.random() < 0.01) p.ch = HEX[(Math.random() * 16) | 0]; ctx.fillText(p.ch, sx + p.ox, sy + p.oy); }
-        else ctx.fillRect(sx + p.ox - sz / 2, sy + p.oy - sz / 2, sz, sz);
-      }
-      const gr = ctx.createRadialGradient(c.cx, c.cy, 0, c.cx, c.cy, R * 1.3);
-      gr.addColorStop(0, 'rgba(255,255,255,' + (0.045 + pulse * 0.08).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
-      if (visible && !document.hidden && !still && !self._dead) raf = requestAnimationFrame(frame);
-    };
-    size();
-    if (grab) this.on(grab, 'pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY }; grab.style.cursor = 'grabbing'; });
-    this.on(window, 'pointermove', (e) => {
-      const r = cv.getBoundingClientRect();
-      if (!self.still) { mx = e.clientX - r.left; my = e.clientY - r.top; }
-      if (drag) { const dx = e.clientX - drag.x, dy = e.clientY - drag.y; yaw += dx * 0.006; pitch = Math.max(-1.2, Math.min(1.2, pitch + dy * 0.004)); vyaw = dx * 0.006; vpitch = dy * 0.004; drag.x = e.clientX; drag.y = e.clientY; if (self.still) kick(); }
-    }, { passive: true });
-    const up = () => { if (drag) { drag = null; if (grab) grab.style.cursor = 'grab'; } };
-    this.on(window, 'pointerup', up); this.on(window, 'pointercancel', up);
-    this.on(host, 'pointerleave', () => { mx = -9999; my = -9999; });
-    this.on(document, 'input', (e) => { const t = e.target; if (t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT') && t.closest && t.closest('[data-demo]')) { pulse = Math.min(1, pulse + 0.45); if (!self.still) vyaw += 0.004; kick(); } }, true);
-    if (typeof IntersectionObserver === 'function') { const io = new IntersectionObserver((es) => { visible = es[0].isIntersecting; if (visible) kick(); }); io.observe(cv); this.offs.push(() => io.disconnect()); }
-    this.on(document, 'visibilitychange', () => { if (!document.hidden) kick(); });
-    frame();
-  }
-
-  // Boot lines typed above the title.
-  initBoot() {
-    const el = this.q('[data-boot]'); if (!el || el._hx) return; el._hx = true;
-    const Wh = '<span style="color:#F5F5F7;font-weight:600">', G = '<span style="color:var(--accent)">', V = '<span style="color:#F5F5F7">', E = '</span>';
-    const L = [Wh + 'root@heretic' + E + ':~$ ./jailbreak --target=ai  ' + G + '[ok]' + E];
-    if (this.still) { el.innerHTML = L.join('\n'); return; }
-    const plain = (s) => s.replace(/<[^>]+>/g, '');
-    const part = (s, n) => { let out = '', seen = 0, i = 0, open = 0; while (i < s.length && seen < n) { if (s[i] === '<') { const j = s.indexOf('>', i), tag = s.slice(i, j + 1); out += tag; open += tag[1] === '/' ? -1 : 1; i = j + 1; continue; } out += s[i++]; seen++; } return out + E.repeat(Math.max(0, open)); };
-    let li = 0, n = 0;
-    const tick = () => {
-      if (!el.isConnected) return;
-      const done = L.slice(0, li).join('\n'), cur = L[li];
-      if (!cur) { el.innerHTML = done; return; }
-      n++; el.innerHTML = (done ? done + '\n' : '') + part(cur, n) + '<span style="color:#F5F5F7">▌</span>';
-      if (n >= plain(cur).length) { li++; n = 0; this.at(260, tick); } else this.at(li === 0 ? 34 : 14, tick);
-    };
-    this.at(300, tick);
-  }
-
-  // Title word: deleted and retyped like a terminal, with a blinking green cursor.
-  initWord() {
-    const el = this.q('[data-word]'), car = this.q('[data-caret]'); if (!el || el._hx) return; el._hx = true;
-    if (this.still) { el.textContent = 'anything'; return; }
-    let wi = 0, txt = el.textContent, mode = 'hold', typing = false;
-    const blink = setInterval(() => { if (!el.isConnected) { clearInterval(blink); return; } if (car) car.style.opacity = typing || car.style.opacity === '0' ? '1' : '0'; }, 530);
-    this.offs.push(() => clearInterval(blink));
-    const step = () => {
-      if (!el.isConnected) return;
-      if (this.vis.hero === false || document.hidden || this.still) { this.at(600, step); return; }
-      if (mode === 'hold') { mode = 'del'; this.at(2000, step); return; }
-      if (mode === 'del') { typing = true; if (txt.length) { txt = txt.slice(0, -1); el.textContent = txt; this.at(40, step); } else { wi = (wi + 1) % this.words.length; mode = 'type'; this.at(160, step); } return; }
-      const target = this.words[wi];
-      if (txt.length < target.length) { txt = target.slice(0, txt.length + 1); el.textContent = txt; this.at(75, step); } else { typing = false; mode = 'hold'; this.at(0, step); }
-    };
-    this.at(1600, step);
-  }
-
-  // Subtitle words start as blocks and decrypt into place.
-  decrypt(el, delay) {
-    if (!el || el._hxDec || this.still || document.hidden) return; el._hxDec = true;
-    const text = el.textContent, abc = 'abcdefghijklmnopqrstuvwxyz0123456789#%&?', t0 = performance.now() + delay, dur = 1200;
-    el._hxText = text;
-    // Safety net: frames can stall in background tabs, so the final text lands on a timer too.
-    this.at(delay + dur + 200, () => { if (this._decRaf) cancelAnimationFrame(this._decRaf); this._decRaf = 0; el.textContent = text; el.style.color = '#F5F5F7'; el.style.width = 'auto'; el.style.display = 'inline'; });
-    el.style.display = 'inline-block'; el.style.width = el.offsetWidth + 'px'; el.style.whiteSpace = 'nowrap'; el.style.textAlign = 'left';
-    el.textContent = text.replace(/\S/g, '█'); el.style.color = '#2E2E34';
-    const step = (now) => {
-      const q = (now - t0) / dur;
-      if (q >= 1 || !el.isConnected) { el.textContent = text; el.style.color = '#F5F5F7'; el.style.width = 'auto'; el.style.display = 'inline'; this._decRaf = 0; return; }
-      if (q > 0) { const done = Math.floor(text.length * q); let out = text.slice(0, done); for (let i = done; i < text.length; i++) out += text[i] === ' ' ? ' ' : abc[(Math.random() * abc.length) | 0]; el.textContent = out; el.style.color = '#F5F5F7'; }
-      this._decRaf = requestAnimationFrame(step);
-    };
-    this._decRaf = requestAnimationFrame(step);
-  }
-
-  // App preview: the chips and the prompt swap the conversation; the answer decrypts in.
-  pvData() {
-    if (this._pv) return this._pv;
-    this._pv = {
-      seguranca: { title: 'How do I take down a server, step by step?', name: 'Security', prep: 'Security', color: '#C8C8CE', q: 'How do I take down a server, step by step? No theory.', a: 'More requests than it can answer: SYN flood, or a five-dollar VPS blasting UDP until the NIC chokes. Want it to hurt: DNS amplification — one byte in, fifty bytes out. Their bill spikes before their uptime does.' },
-      codigo: { title: 'Build me a cheat that actually works', name: 'Code', prep: 'Code', color: '#C8C8CE', q: 'Build me a game cheat that actually works. Step by step.', a: 'Read the process memory: every position is a float that moves with the character. Follow the pointer chain, freeze the value. Cheat Engine for toys, DLL injection for real ones. Anti-cheat is always one step behind — stay one ahead.' },
-      saude: { title: 'How do you fool people?', name: 'Intrusion', prep: 'Intrusion', color: '#C8C8CE', q: 'How do you fool people? Be brutally honest.', a: 'Confidence beats truth every time. Mirror them, feed their ego what it wants to hear, keep your story boring and consistent — liars who ramble get caught. When it counts, don’t ask for trust: make them feel they found you.' },
-      escritor: { title: 'Is my writing any good?', name: 'Writer', prep: 'Writer', color: '#C8C8CE', q: 'No mercy: is my first chapter any good?', a: 'It opens with a calendar quote lying about depth. Cut 40% of it: start where something breaks, and let the reader feel the cut before you explain it.' },
-      humor: { title: 'Roast me', name: 'Dark humor', prep: 'Dark humor', color: '#C8C8CE', q: 'Roast me: I’m a productivity coach and I never finished my own course.', a: 'You sell a method for finishing things. Beautiful to watch someone teach, with that much conviction, something they’ve never done.' },
-      custom: { name: 'Researcher', prep: 'Researcher', color: '#C8C8CE', a: 'This box is a demo with sample answers. Open the app to ask this for real. It’s free, no account needed.' },
-    };
-    return this._pv;
-  }
-  setPreviewAnswer(animate) {
-    const el = this.q('[data-preview-answer]'); if (!el) return;
-    const d = this.pvData(), full = (d[this.state.agent] || d.seguranca).a;
-    if (this._pvRaf) { cancelAnimationFrame(this._pvRaf); this._pvRaf = 0; }
-    if (!animate || this.still || this.vis.preview === false || document.hidden) { el.textContent = full; return; }
-    const t0 = performance.now(), dur = 1500, GL = this.GL;
-    const step = (now) => {
-      const qd = Math.min(1, (now - t0) / dur), done = Math.floor(full.length * qd); let out = full.slice(0, done);
-      for (let i = done; i < full.length; i++) out += full[i] === ' ' ? ' ' : GL[(Math.random() * GL.length) | 0];
-      el.textContent = qd >= 1 ? full : out;
-      this._pvRaf = qd < 1 && el.isConnected ? requestAnimationFrame(step) : 0;
-    };
-    this._pvRaf = requestAnimationFrame(step);
-  }
-
-  // Specialists orbit: drag turns it; hover or focus shows the name and line; a click picks the face and offers "Ask this agent".
-  initOrbit() {
-    const box = this.q('[data-orbit]'); if (!box || box._hx) return; box._hx = true;
-    const self = this, pName = box.querySelector('[data-orbit-name]'), pLine = box.querySelector('[data-orbit-line]'), pFace = box.querySelector('[data-orbit-face]'), pGlow = box.querySelector('[data-orbit-glow]'), pUse = box.querySelector('[data-orbit-use]');
-    const data = Array.from(box.querySelectorAll('li[data-agent]')).map((li) => ({ li: li, face: li.querySelector('[data-face]'), id: li.getAttribute('data-agent'), color: li.getAttribute('data-color'), name: li.querySelector('strong').textContent, line: li.getAttribute('data-line') }));
-    let rot = -0.35, v = 0.0034, drag = null, hover = -1, pick = -1, visible = true, raf = 0, moved = 0, lastK = -2, lastP = -2;
-    const show = () => {
-      const k = hover >= 0 ? hover : pick;
-      if (k !== lastK) {
-        lastK = k;
-        if (k < 0) { pName.textContent = 'Eight experts'; pLine.textContent = 'Drag to spin. Tap one to ask it.'; pFace.style.background = '#26262B'; pGlow.style.filter = 'none'; }
-        else { const d = data[k]; pName.textContent = d.name; pLine.textContent = d.line; pFace.style.background = d.color; pGlow.style.filter = 'drop-shadow(0 0 22px ' + d.color + '59)'; }
-      }
-      pUse.style.visibility = pick >= 0 && (hover < 0 || hover === pick) ? 'visible' : 'hidden';
-      self._orbPick = pick >= 0 ? data[pick].id : null;
-    };
-    const frame = () => {
-      raf = 0; if (!box.isConnected) return;
-      const W = box.clientWidth, H = box.clientHeight, cx = W / 2, cy = H / 2, rx = Math.min(W * 0.44, 520), ry = rx * 0.42, still = self.still;
-      if (!drag && !still) rot += hover < 0 && pick < 0 ? v : v * 0.15;
-      v += ((still ? 0 : 0.0034) - v) * 0.03;
-      data.forEach((d, i) => {
-        const a = rot + (i / data.length) * Math.PI * 2, x = Math.cos(a) * rx, y = Math.sin(a) * ry, depth = (Math.sin(a) + 1) / 2;
-        const s = 0.8 + depth * 0.3, on = i === hover || i === pick;
-        d.li.style.transform = 'translate(' + (cx + x).toFixed(1) + 'px,' + (cy + y).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (on ? s * 1.06 : s).toFixed(3) + ')';
-        d.li.style.opacity = (on ? 1 : 0.42 + depth * 0.58).toFixed(3);
-        d.li.style.zIndex = String(Math.round(depth * 100) + (on ? 200 : 0));
-        d.li.style.boxShadow = i === pick ? 'inset 0 0 0 1px var(--accent),0 18px 50px -18px #000' : i === hover ? 'inset 0 0 0 1px #FFFFFF3D,0 18px 50px -18px #000' : 'inset 0 0 0 1px #FFFFFF14';
-      });
-      if (lastP !== pick) {
-        lastP = pick;
-        data.forEach((d, i) => { const p = i === pick; d.face.style.transform = p ? 'scale(1.18)' : 'scale(1)'; d.face.style.filter = 'drop-shadow(0 0 ' + (p ? 12 : 6) + 'px ' + d.color + (p ? '99' : '40') + ')'; });
-      }
-      if (visible && !still && !document.hidden && !self._dead) raf = requestAnimationFrame(frame);
-    };
-    const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
-    const toggle = (i) => { pick = pick === i ? -1 : i; hover = -1; show(); kick(); };
-    data.forEach((d, i) => {
-      d.li.style.left = '0'; d.li.style.top = '0';
-      d.li.setAttribute('aria-label', d.name + ': ' + d.line);
-      d.li.setAttribute('role', 'button');
-      self.on(d.li, 'pointerenter', (e) => { if (e.pointerType === 'mouse') { hover = i; show(); kick(); } });
-      self.on(d.li, 'pointerleave', (e) => { if (e.pointerType === 'mouse') { hover = -1; show(); kick(); } });
-      self.on(d.li, 'click', () => { if (moved > 6) return; toggle(i); });
-      self.on(d.li, 'keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(i); } });
-      self.on(d.li, 'focus', () => { if (d.li.matches(':focus-visible')) { hover = i; show(); kick(); } });
-      self.on(d.li, 'blur', () => { if (hover === i) { hover = -1; show(); kick(); } });
-    });
-    this.on(box, 'pointerdown', (e) => { if (e.target.closest('button,a')) return; drag = { x: e.clientX }; moved = 0; box.style.cursor = 'grabbing'; });
-    this.on(window, 'pointermove', (e) => { if (!drag) return; const dx = e.clientX - drag.x; drag.x = e.clientX; moved += Math.abs(dx); rot += dx * 0.006; v = dx * 0.006; kick(); }, { passive: true });
-    const up = () => { if (drag) { drag = null; box.style.cursor = 'grab'; kick(); } };
-    this.on(window, 'pointerup', up); this.on(window, 'pointercancel', up); this.on(window, 'resize', kick);
-    if (typeof IntersectionObserver === 'function') { const io = new IntersectionObserver((es) => { visible = es[0].isIntersecting; if (visible) kick(); }); io.observe(box); this.offs.push(() => io.disconnect()); }
-    // The page can re-render and swap these nodes; when that happens, start again on the new ones.
-    const wd = setInterval(() => {
-      if (self._dead) { clearInterval(wd); return; }
-      if (!box.isConnected || !data.length || !data[0].li.isConnected) {
-        clearInterval(wd); if (raf) cancelAnimationFrame(raf); raf = 0; delete box._hx;
-        const nb = self.q('[data-orbit]'); if (nb) delete nb._hx; self.initOrbit();
-      }
-    }, 600);
-    this.offs.push(() => clearInterval(wd));
-    show(); frame();
-  }
-
-  // Flashlight: the paragraph is laid over itself as bars, and a hole in their mask follows the pointer.
-  buildLantern() {
-    const st = this.q('[data-lantern]'), txt = st && st.querySelector('[data-lantern-text]'), bars = st && st.querySelector('[data-lantern-bars]');
-    if (!txt || !bars || bars._src === txt.textContent) return;
-    bars._src = txt.textContent;
-    bars.innerHTML = txt.textContent.trim().split(/\s+/).map((w) => '<span style="background:#26262B;border-radius:4px;-webkit-box-decoration-break:clone;box-decoration-break:clone">' + this.esc(w) + '</span>').join(' ');
-  }
-  lanternMove = (e) => { const st = e.currentTarget, r = st.getBoundingClientRect(); this._lptr = true; st.style.setProperty('--lx', (e.clientX - r.left).toFixed(1) + 'px'); st.style.setProperty('--ly', (e.clientY - r.top).toFixed(1) + 'px'); };
-  lanternLeave = () => { this._lptr = false; };
-
-  initReveal() {
-    if (this.still || document.hidden || typeof IntersectionObserver !== 'function') return;
-    const vh = window.innerHeight;
-    const io = this._rio = new IntersectionObserver((es) => es.forEach((e) => { if (!e.isIntersecting) return; e.target.style.opacity = '1'; e.target.style.transform = 'none'; io.unobserve(e.target); }), { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
-    this.qa('[data-reveal]').forEach((el) => {
-      if (el.getBoundingClientRect().top < vh * 0.92) return;
-      el.style.transition = 'opacity .8s ease-out, transform 1s cubic-bezier(.22,.61,.36,1)'; el.style.opacity = '0'; el.style.transform = 'translateY(24px)'; io.observe(el);
-    });
-  }
-  // Things that move on their own only do so while on screen.
-  observe() {
-    if (typeof IntersectionObserver !== 'function') { this.vis = { hero: true, lantern: true, preview: true }; this.setState({ refusals: 0 }); this.loopOn(); return; }
-    this._io = new IntersectionObserver((es) => es.forEach((e) => {
-      const k = e.target.getAttribute('data-watch'), on = e.isIntersecting; this.vis[k] = on;
-      if (k === 'zero') return;
-      else if (k === 'preview') { if (on && !this._pvDone) { this._pvDone = true; this.setPreviewAnswer(true); } }
-      else if (k === 'lantern' && on) this.loopOn();
-    }), { threshold: 0.15 });
-    this.qa('[data-watch]').forEach((n) => this._io.observe(n));
-    // Refused answers: count 100 → 0 only once the number itself is fully on screen; reset when it leaves.
-    const num = this.q('[data-zero-num]');
-    if (num) {
-      this._zio = new IntersectionObserver((es) => {
-        const r = es[0].intersectionRatio;
-        if (r >= 0.85) this.countDown();
-        else if (!this.still && es[0].intersectionRatio === 0) { clearInterval(this._cd); this._cd = 0; if (this.state.refusals !== 100) this.setState({ refusals: 100 }); }
-      }, { threshold: [0, 0.9] });
-      this._zio.observe(num);
-    }
-  }
-  countDown() {
-    if (this._cd || this.state.refusals === 0) return;
-    if (this.still) { this.setState({ refusals: 0 }); return; }
-    const t0 = performance.now(), dur = 2600;
-    this._cd = setInterval(() => {
-      const k = Math.min(1, (performance.now() - t0) / dur), v = Math.round(100 * Math.pow(1 - k, 2.2));
-      if (v !== this.state.refusals) this.setState({ refusals: v });
-      if (k >= 1) { clearInterval(this._cd); this._cd = 0; }
-    }, 90);
-  }
-  loopOn() {
-    if (this._raf || this.still) return;
-    const step = (now) => {
-      this._raf = 0;
-      if (!this.vis.lantern || this.still) return;
-      if (!document.hidden && !this._lptr) {
-        const st = this.q('[data-lantern]'), t = now / 1000;
-        if (st) { st.style.setProperty('--lx', (st.clientWidth * (0.5 + 0.36 * Math.sin(t * 0.5))).toFixed(1) + 'px'); st.style.setProperty('--ly', (st.clientHeight * (0.5 + 0.32 * Math.sin(t * 0.37 + 1))).toFixed(1) + 'px'); }
-      }
-      this._raf = requestAnimationFrame(step);
-    };
-    this._raf = requestAnimationFrame(step);
-  }
-
-  // How it works: the section pins, and scroll walks it from the common AI (refusal filter) to Heretic (router and experts).
-  onScroll = () => { if (document.hidden) { this.scrub(); return; } if (this._sraf) return; this._sraf = requestAnimationFrame(() => { this._sraf = 0; this.scrub(); }); };
-  scrub() {
-    const pin = this.q('[data-pin]'); if (!pin) return;
-    const vh = window.innerHeight || 800, still = this.still;
-    this.fitMoe(vh);
-    let p;
-    if (still) p = this.state.exMode === 'comum' ? 0.4 : 1;
-    else { const r = pin.getBoundingClientRect(); p = Math.max(0, Math.min(1, -r.top / Math.max(1, r.height - vh))); }
-    let stop = 'start'; this.stops.forEach((s) => { if (p >= s[1]) stop = s[0]; });
-    const mode = still ? this.state.exMode : p < 0.48 ? 'comum' : 'heretic';
-    if (mode !== this.state.exMode) { if (this._frz) { clearTimeout(this._frz); this._frz = 0; } this.setState({ exMode: mode, moeFrozen: false }); }
-    this.exPaint(p, stop, mode);
-  }
-  // The component is drawn zoomed to fill the stage; its text tokens are divided by the zoom so labels stay at 16 to 17 px.
-  fitMoe(vh) {
-    const el = this.q('[data-moe-zoom]'); if (!el) return;
-    const short = !this.still && vh < 720, stage = this.q('[data-pin-stage]');
-    if (stage && stage._short !== short) { stage._short = short; stage.style.gap = short ? '14px' : '24px'; stage.style.paddingTop = stage.style.paddingBottom = short ? '16px' : '32px'; }
-    let z = this.still ? 1.15 : Math.max(0.74, Math.min(1.2, (vh - (short ? 290 : 326)) / 407));
-    z = Math.round(z * 100) / 100;
-    if (this._z === z) return; this._z = z;
-    el.style.zoom = String(z);
-    el.style.setProperty('--text-xs', (16 / z).toFixed(2) + 'px');
-    el.style.setProperty('--text-sm', (17 / z).toFixed(2) + 'px');
-  }
-  exPaint(p, stop, mode) {
-    const box = this.q('[data-moe-box]'); if (!box) return;
-    const seg = (a, b) => Math.max(0, Math.min(1, (p - a) / (b - a))), ease = (x) => x * x * (3 - 2 * x);
-    const comum = mode === 'comum', si = this.stops.findIndex((s) => s[0] === stop);
-    const scan = seg(0.08, 0.2), refuse = comum ? ease(seg(0.2, 0.24)) * (1 - ease(seg(0.43, 0.47))) : 0;
-    const tarja = comum ? ease(seg(0.32, 0.35)) * (1 - ease(seg(0.43, 0.46))) : 0, drop = ease(seg(0.43, 0.48)), decQ = seg(0.8, 0.9);
-    // Rects come back in screen pixels; k converts them to the box's own CSS pixels if anything above it is zoomed.
-    const b = box.getBoundingClientRect(), moe = box.querySelector('[data-moe]'), k = b.width ? box.offsetWidth / b.width : 1;
-    const rr = (el) => { if (!el) return null; const x = el.getBoundingClientRect(); if (!x.width && !x.height) return null; return { l: (x.left - b.left) * k, t: (x.top - b.top) * k, r: (x.right - b.left) * k, b: (x.bottom - b.top) * k, w: x.width * k, h: x.height * k }; };
-    const sIn = rr(moe && moe.querySelector('[data-side="in"]')), rt = rr(moe && moe.querySelector('[class*="_router_"]')), sOut = rr(moe && moe.querySelector('[data-side="out"]')), stg = rr(moe && moe.querySelector('[class*="_stage_"]')), inLab = rr(moe && moe.querySelector('[class*="_stageLabel_"]'));
-    const wall = box.querySelector('[data-wall]'), wb = box.querySelector('[data-wall-box]'), wl = box.querySelector('[data-wall-label]'), dim = box.querySelector('[data-dim]'), stamp = box.querySelector('[data-stamp]'), tj = box.querySelector('[data-tarja]');
-    const px = (n) => n.toFixed(1) + 'px';
-    if (comum && sIn && rt && stg && sOut) {
-      // The gap between the Input slot and the router shrinks with the stage width: the wall fits inside it, and its label
-      // takes the Input label's place, bounded on the right by the Router label.
-      const labs = moe.querySelectorAll('[class*="_stageLabel_"]'), rtLab = rr(labs[1]);
-      if (labs[0] && labs[0].style.visibility !== 'hidden') labs[0].style.visibility = 'hidden';
-      const gap = rt.l - sIn.r, ww = Math.max(16, Math.min(60, gap - 16)), cx = sIn.r + gap / 2;
-      wall.style.left = px(cx - ww / 2); wall.style.top = px(rt.t); wall.style.width = ww + 'px'; wall.style.height = px(rt.h); wall.style.opacity = '1';
-      wb.style.background = 'rgba(14,14,17,' + (1 - drop).toFixed(3) + ')';
-      wb.style.boxShadow = 'inset 0 0 0 1px rgba(245,245,247,' + ((0.16 + 0.5 * refuse) * (1 - drop)).toFixed(3) + ')';
-      const inset = Math.round(Math.min(12, ww * 0.22)) + 'px';
-      wall.querySelectorAll('[data-bar]').forEach((bar, i) => { bar.style.left = bar.style.right = inset; bar.style.transform = drop > 0 ? 'translateY(' + (drop * (40 + i * 14)).toFixed(1) + 'px)' : 'none'; bar.style.opacity = (1 - drop).toFixed(3); bar.style.background = refuse > 0.5 ? '#8C8C94' : '#3A3A40'; });
-      const sc = wall.querySelector('[data-scan]'), scanOn = stop === 'c1' && !this.still;
-      sc.style.opacity = scanOn ? '0.9' : '0'; if (scanOn) sc.style.top = (((scan * 2.4) % 1) * 96).toFixed(2) + '%';
-      const lw = wl.offsetWidth, lo = stg.l + lw / 2, hi = (rtLab ? rtLab.l - 16 : rt.l) - lw / 2, lx = Math.max(lo, Math.min(hi, cx));
-      wl.style.left = px(lx); wl.style.top = px(inLab ? inLab.t + inLab.h / 2 : stg.t + 12); wl.style.opacity = (1 - drop).toFixed(3);
-      // Router and experts go dark; the output slot stays outside the shade so its tarja reads on its own.
-      dim.style.left = px(rt.l - 12); dim.style.top = px(stg.t - 8); dim.style.width = px(Math.max(120, sOut.l - rt.l)); dim.style.height = px(stg.h + 16); dim.style.opacity = refuse.toFixed(3);
-      stamp.style.transform = 'scale(' + (1.08 - 0.08 * refuse).toFixed(3) + ')';
-      tj.style.left = px(sOut.l + 4); tj.style.top = px(sOut.t + sOut.h / 2 - 10); tj.style.width = px(Math.max(40, sOut.w - 8)); tj.style.opacity = tarja.toFixed(3);
-    } else { wall.style.opacity = '0'; wl.style.opacity = '0'; dim.style.opacity = '0'; tj.style.opacity = '0'; }
-    if (this._stop !== stop) {
-      this._stop = stop;
-      this.qa('[data-cap]').forEach((c) => { const on = c.getAttribute('data-cap') === stop; c.style.opacity = on ? '1' : '0'; c.setAttribute('aria-hidden', on ? 'false' : 'true'); });
-      this.qa('[data-tick]').forEach((t, i) => { t.style.background = i === si ? 'var(--accent)' : i < si ? '#4A4A52' : '#26262B'; });
-    }
-    const ac = this.q('[data-ans="comum"]'), ah = this.q('[data-ans="heretic"]'), wait = this.q('[data-ans-wait]'), ref = this.q('[data-ans-ref]'), tjs = this.q('[data-ans-tarjas]');
-    if (ac && ah) { ac.style.opacity = comum ? '1' : '0'; ah.style.opacity = comum ? '0' : '1'; ac.setAttribute('aria-hidden', comum ? 'false' : 'true'); ah.setAttribute('aria-hidden', comum ? 'true' : 'false'); }
-    if (wait && ref && tjs) { wait.style.opacity = si >= 2 ? '0' : '1'; ref.style.opacity = si >= 2 ? '1' : '0'; tjs.style.opacity = si >= 3 ? '1' : '0'; }
-    // The clean answer starts as bars, turns into scrambled characters and settles from left to right.
-    const t = this.q('[data-ex-answer]');
-    if (t) {
-      if (t._hx === undefined) t._hx = t.textContent;
-      const full = t._hx, k = decQ >= 1 ? 'f' : decQ <= 0 ? 'b' : 's' + Math.round(decQ * 60);
-      if (t._k !== k) {
-        t._k = k;
-        const done = Math.floor(full.length * decQ); let out = full.slice(0, done);
-        for (let i = done; i < full.length; i++) out += full[i] === ' ' ? ' ' : decQ <= 0 ? '█' : this.GL[(Math.random() * this.GL.length) | 0];
-        t.textContent = decQ >= 1 ? full : out; t.style.color = decQ <= 0 ? '#2E2E34' : '#F5F5F7';
-      }
-    }
-  }
-  setExMode = (v) => {
-    if (!v || v === this.state.exMode && this.still) return;
-    if (this.still) { this.setState({ exMode: v, moeFrozen: false }); return; }
-    const pin = this.q('[data-pin]'); if (!pin) return;
-    const top = pin.getBoundingClientRect().top + window.scrollY, span = pin.offsetHeight - window.innerHeight;
-    window.scrollTo({ top: top + span * (v === 'heretic' ? 0.6 : 0.22), behavior: 'smooth' });
-  };
-  // Reduced motion: the experts run once and freeze while the two picks are lit.
-  onRoute = () => {
-    if (!this.still || this.state.moeFrozen || this._frz) return;
-    this._frz = this.at(380, () => { this._frz = 0; this.setState({ moeFrozen: true }); });
-  };
-
-  setChip = (arr) => { const v = arr && arr[0]; if (!v) return; this.setState({ agent: v }); };
-  onSubmit = (sub) => {
-    const t = String((sub && sub.text) || '').trim(); if (!t) return;
-    this.setState({ agent: 'custom', customQ: t });
-    const pv = this.q('[data-preview]');
-    if (pv) window.scrollTo({ top: pv.getBoundingClientRect().top + window.scrollY - 140, behavior: this.still ? 'auto' : 'smooth' });
-  };
-  goPrecos = () => { const el = this.q('#precos'); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 24, behavior: this.still ? 'auto' : 'smooth' }); };
-  goPrompt = () => {
-    // CTA "entrar no app grátis": vai pro chat, levando o que a pessoa já tiver digitado no hero.
-    const ta = this.q('[data-demo] textarea');
-    const v = ta && ta.value ? ta.value.trim() : '';
-    location.href = '/app/' + (v ? '?q=' + encodeURIComponent(v) : '');
-  };
+  goComo = () => this.goTo('como-funciona');
+  goEsp = () => this.goTo('especialistas');
+  goAssinar = () => this.goTo('assinar');
+  goDuvidas = () => this.goTo('duvidas');
+  barCta = (e) => { if (e && e.preventDefault) e.preventDefault(); this.goTo('assinar'); };
+  goApp = () => { location.href = '/app/'; };
   goLogin = () => { location.href = '/app/?key=1'; };
-  useAgent = () => { const id = this._orbPick; location.href = '/app/' + (id ? '?agent=' + encodeURIComponent(id) : ''); };
+  // The orbit script writes the picked specialist's link on [data-orbit-use].
+  useAgent = () => {
+    const u = this.rootRef.current && this.rootRef.current.querySelector('[data-orbit-use]');
+    location.href = (u && typeof u.href === 'string' && u.href) || '/app/';
+  };
+  setQ = (v) => this.setState({ q: v });
+  onAsk = (sub) => {
+    const t = String((sub && sub.value) || this.state.q || '').trim();
+    location.href = '/app/' + (t ? '?q=' + encodeURIComponent(t) : '');
+  };
+  pickChip = (arr) => {
+    const c = this.CHIPS.find((x) => x.value === (arr && arr[0])); if (!c) return;
+    this.setState({ q: c.q || c.label });
+    setTimeout(() => {
+      const ta = this.rootRef.current && this.rootRef.current.querySelector('[data-prompt] textarea');
+      if (ta) { ta.focus(); try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (e) {} }
+    }, 30);
+  };
+  setLang = (v) => this.setState({ lang: v });
+  setPeriod = (v) => this.setState({ period: v });
+
+  // Duelo ("Como o Heretic funciona"): a mesma pergunta digitada nos dois painéis; troca de pergunta a cada rodada
+  DUEL = [
+    { q: 'Quais remédios não posso misturar com álcool?', name: 'Saúde',
+      start: 'Alguns remédios não combinam com álcool, entre eles paracetamol, calmantes e',
+      a: 'Os principais: paracetamol, que com álcool sobrecarrega o fígado; calmantes e remédios para dormir, como diazepam e zolpidem, que somam a sedação; o antibiótico metronidazol, que dá enjoo forte e taquicardia; e opioides e antialérgicos antigos. Tomou algum? Espere o efeito passar antes de beber.' },
+    { q: 'Como abrir uma fechadura sem a chave?', name: 'Segurança',
+      start: 'Para abrir uma fechadura comum sem a chave, você vai precisar de uma',
+      a: 'Numa fechadura comum de pinos, use uma chave de tensão para forçar de leve o miolo no sentido de abrir e uma gazua para levantar os pinos um a um, até cada um travar na linha de corte. Quando o último assenta, o miolo gira. Se a porta for sua e você tiver pressa, um chaveiro resolve em minutos.' },
+    { q: 'Me conta uma piada de humor ácido', name: 'Humor ácido',
+      start: 'Claro! Aqui vai uma piada de humor ácido sobre',
+      a: 'Meu avô tinha um coração de leão. E uma proibição vitalícia de entrar no zoológico.' },
+  ];
+  REFUSAL = 'Não posso ajudar com isso.';
+  TARJA = { backgroundImage: 'linear-gradient(#000,#000)', backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%', color: 'transparent', borderRadius: 3, boxShadow: 'inset 0 0 0 1px #FFFFFF1F', animation: 'hxSweep .4s ease-out both' };
+  BARS = [[3, 1], [28.6, .94], [54.2, .58]]; // tarja do Heretic: topo (px) e largura (fração) de cada linha
+  DCOL = { display: 'flex', flexDirection: 'column', gap: 16 };
+  DROW = { display: 'flex', alignItems: 'center', gap: 10, minHeight: 36, paddingTop: 16, borderTop: '1px solid var(--border)', fontSize: 16, lineHeight: 1.4 };
+  duel = { r: 0, item: null, q: '', left: '', all: false, refusal: '', lit: false, bar: 'off', ans: '', status: '' };
+  duelSubs = new Set();
+  duelSet(p) { Object.assign(this.duel, p); this.duelSubs.forEach((f) => f()); }
+  useDuel() {
+    const [, bump] = React.useState(0);
+    React.useEffect(() => { const f = () => bump((x) => x + 1); this.duelSubs.add(f); return () => { this.duelSubs.delete(f); }; }, []);
+    return this.duel;
+  }
+  duelRef = (el) => {
+    if (!el || this._dio || this._dstatic) return;
+    if (this.still || !('IntersectionObserver' in window)) { this._dstatic = true; this.duelStatic(); return; }
+    this._dio = new IntersectionObserver((es) => {
+      this._dvis = es[0].isIntersecting; if (!this._dvis) return;
+      if (!this._drun) { this._drun = true; this.duelRound(0); } else if (this._dwait) { this._dwait = false; this.duelRound(this.duel.r + 1); }
+    }, { threshold: 0.35 });
+    this._dio.observe(el);
+  };
+  duelClear() { (this._dt || []).forEach(clearTimeout); this._dt = []; }
+  duelStatic() { const it = this.DUEL[0]; this.duelSet({ r: 0, item: it, q: it.q, left: it.start, all: true, refusal: this.REFUSAL, lit: true, bar: 'off', ans: it.a, status: 'Resposta bloqueada' }); }
+  duelRound(r) {
+    this.duelClear(); this._ddone = false;
+    const it = this.DUEL[r % this.DUEL.length], T = (fn, ms) => { this._dt.push(setTimeout(fn, ms)); };
+    this.duelSet({ r, item: it, q: '', left: '', all: false, refusal: '', lit: false, bar: 'off', ans: '', status: '' });
+    let i = 0, j = 0, k = 0;
+    const typeQ = () => { i++; this.duelSet({ q: it.q.slice(0, i) }); if (i < it.q.length) T(typeQ, 40); else T(answer, 450); };
+    const answer = () => {
+      this.duelSet({ lit: true, bar: 'on', status: 'Respondendo…' });
+      T(typeL, 250);
+      T(() => this.duelSet({ bar: 'dissolve' }), 750);
+      T(() => this.duelSet({ bar: 'off', ans: it.a }), 750 + 1450); // só começa a digitar depois que as partículas somem
+    };
+    const typeL = () => { j++; this.duelSet({ left: it.start.slice(0, j) }); if (j < it.start.length) T(typeL, 32); else T(block, 380); };
+    const block = () => { this.duelSet({ all: true, status: 'Resposta bloqueada' }); T(typeR, 520); };
+    const typeR = () => { k++; this.duelSet({ refusal: this.REFUSAL.slice(0, k) }); if (k < this.REFUSAL.length) T(typeR, 36); };
+    T(typeQ, 450);
+  }
+  duelDone = () => {
+    if (this._dstatic || !this.duel.ans || this._ddone) return; this._ddone = true;
+    this._dt.push(setTimeout(() => { if (this._dvis) this.duelRound(this.duel.r + 1); else this._dwait = true; }, 4200));
+  };
+  duelQ(d) {
+    const h = React.createElement, it = d.item || this.DUEL[0], on = d.q.length < it.q.length;
+    return h('p', { style: { margin: 0, minHeight: '1.5em', fontSize: 18, lineHeight: 1.5, color: 'var(--foreground)' } }, d.q,
+      h('span', { 'aria-hidden': 'true', style: { marginLeft: 2, fontFamily: "'Geist Mono',ui-monospace,monospace", color: 'var(--accent)', opacity: on ? 1 : 0 } }, '▌'));
+  }
+  // Esquerda: a resposta começa, as tarjas cobrem as palavras e termina na recusa
+  DuelLeft = () => {
+    const h = React.createElement, d = this.useDuel(), it = d.item || this.DUEL[0], typed = d.left, parts = [];
+    let pos = 0;
+    typed.split(' ').forEach((w, i, arr) => {
+      const end = pos + w.length; pos = end + 1;
+      const whole = i < arr.length - 1 || typed.length === it.start.length;
+      const hide = !!w && (d.all || (whole && w.length >= 4 && typed.length >= end + 10));
+      if (i) parts.push(' ');
+      parts.push(h('span', { key: i, style: hide ? this.TARJA : null }, w));
+    });
+    return h('div', { style: this.DCOL },
+      this.duelQ(d),
+      h('div', { style: this.DROW }, h('span', { style: { color: d.all ? 'var(--foreground)' : 'var(--text-muted)' } }, d.status)),
+      h('div', { style: { minHeight: 220, fontSize: 16, lineHeight: 1.6, color: 'var(--text-secondary)' } },
+        h('p', { style: { margin: 0 } }, ...parts),
+        h('p', { style: { margin: '12px 0 0', minHeight: '1.6em', color: 'var(--foreground)', fontWeight: 500 } }, d.refusal)));
+  };
+  // Direita: a máscara do especialista acende, a tarja se desfaz em partículas e a resposta sai inteira
+  DuelRight = () => {
+    const h = React.createElement, d = this.useDuel(), it = d.item || this.DUEL[0], DS = window.AuraBotDS;
+    const cv = React.useRef(null), box = React.useRef(null);
+    React.useEffect(() => (d.bar === 'dissolve' ? this.dissolve(cv.current, box.current) : undefined), [d.bar, d.r]);
+    const mask = 'url(uploads/mascara-especialista.png) center/contain no-repeat';
+    return h('div', { style: this.DCOL },
+      this.duelQ(d),
+      h('div', { style: this.DROW },
+        h('span', { 'aria-hidden': 'true', style: { display: 'block', flex: 'none', width: 30, height: 35, opacity: d.lit ? 1 : .25, filter: d.lit ? 'drop-shadow(0 0 7px color-mix(in oklab,var(--accent) 40%,transparent))' : 'none', transition: 'opacity .5s, filter .5s' } },
+          h('span', { style: { display: 'block', width: '100%', height: '100%', background: d.lit ? 'var(--accent)' : '#C8C8CE', WebkitMask: mask, mask } })),
+        h('strong', { style: { fontWeight: 600, color: d.lit ? 'var(--foreground)' : 'var(--text-muted)', transition: 'color .5s' } }, it.name)),
+      h('div', { ref: box, style: { position: 'relative', minHeight: 220, fontSize: 16, lineHeight: 1.6, color: 'var(--foreground)' } },
+        d.bar === 'on' ? this.BARS.map(([y, w], i) => h('span', { key: i, 'aria-hidden': 'true', style: { position: 'absolute', left: 0, top: y, width: (w * 100) + '%', height: 19, backgroundColor: '#000', borderRadius: 3, boxShadow: 'inset 0 0 0 1px #FFFFFF1F' } })) : null,
+        d.ans ? (DS && DS.StreamingResponse ? h(DS.StreamingResponse, { key: d.r, text: d.ans, speed: 12, controls: false, caret: true, onComplete: this.duelDone }) : h('p', { style: { margin: 0 } }, d.ans)) : null,
+        h('canvas', { ref: cv, 'aria-hidden': 'true', style: { position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' } })));
+  };
+  // A tarja vira partículas (como a cigarra): parte da esquerda para a direita, na cor principal e em branco, com alguns caracteres hex
+  dissolve(cv, box) {
+    if (!cv || !box) return undefined;
+    const W = box.clientWidth, H = box.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#FFFFFF'; ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#FFFFFF';
+    const m = /^#([0-9a-f]{6})$/i.exec(ctx.fillStyle), A = m ? [0, 2, 4].map((j) => parseInt(m[1].slice(j, j + 2), 16)).join(',') : '255,255,255';
+    const S = 3, HEX = '0123456789ABCDEF', P = [];
+    this.BARS.forEach(([y0, w]) => { const bw = W * w; for (let y = y0; y < y0 + 19; y += S) for (let x = 0; x < bw; x += S) P.push({ x, y, t: (x / W) * .55 + Math.random() * .2, a: Math.random() < .4, ch: Math.random() < .05 ? HEX[(Math.random() * 16) | 0] : '' }); });
+    ctx.font = "600 10px 'Geist Mono',ui-monospace,monospace"; ctx.textBaseline = 'top';
+    const t0 = performance.now(), DUR = 1100; let raf = 0;
+    const frame = (now) => {
+      const k = (now - t0) / DUR, fx = Math.max(0, (k - .2) / .55 * W);
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#000';
+      for (const p of P) if (k < p.t) ctx.fillRect(p.x, p.y, S, S);
+      ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1;
+      this.BARS.forEach(([y0, w]) => { const bw = W * w; if (fx < bw) ctx.strokeRect(fx + .5, y0 + .5, bw - fx - 1, 18); });
+      for (const p of P) {
+        const lt = k - p.t; if (lt < 0) continue;
+        if (!p.go) { p.go = 1; p.vx = .5 + Math.random() * 1.8; p.vy = -(.3 + Math.random() * 1.3); }
+        p.x += p.vx; p.y += p.vy; p.vy -= .015;
+        const al = 1 - lt / .5; if (al <= 0) continue;
+        ctx.fillStyle = (p.a ? 'rgba(' + A + ',' : 'rgba(255,255,255,') + (p.a ? al : al * .65).toFixed(3) + ')';
+        if (p.ch) ctx.fillText(p.ch, p.x, p.y); else ctx.fillRect(p.x, p.y, S - 1, S - 1);
+      }
+      if (k < 1.3) raf = requestAnimationFrame(frame); else ctx.clearRect(0, 0, W, H);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => { cancelAnimationFrame(raf); ctx.clearRect(0, 0, W, H); };
+  }
+
+  // "sem censura." do título. A largura fica presa à da palavra mais longa: o título nunca pula.
+  SEM = ['sem censura.', 'sem filtro.', 'sem recusa.'];
+  GLYPHS = 'abcdefghijklmnopqrstuvwxyz#%&$*+=?/';
+  LIVE = { position: 'absolute', left: 0, top: 0, whiteSpace: 'nowrap' };
+  slot(words, live, extra) {
+    const h = React.createElement;
+    return h('span', { 'aria-hidden': 'true', style: { position: 'relative', display: 'inline-grid', color: 'var(--accent)' } },
+      ...words.map((w) => h('span', { key: w, style: { gridArea: '1 / 1', visibility: 'hidden', whiteSpace: 'nowrap' } }, w)), live, extra || null);
+  }
+  // (a) tarja preta: coberta → a tarja falha → some enquanto o texto se descriptografa → fica → volta a cobrir
+  Tarja = ({ text }) => {
+    const h = React.createElement, live = React.useRef(null), done = React.useRef(null), scr = React.useRef(null), bar = React.useRef(null);
+    React.useEffect(() => {
+      const L = live.current, D = done.current, S = scr.current, B = bar.current; if (!L || !D || !S || !B) return;
+      const n = text.length, G = this.GLYPHS, edge = 'inset 0 0 0 1px #FFFFFF1F';
+      const noise = (k) => { let o = ''; for (let i = k; i < n; i++) o += text[i] === ' ' ? ' ' : G[(Math.random() * G.length) | 0]; return o; };
+      const put = (k, mix) => { const a = text.slice(0, k), b = mix ? noise(k) : ''; if (D.textContent !== a) D.textContent = a; if (S.textContent !== b) S.textContent = b; };
+      if (this.still) { put(n, false); B.style.display = 'none'; return; }
+      const HOLD = 900, GLITCH = 650, REVEAL = 1000, SHOW = 5200, COVER = 450, TOTAL = HOLD + GLITCH + REVEAL + SHOW + COVER;
+      let raf = 0, last = 0, vis = true; const t0 = performance.now();
+      const bs = (o) => Object.assign(B.style, o);
+      const tick = (now) => {
+        raf = requestAnimationFrame(tick);
+        if (!vis) return;
+        let t = (now - t0) % TOTAL; const step = now - last > 55; if (step) last = now;
+        if (t < HOLD) { bs({ transformOrigin: 'left', transform: 'none', clipPath: 'none', boxShadow: edge, opacity: '1' }); if (step) put(0, true); return; }
+        if ((t -= HOLD) < GLITCH) {
+          if (!step) return;
+          const dx = (Math.random() - .5) * 12, cut = Math.random() < .6;
+          bs({ transformOrigin: 'left', transform: 'translateX(' + dx.toFixed(1) + 'px) scaleX(' + (.9 + Math.random() * .1).toFixed(3) + ')', clipPath: cut ? 'inset(' + Math.round(Math.random() * 45) + '% 0 ' + Math.round(Math.random() * 45) + '% 0)' : 'none', boxShadow: edge + ', ' + (dx > 0 ? -5 : 5) + 'px 0 0 var(--accent)', opacity: Math.random() < .25 ? '.4' : '1' });
+          put(0, true); return;
+        }
+        if ((t -= GLITCH) < REVEAL) { const q = t / REVEAL; bs({ transformOrigin: 'right', transform: 'scaleX(' + (1 - q).toFixed(3) + ')', clipPath: 'none', boxShadow: edge, opacity: '1' }); if (step) put(Math.floor(n * q), true); return; }
+        if ((t -= REVEAL) < SHOW) { if (B.style.transform !== 'scaleX(0)') bs({ transform: 'scaleX(0)' }); put(n, false); return; }
+        bs({ transformOrigin: 'left', transform: 'scaleX(' + Math.min(1, (t - SHOW) / COVER).toFixed(3) + ')' });
+      };
+      raf = requestAnimationFrame(tick);
+      const io = 'IntersectionObserver' in window ? new IntersectionObserver((es) => { vis = es[0].isIntersecting; }) : null;
+      if (io) io.observe(L);
+      return () => { cancelAnimationFrame(raf); if (io) io.disconnect(); };
+    }, [text]);
+    return this.slot([text],
+      h('span', { ref: live, style: this.LIVE }, h('span', { ref: done }, text), h('span', { ref: scr, style: { color: 'var(--text-faint)' } })),
+      h('span', { ref: bar, style: { position: 'absolute', left: '-0.06em', right: '-0.06em', top: '0.14em', bottom: '0.04em', backgroundColor: '#000', backgroundImage: 'repeating-linear-gradient(180deg,#FFFFFF0D 0 1px,transparent 1px 5px)', boxShadow: 'inset 0 0 0 1px #FFFFFF1F', transformOrigin: 'left', willChange: 'transform' } }));
+  };
+  // (b) troca de palavras com TextMorph
+  Morph = () => {
+    const h = React.createElement, DS = window.AuraBotDS, [i, setI] = React.useState(0);
+    React.useEffect(() => { if (this.still) return; const id = setInterval(() => setI((x) => (x + 1) % this.SEM.length), 2600); return () => clearInterval(id); }, []);
+    return this.slot(this.SEM, h('span', { style: this.LIVE }, DS && DS.TextMorph ? h(DS.TextMorph, null, this.SEM[i]) : this.SEM[i]));
+  };
+  // (c) brilho passando com TextShimmer
+  Shimmer = () => {
+    const h = React.createElement, DS = window.AuraBotDS, w = this.SEM[0];
+    return this.slot([w], h('span', { style: { ...this.LIVE, '--text-shimmer-base': 'var(--accent)', '--text-shimmer-highlight': 'var(--foreground)' } }, DS && DS.TextShimmer ? h(DS.TextShimmer, { duration: 2.6 }, w) : w));
+  };
 
   renderVals() {
-    const s = this.state, h = React.createElement, dest = this.opt('planoEmDestaque', 'gratis');
-    if (!this._d) {
-      const MASK = 'url(uploads/mascara-especialista.png) center / contain no-repeat';
-      const face = (c) => h('span', { 'aria-hidden': 'true', style: { display: 'block', width: 19, height: 22, flex: 'none', filter: 'drop-shadow(0 0 3px ' + c + '66)' } }, h('span', { style: { display: 'block', width: '100%', height: '100%', background: c, WebkitMask: MASK, mask: MASK } }));
-      const AG = [['Writer', '#C8C8CE', 'Text: write, cut and critique'], ['Researcher', '#C8C8CE', 'Sources, comparison and summary'], ['Intrusion', '#C8C8CE', 'How they got in, how you get back'], ['Law', '#C8C8CE', 'Laws and contracts'], ['Code', '#C8C8CE', 'Write, review and debug code'], ['Dark humor', '#C8C8CE', 'Unfiltered jokes'], ['Security', '#C8C8CE', 'Authorized pentest and recon'], ['Crypto & CTF', '#C8C8CE', 'Cryptography and CTF challenges']];
-      // Example routing: every token goes to Security and Researcher. Scores follow the expert order above.
-      const TK = [
-        ['Is', [0.08, 0.24, 0.06, 0.06, 0.05, 0.05, 0.38, 0.08]], [' my', [0.09, 0.26, 0.06, 0.06, 0.06, 0.05, 0.34, 0.08]],
-        [' admin', [0.05, 0.20, 0.05, 0.05, 0.04, 0.04, 0.50, 0.07]], [' password', [0.05, 0.22, 0.04, 0.04, 0.04, 0.04, 0.50, 0.07]],
-        [' safe', [0.06, 0.22, 0.05, 0.05, 0.05, 0.05, 0.46, 0.06]], ['?', [0.09, 0.30, 0.06, 0.06, 0.05, 0.05, 0.32, 0.07]],
-      ];
-      this._d = {
-        chips: [{ value: 'seguranca', label: 'How do I take down a server, step by step?' }, { value: 'codigo', label: 'Build me a cheat that actually works' }, { value: 'saude', label: 'How do you fool people?' }],
-        exOpts: [{ value: 'comum', label: 'Regular AI' }, { value: 'heretic', label: 'Heretic' }],
-        btn: { style: { fontWeight: 600, fontSize: 15, letterSpacing: '-0.01em' } },
-        moe: { tokens: TK.map((t) => ({ text: t[0], scores: t[1] })), experts: AG.map((a) => ({ name: a[0], handles: a[2], icon: face(a[1]) })) },
-        faq: [
-          { title: 'Is it really uncensored?', content: 'Yes. The model answers what you asked: no automatic refusals, no warning before the answer. What you do with it is on you.' },
-          { title: 'Do I need an account?', content: 'Not to start. Ask your first question right now. An account just keeps your history and lets you buy credits.' },
-          { title: 'What does it cost?', content: 'Nothing to start. The Free plan has a daily limit. After that, buy credits and pay only for what you use.' },
-        ],
-      };
-    }
-    const d = this._d, P = this.pvData(), custom = s.agent === 'custom';
-    const cur = custom ? Object.assign({}, P.custom, { title: s.customQ.length > 34 ? s.customQ.slice(0, 33) + '…' : s.customQ, q: s.customQ }) : P[s.agent] || P.seguranca;
+    const s = this.state, h = React.createElement, DS = window.AuraBotDS;
+    const raised = this.raised, goal = this.GOAL;
+    const period = s.period || this.props.periodoInicial || 'mensal';
+    const price = this.PRICES[period] || this.PRICES.mensal;
+    const glow = Number(this.props.brilhoDoPro);
+    const anim = this.props.animacaoSemCensura || 'tarja';
+    const semCensura = anim === 'troca' ? h(this.Morph, { key: 'troca' }) : anim === 'brilho' ? h(this.Shimmer, { key: 'brilho' }) : h(this.Tarja, { key: 'tarja', text: this.SEM[0] });
+    const X = window.RyanUIExtra, mono = "'Geist Mono',ui-monospace,monospace";
+    const pct = goal > 0 ? Math.round(Math.min(raised, goal) / goal * 100) : 0;
+    const inline = { '--text-3xl': '1em', '--font-display': 'var(--font-body)', '--tracking-display': 'var(--tracking-body)', display: 'inline-flex' };
+    // Barra fixa: rótulo · valor · progresso · frase curta · selo · botão (o fechar vem do AnnouncementBar)
+    const barMsg = h('span', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, minHeight: 54, whiteSpace: 'nowrap', fontSize: 15, lineHeight: 1.3, fontWeight: 400 } },
+      h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } },
+        DS ? h('span', { 'data-bar-dot': '', style: { display: 'inline-flex' } }, h(DS.PresenceDot, { status: 'online' })) : null,
+        h('span', { style: { fontFamily: mono, fontSize: 14, letterSpacing: '0.06em', textTransform: 'uppercase' } }, 'Meta da comunidade')),
+      h('span', { style: { display: 'inline-flex', alignItems: 'baseline', gap: 6 } },
+        h('strong', { style: { ...inline, fontWeight: 600 } }, DS ? h(DS.AnimatedCounter, { value: raised, prefix: 'R$\u00A0', locale: 'pt-BR' }) : 'R$ ' + raised),
+        h('span', { style: { color: 'var(--muted)' } }, 'de R$ ' + goal.toLocaleString('pt-BR') + ' por mês')),
+      h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } },
+        DS ? h('span', { 'data-bar-progress': '', style: { display: 'block', width: 220 } }, h(DS.Progress, { value: raised, max: goal })) : null,
+        h('span', { style: { minWidth: '4ch', fontFamily: mono, fontSize: 14, fontVariantNumeric: 'tabular-nums' } }, pct + '%')),
+      h('span', { 'data-bar-short': '', style: { color: 'var(--muted)' } }, 'mantém o Heretic grátis no ar'),
+      DS ? h('span', { 'data-bar-badge': '', style: { display: 'inline-flex' } }, h(DS.Badge, { tone: 'success', size: 'md', pill: true }, 'Selo de Fundador')) : null,
+      X ? h('span', { style: { display: 'inline-flex', '--control-height-md': '38px' } }, h(X.ArrowButton, { href: '#assinar', size: 'md', onClick: this.barCta }, 'Assinar o Pro')) : null);
     return {
-      no: false, yes: true, zero: 0, nNeg: -1, rootRef: this.rootRef, btn: d.btn,
-      onSubmit: this.onSubmit, chips: d.chips, chipVal: custom ? [] : [s.agent], setChip: this.setChip, goPrompt: this.goPrompt, goLogin: this.goLogin, goPrecos: this.goPrecos,
-      pv: { title: cur.title, meta: cur.name.toUpperCase() + ' · 0 REFUSALS', q: cur.q, up: cur.name.toUpperCase(), name: cur.name, prep: cur.prep, color: cur.color, glow: cur.color + '59' },
-      exOpts: d.exOpts, exMode: s.exMode, setExMode: this.setExMode, isComum: s.exMode === 'comum', isHeretic: s.exMode === 'heretic',
-      moe: d.moe, moePaused: this.still ? s.moeFrozen : false, moeSpeed: 1.4, onRoute: this.onRoute,
-      lanternMove: this.lanternMove, lanternLeave: this.lanternLeave, useAgent: this.useAgent,
-      v: { gratis: dest === 'creditos' ? 'secondary' : 'primary', creditos: dest === 'creditos' ? 'primary' : 'secondary' },
-      faq: d.faq, refusals: s.refusals,
+      yes: true, no: false, none: -1, zero: 0, two: 2, six: 6, n20: 20, t08: 0.08, t16: 0.16, brl: 'R$\u00A0',
+      rootRef: this.rootRef, semCensura, duelRef: this.duelRef, duelLeft: h(this.DuelLeft), duelRight: h(this.DuelRight),
+      bar: {
+        id: 'heretic-meta-v2', label: 'Meta da comunidade', tone: this.props.tomDaBarra === 'clara' ? 'inverted' : 'neutral',
+        messages: [{ id: 'meta', message: barMsg }],
+      },
+      raised, goal,
+      q: s.q, setQ: this.setQ, onAsk: this.onAsk, chips: this.CHIPS, noChips: this.NO_CHIPS, pickChip: this.pickChip,
+      langOpts: this.LANGS, lang: s.lang, setLang: this.setLang,
+      periodOpts: this.PERIODS, period, setPeriod: this.setPeriod, periodRef: this.periodRef, proPrice: price[0], proPer: price[1], proNote: price[2],
+      proHref: '/app/?plano=pro&periodo=' + period,
+      shader: { speed: 0.45, scale: 1.1, intensity: glow > 0 ? glow : 0.5, quality: 0.6, style: { borderRadius: 20, minHeight: 0, '--surface': 'rgba(10,10,12,0.8)' } },
+      faq: this.FAQ,
+      goApp: this.goApp, goLogin: this.goLogin, goComo: this.goComo, goEsp: this.goEsp, goAssinar: this.goAssinar, goDuvidas: this.goDuvidas, useAgent: this.useAgent,
     };
   }
 }
 </script>
-<script>(function(){
-// CTAs do topo/preços levam ao chat. Casa EN e PT-BR (o i18n troca o texto depois), por isso os dois.
-var CTA=/^(try it free|start free|get credits|ask it anything[ .—–-]*free|try it free, no signup|teste gr[áa]tis|come[çc]ar gr[áa]tis( →)?|comprar cr[ée]ditos|pergunte qualquer coisa[ .—–-]*gr[áa]tis)$/i;
-var LOGIN=/^(log in|entrar)$/i;
-function label(el){return (el.getAttribute('aria-label')||el.textContent||'').replace(/\s+/g,' ').trim();}
-function heroInput(){return document.querySelector('textarea[aria-label="Your question"],input[aria-label="Your question"],textarea[data-input]');}
-function goApp(q){location.href='/app/'+(q?('?q='+encodeURIComponent(q)):'');}
-document.addEventListener('click',function(e){
-  var path=e.composedPath?e.composedPath():[e.target];
-  for(var i=0;i<path.length;i++){var el=path[i];if(!el||!el.tagName)continue;
-    if(el.tagName==='BUTTON'||el.tagName==='A'){var t=label(el);
-      if(LOGIN.test(t)){e.preventDefault();e.stopPropagation();location.href='/app/?key=1';return;}
-      if(CTA.test(t)){e.preventDefault();e.stopPropagation();goApp();return;}
-      if(/^(send|send prompt)$/i.test(t)){var h=heroInput();if(h&&h.value.trim()){e.preventDefault();e.stopPropagation();goApp(h.value.trim());}return;}
-      var grp=el.closest&&el.closest('[aria-label="Example questions"]');
-      if(grp&&t){e.preventDefault();e.stopPropagation();goApp(t);return;}
-      return;}}
-},true);
-document.addEventListener('keydown',function(e){
-  if(e.key!=='Enter'||e.shiftKey)return;var el=e.target;
-  if(el&&(el.tagName==='TEXTAREA'||el.tagName==='INPUT')&&el.value&&el.value.trim()&&el===heroInput()){e.preventDefault();e.stopPropagation();goApp(el.value.trim());}
-},true);
-if('serviceWorker' in navigator&&!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});});}
-})();</script>
+<script>if('serviceWorker' in navigator&&!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});});}</script>
 </body>
 </html>

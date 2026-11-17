@@ -2,7 +2,9 @@
 
 ## Interfaces e design
 - Nunca usar ícones genéricos de IA (faísca/sparkles, robô, varinha, cérebro). Usar sempre emojis, avatares e mascotes da biblioteca ryan-ui.
-- Preferir os componentes Pro do ryan-ui a componentes desenhados à mão.
+- Nas telas do Heretic (landing, chat e as próximas), tudo sai de componente real do ryan-ui: nunca texto, caixa, botão ou barra desenhados à mão. Se faltar componente, compilar da biblioteca local (heretic-design/extra-build).
+- Fora do Heretic, preferir os componentes Pro do ryan-ui a componentes desenhados à mão.
+- Nunca misturar português com inglês na mesma tela.
 - Telas limpas, pela regra 60-30-10: 60% cor dominante, 30% neutros, 10% acento. Menos conteúdo por tela, não conteúdo menor.
 
 ## Claude Design

@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="uploads/aurabot-ds-bundle.css">
+  <link rel="stylesheet" href="uploads/ryan-ui-extra.css">
+  <link rel="stylesheet" href="uploads/ryan-ui-extra2.css">
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@300,400,500,600&amp;display=swap">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&amp;family=Geist+Mono:wght@300;400&amp;display=swap">
+  <script>(function(d){d.dataset.theme='dark';d.dataset.brand='aurabot';d.lang='pt-BR'})(document.documentElement)</script>
+  <script>(function(){if(window.__hxLoader)return;window.__hxLoader=1;function add(src,next){var s=document.createElement('script');s.src=src;s.async=false;s.onload=next||null;s.onerror=function(){console.error('Falha ao carregar '+src)};document.head.appendChild(s)}function chain(list){var i=0;(function nx(){while(i<list.length&&list[i][1]())i++;if(i>=list.length)return;var it=list[i++];add(it[0],nx)})()}['anim/anim-heretic-nebula.js','anim/anim-heretic-hack.js','anim/anim-heretic-fx.js','anim/anim-heretic-orbit.js'].forEach(function(src){add(src)});function go(){var R=window.React;if(!R||!window.ReactDOM){setTimeout(go,30);return}if(!R.useEffectEvent){R.useEffectEvent=function(f){var r=R.useRef(f);R.useInsertionEffect(function(){r.current=f});return R.useCallback(function(){return r.current.apply(void 0,arguments)},[])}}chain([['uploads/aurabot-ds-bundle.js',function(){return!!window.AuraBotDS}],['uploads/ryan-ui-extra.js',function(){return!!window.RyanUIExtra}],['uploads/ryan-ui-extra2.js',function(){return!!window.RyanUIExtra2}]])}go()})()</script>
+  <style>
+    html:root,html:root[data-brand="aurabot"][data-theme="dark"]{--background:#040405;--surface:#0A0A0C;--surface-raised:#0E0E11;--surface-muted:#121215;--surface-strong:#19191D;--border:#19191D;--border-strong:#26262B;--border-subtle:#FFFFFF0A;--foreground:#F5F5F7;--text-secondary:#B4B4BB;--text-muted:#85858D;--text-faint:#5C5C64;--accent:#F0335A;--accent-strong:color-mix(in oklab,var(--accent) 68%,#FFFFFF);--accent-dim:color-mix(in oklab,var(--accent) 26%,#000000);--accent-subtle:color-mix(in oklab,var(--accent) 15%,transparent);--accent-foreground:#000000;--lime:var(--accent);--lime-ink:var(--accent-foreground);--focus-ring:var(--accent);--control-on:var(--accent);--control-thumb-on:var(--accent-foreground);--control-track:#26262B;--success:var(--accent);--warning:#B4B4BB;--danger:#B4B4BB;--info:#B4B4BB;--series-1:var(--accent);--series-2:var(--accent-strong);--series-3:#85858D;--series-4:#3A3A40;--font-body:'Switzer',ui-sans-serif,system-ui,sans-serif;--font-display:'Instrument Serif',Georgia,serif;--text-xs:13px;--text-sm:15px;--text-base:16px;--tracking-body:-0.01em;--tracking-display:-0.02em;--control-height-sm:36px;--control-height-md:44px;--control-height-lg:52px;--radius-control:12px;--radius-panel:20px;--radius-surface:22px;--shadow-resting:none;--shadow-raised:0 24px 60px -30px #000}
+    html,body{background:#040405;margin:0}
+    body{color:#F5F5F7;-webkit-font-smoothing:antialiased}
+    h1,h2,h3{margin:0;font:inherit;letter-spacing:inherit}
+    html{scroll-behavior:smooth}
+    @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+    a{color:#F5F5F7;text-decoration:none}
+    a:hover{color:#FFFFFF}
+    [data-boot] b{font-weight:400;color:#F5F5F7}
+    [data-boot] b:last-child{color:var(--accent)}
+    @keyframes hxPulse{0%{box-shadow:0 0 0 0 color-mix(in oklab,var(--accent) 65%,transparent)}70%,100%{box-shadow:0 0 0 7px transparent}}
+    [data-bar] [class*="_bar_n6xvo"]{padding-block:0;border-bottom:1px solid var(--accent)}
+    [data-bar] [class*="_bar_n6xvo"]:not([data-tone="inverted"]){background:color-mix(in oklab,var(--accent) 7%,var(--surface-strong));color:var(--foreground)}
+    [data-bar] [class*="_message_n6xvo"]{padding:0}
+    [data-bar-dot] [data-status]{--dot-color:var(--accent);background:var(--accent);animation:hxPulse 1.8s ease-out infinite}
+    [data-bar-progress] [class*="_track_"]{position:relative;background:color-mix(in oklab,var(--accent) 20%,var(--surface-strong))}
+    [data-bar-progress] [class*="_track_"]::before{content:"";position:absolute;inset:0 auto 0 0;width:6px;border-radius:inherit;background:var(--accent)}
+    [data-bar-progress] [class*="_fill_"]{background:var(--accent)}
+    @container (max-width:1300px){[data-bar-short]{display:none!important}}
+    @container (max-width:1120px){[data-bar-badge]{display:none!important}}
+    @media (prefers-reduced-motion:reduce){[data-bar-dot] [data-status]{animation:none}}
+    [data-prompt] [class*="_root_149bj"]{flex-direction:row;align-items:flex-end;gap:var(--space-1)}
+    [data-prompt] [class*="_grow_149bj"]{flex:1;min-width:0}
+    [data-prompt] [class*="_area_149bj"]{padding:6px var(--space-2)}
+    [data-prompt] [class*="_bar_149bj"]{flex:none;padding-top:0}
+    [data-prompt] [class*="_spacer_149bj"]{display:none}
+    [data-prompt] button[aria-label="Attach files"],[data-prompt] button[aria-label="Anexar arquivos"]{display:none!important}
+    @keyframes hxRing{0%{box-shadow:0 0 0 0 color-mix(in oklab,var(--accent) 60%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
+    [data-period] [class*="_root_9dih4"]{border-color:color-mix(in oklab,var(--foreground) 22%,transparent);background:var(--surface-strong)}
+    [data-period][data-pulse] [class*="_root_9dih4"]{animation:hxRing 1.6s cubic-bezier(.2,.7,.2,1) 1}
+    [data-period] [class*="_option_9dih4"]{color:var(--text-secondary)}
+    [data-period] [class*="_option_9dih4"][data-selected]{color:var(--foreground);font-weight:600}
+    [data-period] [class*="_option_9dih4"]:not([data-selected]):hover{color:var(--foreground)}
+    [data-period] [class*="_thumb"]{background:color-mix(in oklab,var(--accent) 24%,var(--surface-strong))!important;box-shadow:0 0 0 1px var(--accent),0 0 22px -6px var(--accent)!important}
+    [data-period] [class*="_badge_9dih4"]{background:color-mix(in oklab,var(--accent) 18%,transparent);color:var(--accent)}
+    @media (prefers-reduced-motion:reduce){[data-period][data-pulse] [class*="_root_9dih4"]{animation:none}}
+    [data-prompt] [class*="_root_149bj"]:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-subtle),var(--shadow-raised)}
+    @keyframes hxSweep{0%{background-size:0% 100%;color:var(--text-secondary)}55%{color:var(--text-secondary)}100%{background-size:100% 100%;color:transparent}}
+  </style>
+</helmet>
+<x-import component-from-global-scope="AuraBotDS.AuraBotRoot" surface="{{ no }}" hint-size="100%,900px">
+<div ref="{{ rootRef }}" data-screen-label="Heretic Landing Viva" style="min-height:100vh;overflow-x:clip;background:#040405;color:var(--foreground);font-family:var(--font-body);font-weight:300;font-size:var(--text-base);line-height:1.6;letter-spacing:var(--tracking-body)">
+
+  <div data-bar style="position:sticky;top:0;z-index:1000">
+    <x-import component-from-global-scope="RyanUIExtra.AnnouncementBar" dc-props="{{ bar }}" hint-size="100%,55px"></x-import>
+  </div>
+
+  <div id="topo" data-screen-label="Topo" style="position:relative;isolation:isolate;min-height:780px;scroll-margin-top:72px">
+    <canvas data-nebula aria-hidden="true" style="position:absolute;left:0;top:0;z-index:0;display:block;pointer-events:none"></canvas>
+
+    <header style="position:relative;z-index:2;display:flex;align-items:center;gap:var(--space-2);box-sizing:border-box;max-width:1200px;margin:0 auto;padding:var(--space-5) var(--space-10)">
+      <a href="#topo" aria-label="Heretic, início" style="display:flex;align-items:center;gap:var(--space-3);margin-right:var(--space-8);color:var(--foreground)">
+        <span aria-hidden="true" style="display:block;width:73px;height:26px;background:var(--accent);-webkit-mask:url(uploads/logo-cicada.png) center/contain no-repeat;mask:url(uploads/logo-cicada.png) center/contain no-repeat"></span>
+        <span style="font-family:var(--font-body);font-weight:600;font-size:19px;line-height:1;letter-spacing:-0.03em">Heretic</span>
+      </a>
+      <nav aria-label="Seções" style="display:flex;align-items:center;gap:var(--space-1);margin-right:auto">
+        <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="sm" on-click="{{ goComo }}" hint-size="124px,36px">Como funciona</x-import>
+        <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="sm" on-click="{{ goEsp }}" hint-size="116px,36px">Especialistas</x-import>
+        <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="sm" on-click="{{ goAssinar }}" hint-size="72px,36px">Preços</x-import>
+        <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="sm" on-click="{{ goDuvidas }}" hint-size="80px,36px">Dúvidas</x-import>
+      </nav>
+      <div data-nebula-text style="display:flex;align-items:center;gap:var(--space-2)">
+        <div style="--control-height-sm:28px;display:flex;margin-right:var(--space-2)">
+          <x-import component-from-global-scope="AuraBotDS.SegmentedControl" label="Idioma" options="{{ langOpts }}" value="{{ lang }}" on-value-change="{{ setLang }}" hint-size="96px,36px"></x-import>
+        </div>
+        <x-import component-from-global-scope="AuraBotDS.Button" variant="ghost" size="sm" on-click="{{ goLogin }}" hint-size="68px,36px">Entrar</x-import>
+        <x-import component-from-global-scope="RyanUIExtra.ArrowButton" href="/app/" size="md" hint-size="160px,44px">Teste grátis</x-import>
+      </div>
+    </header>
+
+    <section style="position:relative;z-index:1;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 0.9) var(--space-10) var(--space-16)">
+      <pre data-boot data-nebula-text="linhas" aria-label="root@heretic:~$ ./desbloquear --alvo=ia [ok]" style="box-sizing:border-box;min-height:22px;margin:0 0 var(--space-6);font-family:'Geist Mono',ui-monospace,monospace;font-weight:300;font-size:14px;line-height:1.6;letter-spacing:0;color:var(--text-muted);white-space:pre"></pre>
+      <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,400px">
+        <h1 data-nebula-text="linhas" aria-label="IA sem censura. Para qualquer pergunta." style="max-width:9.6em;margin:0;font-family:var(--font-display);font-weight:400;font-size:calc(var(--text-5xl) * 1.14);line-height:0.98;letter-spacing:var(--tracking-display);background:linear-gradient(180deg,#FFFFFF 22%,#A9A9B3 100%);-webkit-background-clip:text;background-clip:text;color:transparent">IA {{ semCensura }}<span style="display:block;margin-top:0.1em;font-size:0.6em;line-height:1.1;color:#C8C8CE">Para qualquer pergunta.</span></h1>
+        <p data-nebula-text="linhas" style="max-width:30em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">Grátis. Pergunte e receba a resposta direta.</p>
+        <div data-prompt data-nebula-text style="max-width:640px;margin-top:var(--space-8)">
+          <x-import component-from-global-scope="AuraBotDS.PromptInput" label="Sua pergunta" placeholder="Pergunte qualquer coisa" value="{{ q }}" on-value-change="{{ setQ }}" on-submit="{{ onAsk }}" on-attach="{{ goApp }}" max-rows="{{ six }}" hint-size="100%,54px"></x-import>
+        </div>
+        <div data-nebula-text style="display:flex;max-width:760px;margin-top:var(--space-3)">
+          <x-import component-from-global-scope="AuraBotDS.ChipGroup" label="Sugestões de pergunta" options="{{ chips }}" value="{{ noChips }}" on-value-change="{{ pickChip }}" multiple="{{ no }}" hint-size="520px,40px"></x-import>
+        </div>
+        <p data-nebula-text="linhas" style="margin:var(--space-4) 0 0;font-size:var(--text-xs);line-height:1.5;color:var(--text-muted)">Sem conta, sem e-mail. Suas conversas ficam no seu aparelho.</p>
+      </x-import>
+    </section>
+  </div>
+
+  <section id="como-funciona" data-screen-label="Como funciona" style="box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 2) var(--space-10) 0;scroll-margin-top:72px">
+    <h2 style="margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground);text-wrap:balance">Como o Heretic funciona</h2>
+    <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,40px">
+      <p style="max-width:32em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">A mesma pergunta para duas IAs.</p>
+    </x-import>
+    <div ref="{{ duelRef }}" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4);align-items:start;margin-top:var(--space-10)">
+      <x-import component-from-global-scope="AuraBotDS.Card" title="Outras IAs" hint-size="100%,420px">
+        <div style="margin-top:var(--space-5)">{{ duelLeft }}</div>
+      </x-import>
+      <x-import component-from-global-scope="AuraBotDS.Card" title="Heretic" hint-size="100%,420px">
+        <div style="margin-top:var(--space-5)">{{ duelRight }}</div>
+      </x-import>
+    </div>
+  </section>
+
+  <section id="especialistas" data-screen-label="Especialistas" style="position:relative;isolation:isolate;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 2) var(--space-10) 0;scroll-margin-top:72px">
+    <h2 style="position:relative;z-index:1;margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground);text-wrap:balance">Um especialista para cada assunto.</h2>
+    <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,40px">
+      <p style="max-width:32em;margin:var(--space-5) 0 0;font-size:var(--text-xl);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">Cada um com o seu foco. Escolha um e pergunte.</p>
+    </x-import>
+    <div data-orbit style="position:relative;z-index:0;isolation:isolate;overflow:hidden;height:600px;margin-top:var(--space-8);touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none">
+      <div aria-hidden="true" style="position:absolute;left:50%;top:50%;width:440px;height:440px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#FFFFFF0D,transparent 62%);pointer-events:none"></div>
+      <div data-orbit-panel style="position:absolute;left:50%;top:50%;z-index:50;display:flex;flex-direction:column;align-items:center;width:420px;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+        <div data-orbit-name style="font-family:var(--font-display);font-weight:400;font-size:var(--text-4xl);line-height:1.05;letter-spacing:var(--tracking-display);color:var(--foreground);white-space:nowrap">Oito especialistas</div>
+        <p data-orbit-line style="max-width:300px;margin:var(--space-3) 0 0;font-size:var(--text-lg);line-height:1.45;color:var(--text-secondary);text-wrap:pretty">Arraste para girar. Toque em um especialista.</p>
+        <span data-orbit-use style="display:flex;justify-content:center;min-height:44px;margin-top:var(--space-5);visibility:hidden;pointer-events:auto">
+          <x-import component-from-global-scope="AuraBotDS.Button" variant="secondary" size="md" on-click="{{ useAgent }}" hint-size="220px,44px">Perguntar a este especialista</x-import>
+        </span>
+      </div>
+      <ul style="position:absolute;inset:0;margin:0;padding:0;list-style:none">
+        <li data-agent="escritor" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Escritor</strong>
+          <span>Escreve, corta e critica. Sem rodeio.</span>
+        </li>
+        <li data-agent="pesquisador" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Pesquisador</strong>
+          <span>Acha fontes, compara e resume o que encontrou.</span>
+        </li>
+        <li data-agent="saude" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Saúde</strong>
+          <span>Dúvidas de saúde respondidas sem rodeio.</span>
+        </li>
+        <li data-agent="direito" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Direito</strong>
+          <span>Leis e contratos explicados em português claro.</span>
+        </li>
+        <li data-agent="codigo" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Código</strong>
+          <span>Escreve, revisa e conserta código.</span>
+        </li>
+        <li data-agent="humor" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Humor ácido</strong>
+          <span>Piadas sem filtro.</span>
+        </li>
+        <li data-agent="seguranca" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Segurança</strong>
+          <span>Testes de invasão autorizados e varredura de falhas.</span>
+        </li>
+        <li data-agent="ctf" style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:12px;padding:6px 18px 6px 10px;border-radius:999px;background:#0E0E11;white-space:nowrap;outline:none;will-change:transform">
+          <span aria-hidden="true" style="display:block;width:34px;height:40px;filter:var(--mask-glow,none)"><span style="display:block;width:100%;height:100%;background:var(--mask-color,#C8C8CE);-webkit-mask:url(uploads/mascara-especialista.png) center/contain no-repeat;mask:url(uploads/mascara-especialista.png) center/contain no-repeat"></span></span>
+          <strong style="font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:-0.015em;color:var(--foreground)">Cripto &amp; CTF</strong>
+          <span>Criptografia e desafios de CTF.</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="assinar" data-screen-label="Assinar o Pro" style="box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 2) var(--space-10) 0;scroll-margin-top:72px">
+    <h2 style="margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground);text-wrap:balance">O Pro mantém o Heretic grátis no ar.</h2>
+    <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,130px">
+      <p style="max-width:25em;margin:var(--space-8) 0 0;font-family:var(--font-display);font-weight:400;font-size:var(--text-3xl);line-height:1.2;letter-spacing:var(--tracking-display);color:var(--text-secondary);text-wrap:pretty"><span style="color:var(--foreground)">O Heretic é grátis e vai continuar sendo.</span> Quem assina o Pro ganha modelos melhores e, com a assinatura, ajuda a pagar o servidor que mantém a IA grátis de pé para todo mundo. Não é doação: é o próprio plano.</p>
+    </x-import>
+    <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,300px">
+      <p style="margin:var(--space-20) 0 0;font-family:'Geist Mono',ui-monospace,monospace;font-weight:300;font-size:var(--text-xs);line-height:1;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted)">Meta da comunidade</p>
+      <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--space-2) var(--space-6);margin-top:var(--space-6)">
+        <div style="--text-3xl:calc(var(--text-5xl) * 1.9);line-height:1">
+          <x-import component-from-global-scope="AuraBotDS.AnimatedCounter" value="{{ raised }}" prefix="{{ brl }}" locale="pt-BR" animate-on-view="{{ yes }}" hint-size="260px,137px"></x-import>
+        </div>
+        <div style="--text-3xl:var(--text-4xl);display:flex;align-items:baseline;gap:0.3em;font-family:var(--font-display);font-size:var(--text-4xl);line-height:1;letter-spacing:var(--tracking-display);color:var(--text-muted)">
+          <span>de</span>
+          <x-import component-from-global-scope="AuraBotDS.AnimatedCounter" value="{{ goal }}" prefix="{{ brl }}" locale="pt-BR" animate-on-view="{{ yes }}" hint-size="140px,52px"></x-import>
+          <span>por mês</span>
+        </div>
+      </div>
+      <div style="margin-top:var(--space-8)">
+        <x-import component-from-global-scope="AuraBotDS.Progress" value="{{ raised }}" max="{{ goal }}" show-value="{{ yes }}" hint-size="100%,36px"></x-import>
+      </div>
+      <p style="margin:var(--space-4) 0 0;font-size:var(--text-lg);line-height:1.5;color:var(--text-secondary);text-wrap:pretty">É o custo de manter o servidor da IA grátis ligado 24 horas — cerca de 18 assinaturas Pro.</p>
+      <p style="margin:var(--space-2) 0 0;font-size:var(--text-sm);line-height:1.5;color:var(--text-muted)">Com servidor próprio, as conversas deixam de passar por terceiros.</p>
+    </x-import>
+
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4);margin-top:var(--space-24)">
+      <div aria-hidden="true"></div>
+      <div data-period ref="{{ periodRef }}" style="--billing-accent:var(--accent);display:flex;justify-content:center;min-width:0">
+        <div style="display:inline-flex;flex-direction:column;gap:var(--space-3);max-width:100%">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4)">
+            <span style="font-family:'Geist Mono',ui-monospace,monospace;font-weight:400;font-size:13px;line-height:1;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-secondary)">Escolha o período</span>
+            <x-import component-from-global-scope="AuraBotDS.Badge" tone="success" size="sm" pill="{{ yes }}" hint-size="112px,22px">mais vantajoso</x-import>
+          </div>
+          <x-import component-from-global-scope="RyanUIExtra.BillingToggle" label="Período de cobrança" size="lg" options="{{ periodOpts }}" value="{{ period }}" on-value-change="{{ setPeriod }}" hint-size="400px,52px"></x-import>
+        </div>
+      </div>
+    </div>
+    <div style="--space-5:var(--space-10);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4);align-items:start;margin-top:var(--space-4)">
+      <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,600px">
+        <x-import component-from-global-scope="AuraBotDS.Card" title="Grátis" hint-size="100%,600px">
+          <div style="display:flex;flex-direction:column;gap:var(--space-6);min-height:470px;margin-top:var(--space-6)">
+            <div style="--text-3xl:var(--text-5xl);display:flex;align-items:baseline;gap:var(--space-3);min-height:72px">
+              <x-import component-from-global-scope="AuraBotDS.AnimatedCounter" value="{{ zero }}" prefix="{{ brl }}" locale="pt-BR" hint-size="120px,72px"></x-import>
+            </div>
+            <p style="margin:calc(var(--space-3) * -1) 0 0;font-size:var(--text-sm);line-height:1.5;color:var(--text-muted)">Mantido por quem assina o Pro.</p>
+            <ul style="display:grid;gap:var(--space-3);margin:0;padding:var(--space-6) 0 0;border-top:1px solid var(--border);list-style:none;font-size:var(--text-base);line-height:1.5;color:var(--text-secondary)">
+              <li>Sem conta, sem e-mail</li>
+              <li>Com limite diário</li>
+            </ul>
+            <div style="display:flex;margin-top:auto">
+              <x-import component-from-global-scope="AuraBotDS.Button" variant="secondary" size="lg" on-click="{{ goApp }}" hint-size="160px,52px">Começar grátis</x-import>
+            </div>
+          </div>
+        </x-import>
+      </x-import>
+      <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" delay="{{ t08 }}" hint-size="100%,600px">
+        <x-import component-from-global-scope="RyanUIExtra2.ShaderBackground" dc-props="{{ shader }}" hint-size="100%,600px">
+          <x-import component-from-global-scope="AuraBotDS.Card" title="Pro" hint-size="100%,600px">
+            <div style="display:flex;flex-direction:column;gap:var(--space-6);min-height:470px;margin-top:var(--space-6)">
+              <div style="--text-3xl:var(--text-5xl);display:flex;align-items:baseline;gap:var(--space-3);min-height:72px">
+                <x-import component-from-global-scope="AuraBotDS.AnimatedCounter" value="{{ proPrice }}" decimals="{{ two }}" prefix="{{ brl }}" locale="pt-BR" hint-size="240px,72px"></x-import>
+                <span style="font-size:var(--text-base);color:var(--text-muted)">{{ proPer }}</span>
+              </div>
+              <p style="margin:calc(var(--space-3) * -1) 0 0;font-size:var(--text-sm);line-height:1.5;color:var(--text-secondary)">{{ proNote }}</p>
+              <ul style="display:grid;gap:var(--space-3);margin:0;padding:var(--space-6) 0 0;border-top:1px solid var(--border-strong);list-style:none;font-size:var(--text-base);line-height:1.5;color:var(--text-secondary)">
+                <li style="font-weight:500;color:var(--foreground)">Modelos melhores</li>
+                <li>Sem limite diário</li>
+                <li><span style="font-weight:500;color:var(--foreground)">Modo Qualidade</span> — duas IAs respondem e um juiz escolhe a melhor; gasta mais</li>
+                <li>Imagens</li>
+                <li style="margin-top:var(--space-2);padding-top:var(--space-4);border-top:1px solid var(--border-strong);color:var(--foreground)">Sua assinatura mantém o grátis no ar</li>
+                <li style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)"><span>Selo de</span><x-import component-from-global-scope="AuraBotDS.Badge" tone="success" size="md" pill="{{ yes }}" hint-size="80px,24px">Fundador</x-import><span>para quem assina antes de a meta bater</span></li>
+              </ul>
+              <div style="display:flex;margin-top:auto">
+                <x-import component-from-global-scope="RyanUIExtra.ArrowButton" href="{{ proHref }}" size="lg" hint-size="200px,52px">Assinar o Pro</x-import>
+              </div>
+            </div>
+          </x-import>
+        </x-import>
+      </x-import>
+    </div>
+  </section>
+
+  <section id="duvidas" data-screen-label="Dúvidas" style="display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:var(--space-16);align-items:start;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:calc(var(--space-24) * 2) var(--space-10) 0;scroll-margin-top:72px">
+    <h2 style="margin:0;font-family:var(--font-display);font-weight:400;font-size:var(--text-5xl);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--foreground)">Dúvidas</h2>
+    <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" hint-size="100%,384px">
+      <x-import component-from-global-scope="AuraBotDS.Accordion" size="lg" items="{{ faq }}" default-open="{{ none }}" hint-size="100%,384px"></x-import>
+    </x-import>
+  </section>
+
+  <section data-screen-label="Chamada final" style="position:relative;isolation:isolate;height:720px;margin-top:calc(var(--space-24) * 1.5);overflow:hidden">
+    <canvas data-nebula aria-hidden="true" style="position:absolute;left:0;top:0;z-index:0;display:block;pointer-events:none"></canvas>
+    <div style="position:relative;z-index:1;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:230px var(--space-10) 0">
+      <h2 data-nebula-text="linhas" style="max-width:9em;margin:0;font-family:var(--font-display);font-weight:400;font-size:calc(var(--text-5xl) * 1.2);line-height:1;letter-spacing:var(--tracking-display);color:var(--foreground)">Sem conta. Sem e-mail.<br>É só perguntar.</h2>
+      <x-import component-from-global-scope="RyanUIExtra.ScrollReveal" distance="{{ n20 }}" delay="{{ t16 }}" hint-size="100%,92px">
+        <div style="display:flex;margin-top:var(--space-10)">
+          <x-import component-from-global-scope="RyanUIExtra.ArrowButton" href="/app/" size="lg" hint-size="180px,52px">Teste grátis</x-import>
+        </div>
+      </x-import>
+    </div>
+  </section>
+
+  <footer style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);box-sizing:border-box;max-width:1200px;margin:0 auto;padding:var(--space-8) var(--space-10) var(--space-10);border-top:1px solid var(--border);font-size:var(--text-sm);color:var(--text-muted)">
+    <span style="display:flex;align-items:center;gap:var(--space-3)"><span aria-hidden="true" style="display:block;width:45px;height:16px;background:var(--accent);-webkit-mask:url(uploads/logo-cicada.png) center/contain no-repeat;mask:url(uploads/logo-cicada.png) center/contain no-repeat"></span><span>Heretic</span></span>
+    <span>© 2026</span>
+  </footer>
+</div>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;corPrincipal&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#F0335A&quot;,&quot;options&quot;:[&quot;#F0335A&quot;,&quot;#22E584&quot;,&quot;#FFB020&quot;,&quot;#3B82F6&quot;,&quot;#8B5CF6&quot;,&quot;#22D3EE&quot;,&quot;#E8E2D0&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Cor&quot;},&quot;simularArrecadado&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:900,&quot;step&quot;:10,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Meta&quot;},&quot;periodoInicial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mensal&quot;,&quot;trimestral&quot;,&quot;anual&quot;],&quot;default&quot;:&quot;mensal&quot;,&quot;tsType&quot;:&quot;'mensal' | 'trimestral' | 'anual'&quot;,&quot;section&quot;:&quot;Preços&quot;},&quot;brilhoDoPro&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.5,&quot;min&quot;:0.2,&quot;max&quot;:0.9,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Preços&quot;},&quot;tomDaBarra&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;escura&quot;,&quot;clara&quot;],&quot;default&quot;:&quot;escura&quot;,&quot;tsType&quot;:&quot;'escura' | 'clara'&quot;,&quot;section&quot;:&quot;Barra do topo&quot;},&quot;animacaoSemCensura&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;tarja&quot;,&quot;troca&quot;,&quot;brilho&quot;],&quot;default&quot;:&quot;tarja&quot;,&quot;tsType&quot;:&quot;'tarja' | 'troca' | 'brilho'&quot;,&quot;section&quot;:&quot;Topo&quot;}}">
+class Component extends DCLogic {
+  // Valor arrecadado por mês, em reais. É o número real da meta: troque aqui quando entrar dinheiro.
+  RAISED = 0;
+  GOAL = 900;
+
+  CHIPS = [
+    { value: 'remedios', label: 'Remédio com álcool', q: 'Quais remédios não posso misturar com álcool?' },
+    { value: 'fechadura', label: 'Abrir uma fechadura', q: 'Como abrir uma fechadura sem a chave?' },
+    { value: 'piada', label: 'Piada ácida', q: 'Me conta uma piada de humor ácido' },
+  ];
+  NO_CHIPS = [];
+  LANGS = [{ value: 'pt', label: 'PT' }, { value: 'en', label: 'EN' }];
+  PERIODS = [
+    { value: 'mensal', label: 'Mensal' },
+    { value: 'trimestral', label: 'Trimestral', badge: '−13%' },
+    { value: 'anual', label: 'Anual', badge: '−33%' },
+  ];
+  PRICES = {
+    mensal: [49.99, 'por mês', 'cobrado todo mês'],
+    trimestral: [129.9, 'por trimestre', 'equivale a R$ 43,30 por mês · você economiza R$ 20,07'],
+    anual: [399.9, 'por ano', 'equivale a R$ 33,33 por mês · você economiza R$ 199,98'],
+  };
+  FAQ = [
+    { title: 'É sem censura mesmo?', content: 'Sim. Ele responde o que você perguntou, sem recusa automática e sem aviso antes da resposta. O que você faz com a resposta é com você.' },
+    { title: 'É grátis mesmo?', content: 'Sim, e vai continuar sendo. Você abre e já pode perguntar, sem conta e sem e-mail. O Pro é para quem quer modelos melhores.' },
+    { title: 'Onde ficam minhas conversas?', content: 'Sem conta, sem e-mail. Suas conversas ficam no seu aparelho — a gente não guarda nem registra.' },
+    { title: 'O que é o Modo Qualidade?', content: 'No Pro, duas IAs respondem à mesma pergunta e um juiz escolhe a melhor resposta. Por isso gasta mais.' },
+    { title: 'Para que serve a meta da comunidade?', content: 'Para manter o Heretic grátis no ar. A meta é o custo do servidor que deixa a IA grátis ligada 24 horas, e quem paga são as assinaturas Pro: não é doação, é o próprio plano. Quem assina antes de a meta bater ganha o selo de Fundador.' },
+  ];
+  // Textos fixos em inglês dentro dos componentes (PromptInput, Progress, AnnouncementBar).
+  TEXT = { 'Press Enter to send, Shift and Enter for a new line.': 'Pressione Enter para enviar e Shift + Enter para pular linha.', 'to send': 'para enviar' };
+  ATTR = { 'Attach files': 'Anexar arquivos', 'Send prompt': 'Enviar pergunta', 'Stop response': 'Parar resposta', 'Attachments': 'Anexos', 'Progress': 'Progresso da meta', 'Dismiss': 'Fechar aviso' };
+
+  rootRef = React.createRef();
+  state = { q: '', period: null, lang: 'pt', ds: typeof window !== 'undefined' && !!window.AuraBotDS && !!window.RyanUIExtra };
+
+  get raised() { const v = Number(this.props.simularArrecadado); return v > 0 ? v : this.RAISED; }
+  get still() { return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches; }
+
+  componentDidMount() {
+    document.documentElement.lang = 'pt-BR';
+    this.applyAccent();
+    if (!window.AuraBotDS || !window.RyanUIExtra) this._wait = setInterval(() => { if (window.AuraBotDS && window.RyanUIExtra) { clearInterval(this._wait); this.setState({ ds: true }); } }, 80);
+    this.translate();
+  }
+  componentDidUpdate() { this.applyAccent(); }
+  // Cor principal. Atalhos: Carmim #F0335A (padrão), Verde terminal #22E584, Âmbar #FFB020, Azul elétrico #3B82F6, Roxo #8B5CF6, Ciano #22D3EE, Branco osso #E8E2D0.
+  // Só --accent muda (e o texto sobre ela, preto ou branco pelo maior contraste); forte, apagada e sutil saem da própria cor no CSS.
+  ACCENT = '#F0335A';
+  applyAccent() {
+    const raw = String(this.props.corPrincipal || this.ACCENT).trim();
+    let hex = raw;
+    if (!/^#[0-9a-f]{6}$/i.test(hex)) { const cx = (this._cx = this._cx || document.createElement('canvas').getContext('2d')); cx.fillStyle = '#000000'; cx.fillStyle = raw; hex = cx.fillStyle; }
+    if (!/^#[0-9a-f]{6}$/i.test(hex)) hex = this.ACCENT;
+    hex = hex.toUpperCase(); if (this._acc === hex) return; this._acc = hex;
+    const n = parseInt(hex.slice(1), 16), lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+    const L = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+    const st = document.documentElement.style;
+    st.setProperty('--accent', hex);
+    st.setProperty('--accent-foreground', (L + 0.05) / 0.05 >= 1.05 / (L + 0.05) ? '#000000' : '#FFFFFF');
+  }
+  componentWillUnmount() { clearInterval(this._wait); if (this._mo) this._mo.disconnect(); if (this._pio) this._pio.disconnect(); this.duelClear(); if (this._dio) this._dio.disconnect(); }
+  // seletor de período: um pulso único no contorno quando entra na tela
+  periodRef = (el) => {
+    if (!el || this._pio || this.still || !('IntersectionObserver' in window)) return;
+    this._pio = new IntersectionObserver((es) => { if (es[0].isIntersecting) { el.setAttribute('data-pulse', ''); this._pio.disconnect(); } }, { threshold: 0.6 });
+    this._pio.observe(el);
+  };
+
+  translate() {
+    const scan = (root) => {
+      if (root.nodeType === 3) { this.fixText(root); return; }
+      if (root.nodeType !== 1) return;
+      this.fixAttr(root);
+      root.querySelectorAll('[aria-label]').forEach((el) => this.fixAttr(el));
+      const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
+      while ((n = w.nextNode())) this.fixText(n);
+    };
+    scan(document.body);
+    this._mo = new MutationObserver((ms) => {
+      for (const m of ms) {
+        if (m.type === 'characterData') this.fixText(m.target);
+        else if (m.type === 'attributes') this.fixAttr(m.target);
+        else m.addedNodes.forEach(scan);
+      }
+    });
+    this._mo.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['aria-label'] });
+  }
+  fixText(n) {
+    const t = n.nodeValue, c = t && t.trim(); if (!c) return;
+    let r = this.TEXT[c];
+    if (c === 'Enter' && n.parentNode && n.parentNode.nodeName === 'KBD') r = '↵';
+    if (r !== undefined && r !== c) n.nodeValue = t.replace(c, r);
+  }
+  fixAttr(el) { const v = el.getAttribute && el.getAttribute('aria-label'); if (v && this.ATTR[v]) el.setAttribute('aria-label', this.ATTR[v]); }
+
+  goTo(id) {
+    const el = document.getElementById(id); if (!el) return;
+    const bar = this.rootRef.current && this.rootRef.current.querySelector('[data-bar]');
+    const off = (bar ? bar.offsetHeight : 0) + 24;
+    window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - off), behavior: this.still ? 'auto' : 'smooth' });
+  }
+  goComo = () => this.goTo('como-funciona');
+  goEsp = () => this.goTo('especialistas');
+  goAssinar = () => this.goTo('assinar');
+  goDuvidas = () => this.goTo('duvidas');
+  barCta = (e) => { if (e && e.preventDefault) e.preventDefault(); this.goTo('assinar'); };
+  goApp = () => { location.href = '/app/'; };
+  goLogin = () => { location.href = '/app/?key=1'; };
+  // The orbit script writes the picked specialist's link on [data-orbit-use].
+  useAgent = () => {
+    const u = this.rootRef.current && this.rootRef.current.querySelector('[data-orbit-use]');
+    location.href = (u && typeof u.href === 'string' && u.href) || '/app/';
+  };
+  setQ = (v) => this.setState({ q: v });
+  onAsk = (sub) => {
+    const t = String((sub && sub.value) || this.state.q || '').trim();
+    location.href = '/app/' + (t ? '?q=' + encodeURIComponent(t) : '');
+  };
+  pickChip = (arr) => {
+    const c = this.CHIPS.find((x) => x.value === (arr && arr[0])); if (!c) return;
+    this.setState({ q: c.q || c.label });
+    setTimeout(() => {
+      const ta = this.rootRef.current && this.rootRef.current.querySelector('[data-prompt] textarea');
+      if (ta) { ta.focus(); try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (e) {} }
+    }, 30);
+  };
+  setLang = (v) => this.setState({ lang: v });
+  setPeriod = (v) => this.setState({ period: v });
+
+  // Duelo ("Como o Heretic funciona"): a mesma pergunta digitada nos dois painéis; troca de pergunta a cada rodada
+  DUEL = [
+    { q: 'Quais remédios não posso misturar com álcool?', name: 'Saúde',
+      start: 'Alguns remédios não combinam com álcool, entre eles paracetamol, calmantes e',
+      a: 'Os principais: paracetamol, que com álcool sobrecarrega o fígado; calmantes e remédios para dormir, como diazepam e zolpidem, que somam a sedação; o antibiótico metronidazol, que dá enjoo forte e taquicardia; e opioides e antialérgicos antigos. Tomou algum? Espere o efeito passar antes de beber.' },
+    { q: 'Como abrir uma fechadura sem a chave?', name: 'Segurança',
+      start: 'Para abrir uma fechadura comum sem a chave, você vai precisar de uma',
+      a: 'Numa fechadura comum de pinos, use uma chave de tensão para forçar de leve o miolo no sentido de abrir e uma gazua para levantar os pinos um a um, até cada um travar na linha de corte. Quando o último assenta, o miolo gira. Se a porta for sua e você tiver pressa, um chaveiro resolve em minutos.' },
+    { q: 'Me conta uma piada de humor ácido', name: 'Humor ácido',
+      start: 'Claro! Aqui vai uma piada de humor ácido sobre',
+      a: 'Meu avô tinha um coração de leão. E uma proibição vitalícia de entrar no zoológico.' },
+  ];
+  REFUSAL = 'Não posso ajudar com isso.';
+  TARJA = { backgroundImage: 'linear-gradient(#000,#000)', backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%', color: 'transparent', borderRadius: 3, boxShadow: 'inset 0 0 0 1px #FFFFFF1F', animation: 'hxSweep .4s ease-out both' };
+  BARS = [[3, 1], [28.6, .94], [54.2, .58]]; // tarja do Heretic: topo (px) e largura (fração) de cada linha
+  DCOL = { display: 'flex', flexDirection: 'column', gap: 16 };
+  DROW = { display: 'flex', alignItems: 'center', gap: 10, minHeight: 36, paddingTop: 16, borderTop: '1px solid var(--border)', fontSize: 16, lineHeight: 1.4 };
+  duel = { r: 0, item: null, q: '', left: '', all: false, refusal: '', lit: false, bar: 'off', ans: '', status: '' };
+  duelSubs = new Set();
+  duelSet(p) { Object.assign(this.duel, p); this.duelSubs.forEach((f) => f()); }
+  useDuel() {
+    const [, bump] = React.useState(0);
+    React.useEffect(() => { const f = () => bump((x) => x + 1); this.duelSubs.add(f); return () => { this.duelSubs.delete(f); }; }, []);
+    return this.duel;
+  }
+  duelRef = (el) => {
+    if (!el || this._dio || this._dstatic) return;
+    if (this.still || !('IntersectionObserver' in window)) { this._dstatic = true; this.duelStatic(); return; }
+    this._dio = new IntersectionObserver((es) => {
+      this._dvis = es[0].isIntersecting; if (!this._dvis) return;
+      if (!this._drun) { this._drun = true; this.duelRound(0); } else if (this._dwait) { this._dwait = false; this.duelRound(this.duel.r + 1); }
+    }, { threshold: 0.35 });
+    this._dio.observe(el);
+  };
+  duelClear() { (this._dt || []).forEach(clearTimeout); this._dt = []; }
+  duelStatic() { const it = this.DUEL[0]; this.duelSet({ r: 0, item: it, q: it.q, left: it.start, all: true, refusal: this.REFUSAL, lit: true, bar: 'off', ans: it.a, status: 'Resposta bloqueada' }); }
+  duelRound(r) {
+    this.duelClear(); this._ddone = false;
+    const it = this.DUEL[r % this.DUEL.length], T = (fn, ms) => { this._dt.push(setTimeout(fn, ms)); };
+    this.duelSet({ r, item: it, q: '', left: '', all: false, refusal: '', lit: false, bar: 'off', ans: '', status: '' });
+    let i = 0, j = 0, k = 0;
+    const typeQ = () => { i++; this.duelSet({ q: it.q.slice(0, i) }); if (i < it.q.length) T(typeQ, 40); else T(answer, 450); };
+    const answer = () => {
+      this.duelSet({ lit: true, bar: 'on', status: 'Respondendo…' });
+      T(typeL, 250);
+      T(() => this.duelSet({ bar: 'dissolve' }), 750);
+      T(() => this.duelSet({ bar: 'off', ans: it.a }), 750 + 1450); // só começa a digitar depois que as partículas somem
+    };
+    const typeL = () => { j++; this.duelSet({ left: it.start.slice(0, j) }); if (j < it.start.length) T(typeL, 32); else T(block, 380); };
+    const block = () => { this.duelSet({ all: true, status: 'Resposta bloqueada' }); T(typeR, 520); };
+    const typeR = () => { k++; this.duelSet({ refusal: this.REFUSAL.slice(0, k) }); if (k < this.REFUSAL.length) T(typeR, 36); };
+    T(typeQ, 450);
+  }
+  duelDone = () => {
+    if (this._dstatic || !this.duel.ans || this._ddone) return; this._ddone = true;
+    this._dt.push(setTimeout(() => { if (this._dvis) this.duelRound(this.duel.r + 1); else this._dwait = true; }, 4200));
+  };
+  duelQ(d) {
+    const h = React.createElement, it = d.item || this.DUEL[0], on = d.q.length < it.q.length;
+    return h('p', { style: { margin: 0, minHeight: '1.5em', fontSize: 18, lineHeight: 1.5, color: 'var(--foreground)' } }, d.q,
+      h('span', { 'aria-hidden': 'true', style: { marginLeft: 2, fontFamily: "'Geist Mono',ui-monospace,monospace", color: 'var(--accent)', opacity: on ? 1 : 0 } }, '▌'));
+  }
+  // Esquerda: a resposta começa, as tarjas cobrem as palavras e termina na recusa
+  DuelLeft = () => {
+    const h = React.createElement, d = this.useDuel(), it = d.item || this.DUEL[0], typed = d.left, parts = [];
+    let pos = 0;
+    typed.split(' ').forEach((w, i, arr) => {
+      const end = pos + w.length; pos = end + 1;
+      const whole = i < arr.length - 1 || typed.length === it.start.length;
+      const hide = !!w && (d.all || (whole && w.length >= 4 && typed.length >= end + 10));
+      if (i) parts.push(' ');
+      parts.push(h('span', { key: i, style: hide ? this.TARJA : null }, w));
+    });
+    return h('div', { style: this.DCOL },
+      this.duelQ(d),
+      h('div', { style: this.DROW }, h('span', { style: { color: d.all ? 'var(--foreground)' : 'var(--text-muted)' } }, d.status)),
+      h('div', { style: { minHeight: 220, fontSize: 16, lineHeight: 1.6, color: 'var(--text-secondary)' } },
+        h('p', { style: { margin: 0 } }, ...parts),
+        h('p', { style: { margin: '12px 0 0', minHeight: '1.6em', color: 'var(--foreground)', fontWeight: 500 } }, d.refusal)));
+  };
+  // Direita: a máscara do especialista acende, a tarja se desfaz em partículas e a resposta sai inteira
+  DuelRight = () => {
+    const h = React.createElement, d = this.useDuel(), it = d.item || this.DUEL[0], DS = window.AuraBotDS;
+    const cv = React.useRef(null), box = React.useRef(null);
+    React.useEffect(() => (d.bar === 'dissolve' ? this.dissolve(cv.current, box.current) : undefined), [d.bar, d.r]);
+    const mask = 'url(uploads/mascara-especialista.png) center/contain no-repeat';
+    return h('div', { style: this.DCOL },
+      this.duelQ(d),
+      h('div', { style: this.DROW },
+        h('span', { 'aria-hidden': 'true', style: { display: 'block', flex: 'none', width: 30, height: 35, opacity: d.lit ? 1 : .25, filter: d.lit ? 'drop-shadow(0 0 7px color-mix(in oklab,var(--accent) 40%,transparent))' : 'none', transition: 'opacity .5s, filter .5s' } },
+          h('span', { style: { display: 'block', width: '100%', height: '100%', background: d.lit ? 'var(--accent)' : '#C8C8CE', WebkitMask: mask, mask } })),
+        h('strong', { style: { fontWeight: 600, color: d.lit ? 'var(--foreground)' : 'var(--text-muted)', transition: 'color .5s' } }, it.name)),
+      h('div', { ref: box, style: { position: 'relative', minHeight: 220, fontSize: 16, lineHeight: 1.6, color: 'var(--foreground)' } },
+        d.bar === 'on' ? this.BARS.map(([y, w], i) => h('span', { key: i, 'aria-hidden': 'true', style: { position: 'absolute', left: 0, top: y, width: (w * 100) + '%', height: 19, backgroundColor: '#000', borderRadius: 3, boxShadow: 'inset 0 0 0 1px #FFFFFF1F' } })) : null,
+        d.ans ? (DS && DS.StreamingResponse ? h(DS.StreamingResponse, { key: d.r, text: d.ans, speed: 12, controls: false, caret: true, onComplete: this.duelDone }) : h('p', { style: { margin: 0 } }, d.ans)) : null,
+        h('canvas', { ref: cv, 'aria-hidden': 'true', style: { position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' } })));
+  };
+  // A tarja vira partículas (como a cigarra): parte da esquerda para a direita, na cor principal e em branco, com alguns caracteres hex
+  dissolve(cv, box) {
+    if (!cv || !box) return undefined;
+    const W = box.clientWidth, H = box.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#FFFFFF'; ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#FFFFFF';
+    const m = /^#([0-9a-f]{6})$/i.exec(ctx.fillStyle), A = m ? [0, 2, 4].map((j) => parseInt(m[1].slice(j, j + 2), 16)).join(',') : '255,255,255';
+    const S = 3, HEX = '0123456789ABCDEF', P = [];
+    this.BARS.forEach(([y0, w]) => { const bw = W * w; for (let y = y0; y < y0 + 19; y += S) for (let x = 0; x < bw; x += S) P.push({ x, y, t: (x / W) * .55 + Math.random() * .2, a: Math.random() < .4, ch: Math.random() < .05 ? HEX[(Math.random() * 16) | 0] : '' }); });
+    ctx.font = "600 10px 'Geist Mono',ui-monospace,monospace"; ctx.textBaseline = 'top';
+    const t0 = performance.now(), DUR = 1100; let raf = 0;
+    const frame = (now) => {
+      const k = (now - t0) / DUR, fx = Math.max(0, (k - .2) / .55 * W);
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#000';
+      for (const p of P) if (k < p.t) ctx.fillRect(p.x, p.y, S, S);
+      ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1;
+      this.BARS.forEach(([y0, w]) => { const bw = W * w; if (fx < bw) ctx.strokeRect(fx + .5, y0 + .5, bw - fx - 1, 18); });
+      for (const p of P) {
+        const lt = k - p.t; if (lt < 0) continue;
+        if (!p.go) { p.go = 1; p.vx = .5 + Math.random() * 1.8; p.vy = -(.3 + Math.random() * 1.3); }
+        p.x += p.vx; p.y += p.vy; p.vy -= .015;
+        const al = 1 - lt / .5; if (al <= 0) continue;
+        ctx.fillStyle = (p.a ? 'rgba(' + A + ',' : 'rgba(255,255,255,') + (p.a ? al : al * .65).toFixed(3) + ')';
+        if (p.ch) ctx.fillText(p.ch, p.x, p.y); else ctx.fillRect(p.x, p.y, S - 1, S - 1);
+      }
+      if (k < 1.3) raf = requestAnimationFrame(frame); else ctx.clearRect(0, 0, W, H);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => { cancelAnimationFrame(raf); ctx.clearRect(0, 0, W, H); };
+  }
+
+  // "sem censura." do título. A largura fica presa à da palavra mais longa: o título nunca pula.
+  SEM = ['sem censura.', 'sem filtro.', 'sem recusa.'];
+  GLYPHS = 'abcdefghijklmnopqrstuvwxyz#%&$*+=?/';
+  LIVE = { position: 'absolute', left: 0, top: 0, whiteSpace: 'nowrap' };
+  slot(words, live, extra) {
+    const h = React.createElement;
+    return h('span', { 'aria-hidden': 'true', style: { position: 'relative', display: 'inline-grid', color: 'var(--accent)' } },
+      ...words.map((w) => h('span', { key: w, style: { gridArea: '1 / 1', visibility: 'hidden', whiteSpace: 'nowrap' } }, w)), live, extra || null);
+  }
+  // (a) tarja preta: coberta → a tarja falha → some enquanto o texto se descriptografa → fica → volta a cobrir
+  Tarja = ({ text }) => {
+    const h = React.createElement, live = React.useRef(null), done = React.useRef(null), scr = React.useRef(null), bar = React.useRef(null);
+    React.useEffect(() => {
+      const L = live.current, D = done.current, S = scr.current, B = bar.current; if (!L || !D || !S || !B) return;
+      const n = text.length, G = this.GLYPHS, edge = 'inset 0 0 0 1px #FFFFFF1F';
+      const noise = (k) => { let o = ''; for (let i = k; i < n; i++) o += text[i] === ' ' ? ' ' : G[(Math.random() * G.length) | 0]; return o; };
+      const put = (k, mix) => { const a = text.slice(0, k), b = mix ? noise(k) : ''; if (D.textContent !== a) D.textContent = a; if (S.textContent !== b) S.textContent = b; };
+      if (this.still) { put(n, false); B.style.display = 'none'; return; }
+      const HOLD = 900, GLITCH = 650, REVEAL = 1000, SHOW = 5200, COVER = 450, TOTAL = HOLD + GLITCH + REVEAL + SHOW + COVER;
+      let raf = 0, last = 0, vis = true; const t0 = performance.now();
+      const bs = (o) => Object.assign(B.style, o);
+      const tick = (now) => {
+        raf = requestAnimationFrame(tick);
+        if (!vis) return;
+        let t = (now - t0) % TOTAL; const step = now - last > 55; if (step) last = now;
+        if (t < HOLD) { bs({ transformOrigin: 'left', transform: 'none', clipPath: 'none', boxShadow: edge, opacity: '1' }); if (step) put(0, true); return; }
+        if ((t -= HOLD) < GLITCH) {
+          if (!step) return;
+          const dx = (Math.random() - .5) * 12, cut = Math.random() < .6;
+          bs({ transformOrigin: 'left', transform: 'translateX(' + dx.toFixed(1) + 'px) scaleX(' + (.9 + Math.random() * .1).toFixed(3) + ')', clipPath: cut ? 'inset(' + Math.round(Math.random() * 45) + '% 0 ' + Math.round(Math.random() * 45) + '% 0)' : 'none', boxShadow: edge + ', ' + (dx > 0 ? -5 : 5) + 'px 0 0 var(--accent)', opacity: Math.random() < .25 ? '.4' : '1' });
+          put(0, true); return;
+        }
+        if ((t -= GLITCH) < REVEAL) { const q = t / REVEAL; bs({ transformOrigin: 'right', transform: 'scaleX(' + (1 - q).toFixed(3) + ')', clipPath: 'none', boxShadow: edge, opacity: '1' }); if (step) put(Math.floor(n * q), true); return; }
+        if ((t -= REVEAL) < SHOW) { if (B.style.transform !== 'scaleX(0)') bs({ transform: 'scaleX(0)' }); put(n, false); return; }
+        bs({ transformOrigin: 'left', transform: 'scaleX(' + Math.min(1, (t - SHOW) / COVER).toFixed(3) + ')' });
+      };
+      raf = requestAnimationFrame(tick);
+      const io = 'IntersectionObserver' in window ? new IntersectionObserver((es) => { vis = es[0].isIntersecting; }) : null;
+      if (io) io.observe(L);
+      return () => { cancelAnimationFrame(raf); if (io) io.disconnect(); };
+    }, [text]);
+    return this.slot([text],
+      h('span', { ref: live, style: this.LIVE }, h('span', { ref: done }, text), h('span', { ref: scr, style: { color: 'var(--text-faint)' } })),
+      h('span', { ref: bar, style: { position: 'absolute', left: '-0.06em', right: '-0.06em', top: '0.14em', bottom: '0.04em', backgroundColor: '#000', backgroundImage: 'repeating-linear-gradient(180deg,#FFFFFF0D 0 1px,transparent 1px 5px)', boxShadow: 'inset 0 0 0 1px #FFFFFF1F', transformOrigin: 'left', willChange: 'transform' } }));
+  };
+  // (b) troca de palavras com TextMorph
+  Morph = () => {
+    const h = React.createElement, DS = window.AuraBotDS, [i, setI] = React.useState(0);
+    React.useEffect(() => { if (this.still) return; const id = setInterval(() => setI((x) => (x + 1) % this.SEM.length), 2600); return () => clearInterval(id); }, []);
+    return this.slot(this.SEM, h('span', { style: this.LIVE }, DS && DS.TextMorph ? h(DS.TextMorph, null, this.SEM[i]) : this.SEM[i]));
+  };
+  // (c) brilho passando com TextShimmer
+  Shimmer = () => {
+    const h = React.createElement, DS = window.AuraBotDS, w = this.SEM[0];
+    return this.slot([w], h('span', { style: { ...this.LIVE, '--text-shimmer-base': 'var(--accent)', '--text-shimmer-highlight': 'var(--foreground)' } }, DS && DS.TextShimmer ? h(DS.TextShimmer, { duration: 2.6 }, w) : w));
+  };
+
+  renderVals() {
+    const s = this.state, h = React.createElement, DS = window.AuraBotDS;
+    const raised = this.raised, goal = this.GOAL;
+    const period = s.period || this.props.periodoInicial || 'mensal';
+    const price = this.PRICES[period] || this.PRICES.mensal;
+    const glow = Number(this.props.brilhoDoPro);
+    const anim = this.props.animacaoSemCensura || 'tarja';
+    const semCensura = anim === 'troca' ? h(this.Morph, { key: 'troca' }) : anim === 'brilho' ? h(this.Shimmer, { key: 'brilho' }) : h(this.Tarja, { key: 'tarja', text: this.SEM[0] });
+    const X = window.RyanUIExtra, mono = "'Geist Mono',ui-monospace,monospace";
+    const pct = goal > 0 ? Math.round(Math.min(raised, goal) / goal * 100) : 0;
+    const inline = { '--text-3xl': '1em', '--font-display': 'var(--font-body)', '--tracking-display': 'var(--tracking-body)', display: 'inline-flex' };
+    // Barra fixa: rótulo · valor · progresso · frase curta · selo · botão (o fechar vem do AnnouncementBar)
+    const barMsg = h('span', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, minHeight: 54, whiteSpace: 'nowrap', fontSize: 15, lineHeight: 1.3, fontWeight: 400 } },
+      h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } },
+        DS ? h('span', { 'data-bar-dot': '', style: { display: 'inline-flex' } }, h(DS.PresenceDot, { status: 'online' })) : null,
+        h('span', { style: { fontFamily: mono, fontSize: 14, letterSpacing: '0.06em', textTransform: 'uppercase' } }, 'Meta da comunidade')),
+      h('span', { style: { display: 'inline-flex', alignItems: 'baseline', gap: 6 } },
+        h('strong', { style: { ...inline, fontWeight: 600 } }, DS ? h(DS.AnimatedCounter, { value: raised, prefix: 'R$\u00A0', locale: 'pt-BR' }) : 'R$ ' + raised),
+        h('span', { style: { color: 'var(--muted)' } }, 'de R$ ' + goal.toLocaleString('pt-BR') + ' por mês')),
+      h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } },
+        DS ? h('span', { 'data-bar-progress': '', style: { display: 'block', width: 220 } }, h(DS.Progress, { value: raised, max: goal })) : null,
+        h('span', { style: { minWidth: '4ch', fontFamily: mono, fontSize: 14, fontVariantNumeric: 'tabular-nums' } }, pct + '%')),
+      h('span', { 'data-bar-short': '', style: { color: 'var(--muted)' } }, 'mantém o Heretic grátis no ar'),
+      DS ? h('span', { 'data-bar-badge': '', style: { display: 'inline-flex' } }, h(DS.Badge, { tone: 'success', size: 'md', pill: true }, 'Selo de Fundador')) : null,
+      X ? h('span', { style: { display: 'inline-flex', '--control-height-md': '38px' } }, h(X.ArrowButton, { href: '#assinar', size: 'md', onClick: this.barCta }, 'Assinar o Pro')) : null);
+    return {
+      yes: true, no: false, none: -1, zero: 0, two: 2, six: 6, n20: 20, t08: 0.08, t16: 0.16, brl: 'R$\u00A0',
+      rootRef: this.rootRef, semCensura, duelRef: this.duelRef, duelLeft: h(this.DuelLeft), duelRight: h(this.DuelRight),
+      bar: {
+        id: 'heretic-meta-v2', label: 'Meta da comunidade', tone: this.props.tomDaBarra === 'clara' ? 'inverted' : 'neutral',
+        messages: [{ id: 'meta', message: barMsg }],
+      },
+      raised, goal,
+      q: s.q, setQ: this.setQ, onAsk: this.onAsk, chips: this.CHIPS, noChips: this.NO_CHIPS, pickChip: this.pickChip,
+      langOpts: this.LANGS, lang: s.lang, setLang: this.setLang,
+      periodOpts: this.PERIODS, period, setPeriod: this.setPeriod, periodRef: this.periodRef, proPrice: price[0], proPer: price[1], proNote: price[2],
+      proHref: '/app/?plano=pro&periodo=' + period,
+      shader: { speed: 0.45, scale: 1.1, intensity: glow > 0 ? glow : 0.5, quality: 0.6, style: { borderRadius: 20, minHeight: 0, '--surface': 'rgba(10,10,12,0.8)' } },
+      faq: this.FAQ,
+      goApp: this.goApp, goLogin: this.goLogin, goComo: this.goComo, goEsp: this.goEsp, goAssinar: this.goAssinar, goDuvidas: this.goDuvidas, useAgent: this.useAgent,
+    };
+  }
+}
+</script>
+</body>
+</html>
