@@ -104,7 +104,24 @@ app.post('/api/image', async (c) => {
     const used = await addUsedAll(who, cost);
     return c.json({ image: dataUrl, provider, used, limit, remaining: limit === null ? null : Math.max(0, limit - used) });
   };
-  // 1) Pollinations (grátis, nosso provedor padrão)
+  // 1) Venice sd35 — provedor PRIMÁRIO de imagem (dono 17/11): sem censura (safe_mode:false),
+  //    preciso (segue bem o prompt), usa a chave Venice que já temos. Muito melhor que o Pollinations.
+  const key = process.env.IMAGE_VENICE_KEY || process.env.VENICE_API_KEY;
+  if (key) {
+    try {
+      const r = await fetch('https://api.venice.ai/api/v1/image/generate', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'venice-sd35', prompt, width: 1024, height: 1024, steps: 28, safe_mode: false, format: 'webp', hide_watermark: true }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        const b64 = data && data.images && data.images[0];
+        if (b64) return await done(`data:image/webp;base64,${b64}`, 'venice', IMAGE_COST_VENICE);
+      }
+    } catch { /* cai pra reserva */ }
+  }
+  // 2) Reserva: Pollinations (grátis, menos preciso) — nunca deixa o usuário sem imagem.
   try {
     const seed = Math.floor(Math.random() * 1e6);
     const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&model=flux&seed=${seed}`;
@@ -116,23 +133,7 @@ app.post('/api/image', async (c) => {
         return await done(`data:${ct};base64,${bytesToBase64(bytes)}`, 'pollinations', IMAGE_COST_FREEPROVIDER);
       }
     }
-  } catch { /* cai pra reserva */ }
-  // 2) Reserva: Venice (se tiver chave)
-  const key = process.env.VENICE_API_KEY;
-  if (key) {
-    try {
-      const r = await fetch('https://api.venice.ai/api/v1/image/generate', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'venice-sd35', prompt, width: 1024, height: 1024, steps: 25, safe_mode: false, format: 'webp', hide_watermark: true }),
-      });
-      if (r.ok) {
-        const data = await r.json();
-        const b64 = data && data.images && data.images[0];
-        if (b64) return await done(`data:image/webp;base64,${b64}`, 'venice', IMAGE_COST_VENICE);
-      }
-    } catch { /* falhou também */ }
-  }
+  } catch { /* falhou também */ }
   return c.json({ error: 'image_failed' }, 502);
 });
 
