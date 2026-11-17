@@ -7,7 +7,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import type { CSSProperties, ReactNode, TouchEvent as ReactTouchEvent } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
-import { Check, ChevronUp, Copy, Download, FileDown, FileText, KeyRound, Lock, MoreHorizontal, PanelLeft, Pencil, RefreshCw, Settings as SettingsIcon, SquarePen, Trash2, X, Zap } from "lucide-react";
+import { Check, ChevronUp, Copy, Download, FileDown, FileText, Image as ImageIcon, KeyRound, Lock, MoreHorizontal, PanelLeft, Pencil, RefreshCw, Settings as SettingsIcon, SquarePen, Trash2, X, Zap } from "lucide-react";
 import { motionTokens } from "@/lib/motion-tokens";
 import { useCopyFeedback } from "@/lib/use-copy-feedback";
 import { ThinkingShimmer } from "@/registry/components/loading-states/loading-states";
@@ -151,6 +151,20 @@ const STORE = "heretic-chats-v2";
 const standard = [...motionTokens.ease.standard] as [number, number, number, number];
 const COMPACT_BELOW = 760;
 const MAX_PROMPT_CHARS = 16000;
+
+// A IA entende sozinha um pedido de imagem em linguagem natural (sem /imagem) e extrai a descrição.
+// Retorna a descrição (string) se for imagem, ou null se for conversa normal.
+const IMG_NOUN = "imagem|imagens|fotos?|fotografias?|arte|desenhos?|ilustra\\w*|logos?|logotipos?|wallpapers?|avatares?|avatar|banners?|p[ôo]ster\\w*|posters?|capas?|[íi]cones?|retratos?|pinturas?|renders?|cenas?|paisagens?|quadros?";
+function imageIntent(text: string): string | null {
+  const s = (text || "").trim();
+  if (s.length < 5 || s.length > 600) return null;
+  const verb = new RegExp(`^\\s*(por favor,?\\s*)?(ger[ae]r?|cri[ae]r?|fa[çc]a|faz|desenh[ae]r?|ilustr[ae]r?|renderiz[ae]r?|mostr[ae]r?|gostaria de (ver|uma)|quero (uma?|ver)|me (faz|cria|ger[ae]|d[áa]|desenh[ae]))\\b[\\s\\S]{0,25}?\\b(${IMG_NOUN})\\b`, "i");
+  const noun = new RegExp(`^\\s*(uma?\\s+)?(${IMG_NOUN})\\b\\s+(de|do|da|com|que)\\b`, "i");
+  if (!verb.test(s) && !noun.test(s)) return null;
+  const m = new RegExp(`\\b(${IMG_NOUN})\\b\\s*(de|do|da|dos|das|com|:|que mostr\\w*|mostrando)?\\s*([\\s\\S]+)$`, "i").exec(s);
+  const desc = m && m[3] ? m[3].trim() : s;
+  return desc.length > 1 ? desc : s;
+}
 const MODEL_KEY = "heretic-model";
 /** Used until GET /api/me answers (or if it fails). */
 const FALLBACK_MODELS: ModelOption[] = [
@@ -544,14 +558,15 @@ export function HereticChat() {
     track("pergunta_enviada");
     // Pede permissão de notificação no gesto de enviar (pra avisar quando a resposta ficar pronta).
     try { if ("Notification" in window && Notification.permission === "default") void Notification.requestPermission(); } catch { /* ignore */ }
-    // Comando de imagem: /imagem <descrição> (também /image, /img).
-    const img = /^\/(?:imagem|image|img)\s+([\s\S]+)/i.exec(prompt);
-    const userText = img ? img[1]!.trim() : prompt;
+    // Imagem: comando /imagem <descrição> OU pedido em linguagem natural ("gere uma imagem de...").
+    const cmd = /^\/(?:imagem|image|img)\s+([\s\S]+)/i.exec(prompt);
+    const imgDesc = cmd ? cmd[1]!.trim() : imageIntent(prompt); // string = imagem; null = conversa
+    const userText = cmd ? cmd[1]!.trim() : prompt; // natural: mostra o que a pessoa escreveu
     const userMsg: ChatMessage = { id: nextId("prompt"), role: "user", text: userText, state: "done" };
     const replyId = nextId("reply");
     const before = active.messages;
-    setConversations(list => list.map(c => c.id !== active.id ? c : { ...c, title: c.messages.length === 0 ? titleFrom(title || userText) : c.title, updated: "Now", ts: Date.now(), messages: [...c.messages, userMsg, { id: replyId, role: "assistant", text: "", state: "thinking", model: img ? t("Image") : model.short } as ChatMessage] } as ChatConversation));
-    if (img) generateImage(active.id, replyId, img[1]!.trim());
+    setConversations(list => list.map(c => c.id !== active.id ? c : { ...c, title: c.messages.length === 0 ? titleFrom(title || userText) : c.title, updated: "Now", ts: Date.now(), messages: [...c.messages, userMsg, { id: replyId, role: "assistant", text: "", state: "thinking", model: imgDesc ? t("Image") : model.short } as ChatMessage] } as ChatConversation));
+    if (imgDesc) generateImage(active.id, replyId, imgDesc);
     else run(active.id, replyId, historyOf([...before, userMsg]));
   };
   const regenerate = () => {
@@ -741,7 +756,10 @@ export function HereticChat() {
                           <span className={styles.srOnly}>Heretic: </span>
                           {(() => {
                             const genImg = (message as ChatMessage & { image?: string }).image;
-                            if (message.state === "thinking" && !genImg) return <ThinkingShimmer className={styles.thinking} />;
+                            const isImageMsg = (message as ChatMessage & { model?: string }).model === t("Image");
+                            if (message.state === "thinking" && !genImg) return isImageMsg
+                              ? <div className="hx-imgskeleton" role="img" aria-label={t("Generating image…")}><ImageIcon size={26} aria-hidden="true" /></div>
+                              : <ThinkingShimmer className={styles.thinking} />;
                             if (genImg) return (
                               <figure className="hx-genimg">
                                 <img src={genImg} alt={message.text || "imagem"} loading="lazy" />

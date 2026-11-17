@@ -277,6 +277,14 @@ body { letter-spacing: -.02em; }
 .hx-account-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border: 0; border-radius: 9px; background: transparent; color: var(--text-secondary); font: 500 14px/1 var(--font-body); text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease; }
 .hx-account-item svg { color: var(--accent); flex: none; }
 .hx-account-item:hover { background: var(--surface-muted); color: var(--foreground); }
+/* Rótulo de qualidade do modelo (dono 17/11): barra de nível + texto, no lugar do custo. */
+.hx-modelq { display: inline-flex; align-items: center; gap: 6px; margin-top: 3px; font: 500 11px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace; letter-spacing: .04em; color: var(--text-muted); }
+.hx-modelq-bar { display: inline-flex; gap: 2px; }
+.hx-modelq-bar i { width: 7px; height: 4px; border-radius: 1px; background: var(--border-strong); }
+.hx-modelq[data-q="1"] .hx-modelq-bar i:nth-child(-n+1),
+.hx-modelq[data-q="2"] .hx-modelq-bar i:nth-child(-n+2),
+.hx-modelq[data-q="3"] .hx-modelq-bar i:nth-child(-n+3),
+.hx-modelq[data-q="4"] .hx-modelq-bar i:nth-child(-n+4) { background: var(--accent); }
 .empty-logo { display: block; height: auto; filter: grayscale(1) brightness(1.4); opacity: .9; }
 .empty h2, .onb-title { background: linear-gradient(180deg, #FFFFFF 15%, #B9B9C2 90%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: none; filter: none; }
 .empty h2::after { content: none; }
@@ -470,6 +478,13 @@ body, .composer textarea { font-weight: 300; }
 .hx-dlitem svg{color:var(--accent)}
 
 /* ── Imagem gerada (ferramenta /imagem) ── */
+/* Skeleton de imagem carregando (dono 17/11, tipo ChatGPT): quadrado com brilho varrendo + ícone. */
+.hx-imgskeleton{position:relative;display:grid;place-items:center;width:min(420px,100%);aspect-ratio:1/1;margin:4px 0 0;border-radius:14px;overflow:hidden;background:var(--surface-muted);border:1px solid var(--border);color:var(--text-muted)}
+.hx-imgskeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,color-mix(in srgb,var(--foreground) 9%,transparent) 50%,transparent 80%);background-size:200% 100%;animation:hxShimmerSweep 1.4s linear infinite}
+.hx-imgskeleton svg{position:relative;opacity:.5;animation:hxPulse 1.4s ease-in-out infinite}
+@keyframes hxShimmerSweep{from{background-position:200% 0}to{background-position:-200% 0}}
+@keyframes hxPulse{0%,100%{opacity:.35}50%{opacity:.7}}
+@media (prefers-reduced-motion:reduce){.hx-imgskeleton::after,.hx-imgskeleton svg{animation:none}}
 .hx-genimg{margin:4px 0 0;display:inline-block;max-width:min(420px,100%);position:relative}
 .hx-genimg img{display:block;width:100%;height:auto;border-radius:14px;border:1px solid #1F1F24;background:#0C0C0F}
 .hx-genimg figcaption{margin:8px 2px 0;color:#9A9AA3;font-size:13px;line-height:1.45}

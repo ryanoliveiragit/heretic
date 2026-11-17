@@ -30,13 +30,12 @@ export function costPer100(m) {
 export const PUBLIC_MODELS_RAW = [
   // Catálogo ENXUTO — só os melhores custo-benefício (nomes de marca Heretic; ids de terceiros escondidos).
   // Dono (16/11): cortado de 14 p/ 4 — "não adianta ter vários e ruins".
-  // ── free: 2 opções, ambas boas e baratas ──
-  { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', name: 'Heretic Free', short: 'Heretic Free', note: 'Default. Uncensored, reliable, cheap (Dolphin 24B). 128k context', tier: 'free' },
-  { id: 'sao10k/l3.1-euryale-70b', name: 'Heretic Rapid', short: 'Heretic Rapid', note: 'Smarter, best value (Euryale 70B). 128k context', tier: 'free' },
-  { id: 'thedrummer/cydonia-24b-v4.1', name: 'Heretic Swift', short: 'Heretic Swift', note: 'Fast and cheap (Cydonia 24B). 128k context', tier: 'free' },
-  // ── pro: 2 degraus de potência, cada um com um papel claro ──
-  { id: 'anthracite-org/magnum-v4-72b', name: 'Heretic Deep', short: 'Heretic Deep', note: 'Depth for hard problems and writing (Magnum 72B). 32k context', tier: 'pro' },
-  { id: 'nousresearch/hermes-4-405b', name: 'Heretic Titan', short: 'Heretic Titan', note: 'Largest model, max capability. 128k context', tier: 'pro' },
+  // Ordem = pior → melhor (dono 17/11). quality: 1=Baixo, 2=Médio, 3=Alto, 4=Máximo (mostrado no seletor no lugar do custo).
+  { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', name: 'Heretic Free', short: 'Heretic Free', note: 'Uncensored, rápido e barato (Dolphin 24B)', tier: 'free', quality: 1 },
+  { id: 'thedrummer/cydonia-24b-v4.1', name: 'Heretic Swift', short: 'Heretic Swift', note: 'Equilíbrio de velocidade e qualidade (Cydonia 24B)', tier: 'free', quality: 2 },
+  { id: 'sao10k/l3.1-euryale-70b', name: 'Heretic Rapid', short: 'Heretic Rapid', note: 'Mais esperto, melhor custo (Euryale 70B)', tier: 'free', quality: 3 },
+  { id: 'anthracite-org/magnum-v4-72b', name: 'Heretic Deep', short: 'Heretic Deep', note: 'Profundidade em problemas difíceis (Magnum 72B)', tier: 'pro', quality: 3 },
+  { id: 'nousresearch/hermes-4-405b', name: 'Heretic Titan', short: 'Heretic Titan', note: 'Capacidade máxima (Hermes 405B)', tier: 'pro', quality: 4 },
 ];
 
 export const PUBLIC_MODELS = PUBLIC_MODELS_RAW.map(raw => {

@@ -57,6 +57,8 @@ const { spring, duration, ease } = motionTokens;
 const settle = { type: "spring", visualDuration: 0.24, bounce: 0 } as const;
 
 const cx = (...values: Array<string | false | null | undefined>) => values.filter(Boolean).join(" ");
+// Rótulo de qualidade do modelo (dono 17/11): no lugar do custo, "pior → melhor".
+const QLABEL = ["", "Baixo", "Médio", "Alto", "Máximo"];
 
 /** Kept for API compatibility with the source block; Heretic's backend has no effort control. */
 export type Effort = "low" | "medium" | "high" | "xhigh" | "max";
@@ -71,6 +73,8 @@ export interface ModelOption {
   provider?: string;
   /** Estimated cost of ~100 messages, in USD. */
   cost100?: number | null;
+  /** Nível de qualidade/capacidade: 1=Baixo, 2=Médio, 3=Alto, 4=Máximo (mostrado no lugar do custo). */
+  quality?: number;
   /** Listed but not selectable (Pro models on the free plan). */
   locked?: boolean;
   /** Small pill after the name; locked models show "Pro" when this is empty. */
@@ -570,7 +574,6 @@ function ModelMenu({ models, model, reduced, onModel }: ModelMenuProps) {
           >
             {models.map((option) => {
               const pill = option.locked ? (option.badge ?? "Pro") : option.badge;
-              const meta = modelMeta(option);
               return (
                 <DropdownMenu.RadioItem
                   key={option.id}
@@ -586,7 +589,12 @@ function ModelMenu({ models, model, reduced, onModel }: ModelMenuProps) {
                       {option.locked ? <span className={styles.srOnly}>, locked</span> : null}
                     </span>
                     <span className={styles.modelItemNote}>{option.note}</span>
-                    {meta ? <span className={styles.modelCost}>{meta}</span> : null}
+                    {option.quality ? (
+                      <span className="hx-modelq" data-q={option.quality} title={`Qualidade: ${QLABEL[option.quality]}`}>
+                        <span className="hx-modelq-bar" aria-hidden="true"><i /><i /><i /><i /></span>
+                        {QLABEL[option.quality]}
+                      </span>
+                    ) : null}
                   </span>
                   {pill ? <span className={styles.proPill}>{pill}</span> : null}
                   <DropdownMenu.ItemIndicator className={styles.modelCheck}>
@@ -598,7 +606,7 @@ function ModelMenu({ models, model, reduced, onModel }: ModelMenuProps) {
           </DropdownMenu.RadioGroup>
           <DropdownMenu.Separator className={styles.menuSeparator} />
           <DropdownMenu.Label className={styles.menuFoot}>
-            {anyLocked ? t("Pro models unlock with credits. ") : ""}{t("Cost shown is ≈ per 100 messages.")}
+            {anyLocked ? t("Pro models unlock with credits. ") : ""}{"Qualidade: do mais simples ao mais forte."}
           </DropdownMenu.Label>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>

@@ -65,6 +65,16 @@ export function Markdown({ text, caret }: { text: string; caret?: boolean }) {
       else blocks.push(<CodeBlock key={`c${b++}`} code={bodyText} lang={fence[1] || undefined} />);
       continue;
     }
+    // Mermaid SEM cerca: modelos às vezes escrevem "flowchart TD ..." como texto cru, sem ```.
+    // Desenha o diagrama mesmo assim (coleta as linhas até a próxima linha em branco).
+    const mmHead = /^\s*(?:flowchart|graph)\s+(?:TB|TD|BT|RL|LR)\b/i.test(line)
+      || /^\s*(?:sequenceDiagram|mindmap|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|journey|gitGraph|timeline|quadrantChart|pie)\b/i.test(line);
+    if (mmHead) {
+      flush(); const mm: string[] = [];
+      while (i < lines.length && (lines[i] ?? "").trim() !== "" && !/^\s*```/.test(lines[i] ?? "")) mm.push(lines[i++] ?? "");
+      blocks.push(<Mermaid key={`m${b++}`} code={mm.join("\n")} />);
+      continue;
+    }
     const h = /^(#{1,4})\s+(.*)$/.exec(line);
     if (h) { flush(); const L = Math.min(4, (h[1] ?? "").length + 2); const Tag = (`h${L}`) as "h3" | "h4" | "h5" | "h6"; blocks.push(<Tag key={`h${b++}`} className="md-h">{inline(h[2] ?? "", `h${b}`)}</Tag>); i++; continue; }
     if (/^\s*(-{3,}|\*{3,})\s*$/.test(line)) { flush(); blocks.push(<hr key={`r${b++}`} />); i++; continue; }
