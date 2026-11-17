@@ -331,6 +331,55 @@ async function decideSearchLLM(question) {
   } catch { return null; } finally { clearTimeout(to); }
 }
 
+// ---- Mão: probe de URL (dono 17/11). Quando a pergunta é sobre um site (URL + intenção de
+// diagnóstico), o servidor MEDE de verdade (TTFB, status, headers) e injeta os números reais —
+// é o que faz o modelo parar de inventar "testei com curl, deu 1.8s". Vale pra todos os cérebros.
+function shouldProbe(text) {
+  const t = text || '';
+  const m = t.match(/https?:\/\/[^\s)]+/i);
+  if (!m) return null;
+  if (/\b(lent[oa]|slow|demora|carreg|travand|caiu|fora do ar|down|offline|status|testa|teste|analis|verific|checa|diagn[óo]stic|ttfb|tempo de resposta|performance|erro|50[0-4]|timeout|responde|velocidade|r[áa]pid)\b/i.test(t)
+    || /\bpor que\b[\s\S]*\b(site|url|p[áa]gina|servidor|app)\b/i.test(t)) {
+    return m[0].replace(/[.,;:)\]]+$/, '');
+  }
+  return null;
+}
+async function probeUrl(url) {
+  let u; try { u = new URL(url); } catch { return null; }
+  if (!/^https?:$/.test(u.protocol)) return null;
+  const host = u.hostname.toLowerCase();
+  // guarda SSRF básica: bloqueia local/privado/metadata
+  if (/^(localhost|0\.|127\.|10\.|192\.168\.|169\.254\.|::1)/.test(host) || /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+    || host.endsWith('.internal') || host === 'metadata.google.internal') return null;
+  const sample = async () => {
+    const t0 = Date.now();
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const r = await fetch(url, { redirect: 'follow', signal: ctrl.signal, headers: { 'user-agent': 'HereticProbe/1.0' } });
+      const ttfb = Date.now() - t0;
+      const buf = await r.arrayBuffer();
+      return { status: r.status, ttfb, total: Date.now() - t0, size: buf.byteLength, finalUrl: r.url, headers: r.headers };
+    } finally { clearTimeout(to); }
+  };
+  try {
+    const a = await sample();
+    const b = await sample().catch(() => null);
+    const h = (k) => a.headers.get(k) || '—';
+    return [
+      `URL: ${url}${a.finalUrl && a.finalUrl !== url ? ' → ' + a.finalUrl : ''}`,
+      `Status HTTP: ${a.status}`,
+      `TTFB (1º byte): ${a.ttfb} ms${b ? ` · 2ª medição: ${b.ttfb} ms` : ''}`,
+      `Tempo total: ${a.total} ms · Tamanho: ${(a.size / 1024).toFixed(1)} KB`,
+      `server: ${h('server')} · content-type: ${h('content-type')}`,
+      `cache: x-vercel-cache=${h('x-vercel-cache')} · cf-cache-status=${h('cf-cache-status')} · cache-control=${h('cache-control')} · age=${h('age')}`,
+      b && a.ttfb > b.ttfb * 2 + 150 ? 'Sinal: 1ª medição bem mais lenta que a 2ª → provável COLD START (serverless/edge esquentando).' : '',
+    ].filter(Boolean).join('\n');
+  } catch (e) {
+    return `Falha ao acessar ${url}: ${String(e && e.message).slice(0, 90)}`;
+  }
+}
+
 function buildSystemPrompt(userPersona, uncensored) {
   if (uncensored) return ANTI_CENSORSHIP_PREFIX + (userPersona || '');
   return userPersona || '';
@@ -399,6 +448,16 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
   const url = getBaseUrl(route.provider);
   const uncensored = catalog?.uncensored || false;
   let systemPrompt = buildSystemPrompt(payload.systemPrompt, uncensored);
+
+  // Mão: pergunta sobre um site → mede de verdade e injeta os números (vale pro Max e pros open).
+  const lastUserMsg = (payload.messages || []).filter(m => m.role === 'user').pop()?.content;
+  const probeTarget = shouldProbe(typeof lastUserMsg === 'string' ? lastUserMsg : String(lastUserMsg || ''));
+  if (probeTarget) {
+    const probe = await probeUrl(probeTarget).catch(() => null);
+    if (probe) systemPrompt += '\n\n## MEDIÇÃO REAL do site, feita pelo servidor AGORA (números verdadeiros — OBRIGATÓRIO: comece a resposta reportando estes valores e o que indicam; NÃO invente, NÃO ignore, NÃO dê conselho genérico antes de ler o que foi medido):\n'
+      + probe
+      + '\nInterprete: TTFB alto (>600ms) + x-vercel-cache=MISS → cold start / sem cache. TTFB baixo + status 200 → respondeu rápido no teste, então pergunte ONDE exatamente a pessoa vê lentidão (navegador, uma rota específica, horário de pico).';
+  }
 
   // Heretic Max = cérebro de nuvem Claude (Anthropic). Caminho próprio, fora do loop OpenAI.
   if (route.provider === 'anthropic') {
