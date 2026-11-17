@@ -227,8 +227,30 @@ function must(html, from, to, what) {
 }
 function pageViva() {
   let html = readFileSync(join(VIVA, "landing.dc.html"), "utf8");
+  // A landing nova é servida em TODAS as larguras (sem redirecionar para a /m.html antiga).
+  // Responsivo: abaixo de 860px vira 1 coluna, títulos menores, nav compacta, barra do topo quebra.
+  const RESPONSIVE_VIVA = `<style>
+@media (max-width:860px){
+  html,body{overflow-x:hidden!important}
+  header{padding-left:18px!important;padding-right:18px!important;flex-wrap:wrap!important;gap:10px!important}
+  nav[aria-label="Se\\u00e7\\u00f5es"]{display:none!important}
+  #topo{min-height:0!important}
+  #topo > section{padding:88px 18px 36px!important}
+  #topo h1{font-size:clamp(36px,12vw,58px)!important;max-width:none!important}
+  canvas[data-nebula]{opacity:.3!important}
+  #como-funciona,#especialistas,#assinar,#duvidas{padding-left:18px!important;padding-right:18px!important}
+  [style*="grid-template-columns:repeat(2,minmax(0,1fr))"]{grid-template-columns:1fr!important}
+  [style*="grid-template-columns:minmax(0,4fr) minmax(0"]{grid-template-columns:1fr!important}
+  #assinar div[aria-hidden="true"]:empty{display:none!important}
+  [data-orbit]{height:420px!important}
+  [data-orbit-name]{font-size:30px!important}
+  h2,h2[style]{font-size:clamp(30px,8vw,44px)!important}
+  [data-bar] [style*="nowrap"]{white-space:normal!important}
+  [data-bar-progress]{display:none!important}
+}
+</style>`;
   html = must(html, '<meta name="viewport" content="width=device-width, initial-scale=1">',
-    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' + HEAD_VIVA + "\n" + redirect(true), "a meta viewport");
+    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' + HEAD_VIVA + "\n" + RESPONSIVE_VIVA, "a meta viewport");
   html = must(html, "<html>", '<html lang="pt-BR" data-brand="aurabot" data-theme="dark" style="background:#040405">', "<html>");
   // o pacote do design system é o mesmo arquivo que já vai em /_ds (conferido byte a byte): não duplicar 13 MB
   if (!html.includes("uploads/aurabot-ds-bundle.js")) throw new Error("landing nova: não achei o pacote do design system");
