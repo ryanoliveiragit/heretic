@@ -628,12 +628,12 @@ class Component extends DCLogic {
     const pct = goal > 0 ? Math.round(Math.min(raised, goal) / goal * 100) : 0;
     const inline = { '--text-3xl': '1em', '--font-display': 'var(--font-body)', '--tracking-display': 'var(--tracking-body)', display: 'inline-flex' };
     // Barra fixa: rótulo · valor · progresso · frase curta · selo · botão (o fechar vem do AnnouncementBar)
-    const barMsg = h('span', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, minHeight: 46, whiteSpace: 'nowrap', fontSize: 14, lineHeight: 1.3, fontWeight: 400, color: 'var(--text-secondary)' } },
+    const barMsg = h('span', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, minHeight: 40, whiteSpace: 'nowrap', fontSize: 14, lineHeight: 1.3, fontWeight: 400, color: 'var(--text-secondary)' } },
       h('span', null,
         h('strong', { style: { ...inline, fontWeight: 600, color: 'var(--foreground)' } }, 'Heretic \u00e9 gr\u00e1tis.'),
         ' ',
         h('span', { 'data-bar-short': '' }, 'A comunidade mant\u00e9m o servidor no ar.')),
-      X ? h('span', { style: { display: 'inline-flex', '--control-height-md': '34px' } }, h(X.ArrowButton, { href: '#assinar', size: 'sm', onClick: this.barCta }, 'Assinar o Pro')) : null);
+      DS && DS.Button ? h('span', { style: { display: 'inline-flex', '--control-height-sm': '30px' } }, h(DS.Button, { variant: 'secondary', size: 'sm', onClick: this.barCta }, 'Assinar o Pro')) : null);
     return {
       yes: true, no: false, none: -1, zero: 0, two: 2, six: 6, n20: 20, t08: 0.08, t16: 0.16, brl: 'R$\u00A0',
       rootRef: this.rootRef, semCensura, duelRef: this.duelRef, duelLeft: h(this.DuelLeft), duelRight: h(this.DuelRight),

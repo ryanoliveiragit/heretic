@@ -34,21 +34,27 @@
   [data-bar-progress]{display:none!important}
 }
 </style>
-<script src="/support.js?v=mwk3z2jw"></script>
+<style>
+[data-bar] [data-tone]{background:#121215!important;border-bottom:1px solid rgba(255,255,255,.06)!important;padding-top:6px!important;padding-bottom:6px!important}
+[data-bar] [data-tone][data-tone]{padding-left:clamp(16px,4vw,28px)!important;padding-right:clamp(12px,3vw,20px)!important}
+[data-bar] [id$="-slides"]{height:auto!important;min-height:38px!important;display:flex!important;align-items:center!important}
+/* o botão 'Assinar o Pro' já é Button secondary (sm, 30px): fica centrado com respiro, sem encostar nas bordas */
+</style>
+<script src="/support.js?v=mwk5p2f9"></script>
 </head>
 <body>
 <div id="hx-boot" aria-hidden="true"><i></i></div>
 <x-dc>
 <helmet>
   <link rel="stylesheet" href="_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f/_ds_bundle.css">
-  <link rel="stylesheet" href="uploads/ryan-ui-extra.css?v=mwk3z2jw">
-  <link rel="stylesheet" href="uploads/ryan-ui-extra2.css?v=mwk3z2jw">
+  <link rel="stylesheet" href="uploads/ryan-ui-extra.css?v=mwk5p2f9">
+  <link rel="stylesheet" href="uploads/ryan-ui-extra2.css?v=mwk5p2f9">
   <link rel="preconnect" href="https://api.fontshare.com">
   <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@300,400,500,600&amp;display=swap">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&amp;family=Geist+Mono:wght@300;400&amp;display=swap">
   <script>(function(d){d.dataset.theme='dark';d.dataset.brand='aurabot';d.lang='pt-BR'})(document.documentElement)</script>
-  <script>(function(){if(window.__hxLoader)return;window.__hxLoader=1;function add(src,next){var s=document.createElement('script');s.src=src;s.async=false;s.onload=next||null;s.onerror=function(){console.error('Falha ao carregar '+src)};document.head.appendChild(s)}function chain(list){var i=0;(function nx(){while(i<list.length&&list[i][1]())i++;if(i>=list.length)return;var it=list[i++];add(it[0],nx)})()}['anim/anim-heretic-nebula.js?v=mwk3z2jw','anim/anim-heretic-hack.js?v=mwk3z2jw','anim/anim-heretic-fx.js?v=mwk3z2jw','anim/anim-heretic-orbit.js?v=mwk3z2jw'].forEach(function(src){add(src)});function go(){var R=window.React;if(!R||!window.ReactDOM){setTimeout(go,30);return}if(!R.useEffectEvent){R.useEffectEvent=function(f){var r=R.useRef(f);R.useInsertionEffect(function(){r.current=f});return R.useCallback(function(){return r.current.apply(void 0,arguments)},[])}}chain([['_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f/_ds_bundle.js',function(){return!!window.AuraBotDS}],['uploads/ryan-ui-extra.js?v=mwk3z2jw',function(){return!!window.RyanUIExtra}],['uploads/ryan-ui-extra2.js?v=mwk3z2jw',function(){return!!window.RyanUIExtra2}]])}go()})()</script>
+  <script>(function(){if(window.__hxLoader)return;window.__hxLoader=1;function add(src,next){var s=document.createElement('script');s.src=src;s.async=false;s.onload=next||null;s.onerror=function(){console.error('Falha ao carregar '+src)};document.head.appendChild(s)}function chain(list){var i=0;(function nx(){while(i<list.length&&list[i][1]())i++;if(i>=list.length)return;var it=list[i++];add(it[0],nx)})()}['anim/anim-heretic-nebula.js?v=mwk5p2f9','anim/anim-heretic-hack.js?v=mwk5p2f9','anim/anim-heretic-fx.js?v=mwk5p2f9','anim/anim-heretic-orbit.js?v=mwk5p2f9'].forEach(function(src){add(src)});function go(){var R=window.React;if(!R||!window.ReactDOM){setTimeout(go,30);return}if(!R.useEffectEvent){R.useEffectEvent=function(f){var r=R.useRef(f);R.useInsertionEffect(function(){r.current=f});return R.useCallback(function(){return r.current.apply(void 0,arguments)},[])}}chain([['_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f/_ds_bundle.js',function(){return!!window.AuraBotDS}],['uploads/ryan-ui-extra.js?v=mwk5p2f9',function(){return!!window.RyanUIExtra}],['uploads/ryan-ui-extra2.js?v=mwk5p2f9',function(){return!!window.RyanUIExtra2}]])}go()})()</script>
   <style id="hx-boot-css">html:not([data-ready]) x-dc{opacity:0}x-dc{opacity:1;transition:opacity .35s ease}#hx-boot{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;background:#040405;transition:opacity .4s ease}html[data-ready] #hx-boot{opacity:0;pointer-events:none}#hx-boot i{display:block;width:30px;height:30px;border-radius:50%;background:var(--accent,#E8E2D0);animation:hxboot 1.1s ease-in-out infinite}@keyframes hxboot{0%,100%{transform:scale(.6);opacity:.2}50%{transform:scale(1);opacity:.55}}</style>
   <script>(function(){function r(){return !!(window.AuraBotDS&&window.RyanUIExtra&&window.RyanUIExtra2)&&document.body&&document.body.innerText.indexOf('{{')<0}var t=setInterval(function(){if(r()){clearInterval(t);requestAnimationFrame(function(){requestAnimationFrame(function(){document.documentElement.setAttribute('data-ready','1')})})}},80);setTimeout(function(){clearInterval(t);document.documentElement.setAttribute('data-ready','1')},9000)})();</script>
   <style>
@@ -656,12 +662,12 @@ class Component extends DCLogic {
     const pct = goal > 0 ? Math.round(Math.min(raised, goal) / goal * 100) : 0;
     const inline = { '--text-3xl': '1em', '--font-display': 'var(--font-body)', '--tracking-display': 'var(--tracking-body)', display: 'inline-flex' };
     // Barra fixa: rótulo · valor · progresso · frase curta · selo · botão (o fechar vem do AnnouncementBar)
-    const barMsg = h('span', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, minHeight: 46, whiteSpace: 'nowrap', fontSize: 14, lineHeight: 1.3, fontWeight: 400, color: 'var(--text-secondary)' } },
+    const barMsg = h('span', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, minHeight: 40, whiteSpace: 'nowrap', fontSize: 14, lineHeight: 1.3, fontWeight: 400, color: 'var(--text-secondary)' } },
       h('span', null,
         h('strong', { style: { ...inline, fontWeight: 600, color: 'var(--foreground)' } }, 'Heretic \u00e9 gr\u00e1tis.'),
         ' ',
         h('span', { 'data-bar-short': '' }, 'A comunidade mant\u00e9m o servidor no ar.')),
-      X ? h('span', { style: { display: 'inline-flex', '--control-height-md': '34px' } }, h(X.ArrowButton, { href: '#assinar', size: 'sm', onClick: this.barCta }, 'Assinar o Pro')) : null);
+      DS && DS.Button ? h('span', { style: { display: 'inline-flex', '--control-height-sm': '30px' } }, h(DS.Button, { variant: 'secondary', size: 'sm', onClick: this.barCta }, 'Assinar o Pro')) : null);
     return {
       yes: true, no: false, none: -1, zero: 0, two: 2, six: 6, n20: 20, t08: 0.08, t16: 0.16, brl: 'R$\u00A0',
       rootRef: this.rootRef, semCensura, duelRef: this.duelRef, duelLeft: h(this.DuelLeft), duelRight: h(this.DuelRight),
@@ -681,7 +687,7 @@ class Component extends DCLogic {
   }
 }
 </script>
-<script>if('serviceWorker' in navigator&&!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});});}</script>
+<script>if('serviceWorker' in navigator&&!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)){(function(){var had=!!navigator.serviceWorker.controller,re=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(had&&!re){re=true;location.reload();}});addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).then(function(reg){reg.update();setInterval(function(){reg.update();},3600000);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')reg.update();});}).catch(function(){});});})();}</script>
 <script>(function(){function fire(n){try{(window.va||function(){})('event',{name:n})}catch(e){}}var topo=false;
 document.addEventListener('click',function(e){var p=e.composedPath?e.composedPath():[e.target];for(var i=0;i<p.length;i++){var el=p[i];if(!el||!el.tagName)continue;var t=((el.getAttribute&&(el.getAttribute('aria-label')||''))||el.textContent||'').replace(/\s+/g,' ').trim();
 if(/^Assinar o Pro$/i.test(t)){fire('cta_assinar_pro');return;}

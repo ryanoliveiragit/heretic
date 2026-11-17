@@ -3,12 +3,13 @@
   /* Darkness: preto profundo e branco; vermelho claro só como acento (10%). */
   --background: #040405; --surface: #0A0A0C; --surface-raised: #0E0E11; --surface-muted: #121215; --surface-strong: #1A1A1E;
   --border: #19191D; --border-strong: #26262B; --border-subtle: #111114;
-  --accent: #F0335A; --accent-strong: #FF6B86; --accent-subtle: #F0335A26; --accent-foreground: #0A0A0B;
+  /* Acento = osso, igual à landing (dono 17/11: "cor principal branca"). Antes era carmim #E8E2D0. */
+  --accent: #E8E2D0; --accent-strong: #F4EFE2; --accent-subtle: #E8E2D024; --accent-foreground: #0A0A0B;
   --brand: #FFFFFF; --brand-strong: #FFFFFF; --brand-subtle: #ffffff0f;
   --chrome: linear-gradient(#FFFFFF, #FFFFFF);
   --chrome-edge: linear-gradient(180deg, #ffffff40, #ffffff0a 45%, #ffffff1c);
   --foreground: #F5F5F7; --text-secondary: #9A9AA3; --text-muted: #5E5E67;
-  --success: #c9c9c9; --warning: #c9c9c9; --danger: #c9c9c9; --info: #c9c9c9; --focus-ring: #F0335A;
+  --success: #c9c9c9; --warning: #c9c9c9; --danger: #c9c9c9; --info: #c9c9c9; --focus-ring: #E8E2D0;
   --font-body: "Switzer", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Switzer", ui-sans-serif, system-ui, sans-serif; --font-serif: "Switzer", ui-sans-serif, system-ui, sans-serif;
   --text-xs: 13px; --text-sm: 13px; --text-base: 15px;
@@ -218,10 +219,10 @@ button:active:not(:disabled) { transform: scale(.96); transition-duration: .08s;
 .onb-card > :first-child { grid-row: span 2; }
 .onb-card strong { font-size: 15px; }
 .onb-card span { font-size: 13px; line-height: 1.4; color: var(--text-secondary); }
-.onb-card:hover { box-shadow: inset 0 0 0 1px var(--accent), 0 3px 0 #F0335A40; transform: translateY(-2px); }
+.onb-card:hover { box-shadow: inset 0 0 0 1px var(--accent), 0 3px 0 #E8E2D040; transform: translateY(-2px); }
 .onb-list { display: flex; flex-direction: column; gap: 10px; }
 .onb-q { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border: 0; border-radius: 14px; background: #0E0E11; box-shadow: inset 0 0 0 1px #ffffff14, 0 3px 0 #ffffff0d; font-size: 15px; text-align: left; cursor: pointer; }
-.onb-q:hover { box-shadow: inset 0 0 0 1px var(--accent), 0 3px 0 #F0335A40; transform: translateY(-2px); }
+.onb-q:hover { box-shadow: inset 0 0 0 1px var(--accent), 0 3px 0 #E8E2D040; transform: translateY(-2px); }
 .onb-q span:last-child { color: var(--accent); }
 .onb-back { align-self: flex-start; margin-top: 18px; border: 0; background: none; color: var(--text-secondary); font-size: 14px; cursor: pointer; }
 .onb-done { margin: 0; font-size: 15px; color: var(--text-secondary); animation: rise .4s both; }
@@ -337,7 +338,7 @@ body, .composer textarea { font-weight: 300; }
 .hx-lang{margin-left:auto;display:inline-flex;gap:2px;padding:3px;border:1px solid #1F1F24;border-radius:999px;background:#08080A;font:300 11px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.04em}
 .hx-lang button{all:unset;cursor:pointer;padding:5px 9px;border-radius:999px;color:#8A8A92}
 .hx-lang button[aria-pressed="true"]{background:#1A1A1F;color:#F5F5F7}
-.hx-lang button:focus-visible{outline:1px solid #F0335A}
+.hx-lang button:focus-visible{outline:1px solid #E8E2D0}
 
 /* ── access key: Pro badge, unlock button, modal ── */
 .hx-pro{margin-left:7px;padding:1px 6px;border-radius:5px;background:var(--accent);color:var(--accent-foreground);font:600 9px/1.4 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.08em;vertical-align:1px}

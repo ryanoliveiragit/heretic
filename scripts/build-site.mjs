@@ -142,7 +142,7 @@ document.addEventListener('keydown',function(e){
   if(e.key!=='Enter'||e.shiftKey)return;var el=e.target;
   if(el&&(el.tagName==='TEXTAREA'||el.tagName==='INPUT')&&el.value&&el.value.trim()&&el===heroInput()){e.preventDefault();e.stopPropagation();goApp(el.value.trim());}
 },true);
-if('serviceWorker' in navigator&&!/^(localhost|127\\.0\\.0\\.1)$/.test(location.hostname)){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});});}
+if('serviceWorker' in navigator&&!/^(localhost|127\\.0\\.0\\.1)$/.test(location.hostname)){var had=!!navigator.serviceWorker.controller,re=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(had&&!re){re=true;location.reload();}});addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).then(function(reg){reg.update();setInterval(function(){reg.update();},3600000);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')reg.update();});}).catch(function(){});});}
 })();</script>`;
 
 // A página de celular foi feita para rodar dentro da moldura de iPhone do Claude Design:
@@ -213,7 +213,9 @@ const HEAD_VIVA = `<title>Heretic — IA sem censura</title>
 <meta name="apple-mobile-web-app-title" content="Heretic">
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};</script>
 <script defer src="/_vercel/insights/script.js"></script>`;
-const SW_REG = `<script>if('serviceWorker' in navigator&&!/^(localhost|127\\.0\\.0\\.1)$/.test(location.hostname)){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});});}</script>`;
+// Registro do SW com auto-update: checa versão nova ao carregar, ao voltar o foco e de hora em hora,
+// e recarrega sozinho quando um SW novo assume (só se a página já era controlada — não recarrega na 1ª visita).
+const SW_REG = `<script>if('serviceWorker' in navigator&&!/^(localhost|127\\.0\\.0\\.1)$/.test(location.hostname)){(function(){var had=!!navigator.serviceWorker.controller,re=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(had&&!re){re=true;location.reload();}});addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).then(function(reg){reg.update();setInterval(function(){reg.update();},3600000);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')reg.update();});}).catch(function(){});});})();}</script>`;
 // Eventos do funil (medição anônima, só o nome do evento — nunca o conteúdo): interação no topo e intenção de assinar.
 const VIVA_EVENTS = `<script>(function(){function fire(n){try{(window.va||function(){})('event',{name:n})}catch(e){}}var topo=false;
 document.addEventListener('click',function(e){var p=e.composedPath?e.composedPath():[e.target];for(var i=0;i<p.length;i++){var el=p[i];if(!el||!el.tagName)continue;var t=((el.getAttribute&&(el.getAttribute('aria-label')||''))||el.textContent||'').replace(/\\s+/g,' ').trim();
@@ -249,8 +251,16 @@ function pageViva() {
   [data-bar-progress]{display:none!important}
 }
 </style>`;
+  // Barra de aviso do topo: discreta e alinhada à plataforma (dono 17/11).
+  // Antes: fundo cinza claro + traço inferior cor-osso (forte) + botão osso preenchendo a altura (grudado/chamativo).
+  const BAR_CLEAN = `<style>
+[data-bar] [data-tone]{background:#121215!important;border-bottom:1px solid rgba(255,255,255,.06)!important;padding-top:6px!important;padding-bottom:6px!important}
+[data-bar] [data-tone][data-tone]{padding-left:clamp(16px,4vw,28px)!important;padding-right:clamp(12px,3vw,20px)!important}
+[data-bar] [id$="-slides"]{height:auto!important;min-height:38px!important;display:flex!important;align-items:center!important}
+/* o botão 'Assinar o Pro' já é Button secondary (sm, 30px): fica centrado com respiro, sem encostar nas bordas */
+</style>`;
   html = must(html, '<meta name="viewport" content="width=device-width, initial-scale=1">',
-    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' + HEAD_VIVA + "\n" + RESPONSIVE_VIVA, "a meta viewport");
+    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' + HEAD_VIVA + "\n" + RESPONSIVE_VIVA + "\n" + BAR_CLEAN, "a meta viewport");
   html = must(html, "<html>", '<html lang="pt-BR" data-brand="aurabot" data-theme="dark" style="background:#040405">', "<html>");
   // o pacote do design system é o mesmo arquivo que já vai em /_ds (conferido byte a byte): não duplicar 13 MB
   if (!html.includes("uploads/aurabot-ds-bundle.js")) throw new Error("landing nova: não achei o pacote do design system");
