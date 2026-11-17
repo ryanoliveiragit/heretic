@@ -254,6 +254,18 @@ body { letter-spacing: -.02em; }
 .hx-chrome-text { background: linear-gradient(100deg, #8A8A90 0%, #FFFFFF 20%, #E8E2D0 38%, #B9B9C2 55%, #FFFFFF 78%, #8A8A90 100%); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: hxChrome 5s linear infinite; }
 @keyframes hxChrome { from { background-position: 150% 0; } to { background-position: -150% 0; } }
 @media (prefers-reduced-motion: reduce) { .hx-cicada-chrome, .hx-chrome-text { animation: none; } }
+/* Switch Modo Qualidade no compositor (dono 17/11: fica no input, com rótulo e trilho, estilo /fast). */
+.hx-qswitch { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 10px 0 9px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-muted); color: var(--text-secondary); font: 500 13px/1 var(--font-body); white-space: nowrap; cursor: pointer; transition: background .18s ease, color .18s ease, border-color .18s ease; }
+.hx-qswitch svg { width: 15px; height: 15px; flex: none; }
+.hx-qswitch-label { letter-spacing: -.01em; }
+.hx-qswitch-track { position: relative; width: 26px; height: 15px; flex: none; border-radius: 999px; background: #2A2A30; transition: background .2s ease; }
+.hx-qswitch-thumb { position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: #6A6A72; transition: transform .2s cubic-bezier(.34,1.56,.64,1), background .2s ease; }
+.hx-qswitch[data-on="1"] { color: var(--foreground); border-color: var(--accent-subtle); background: color-mix(in srgb, var(--accent) 12%, var(--surface-muted)); }
+.hx-qswitch[data-on="1"] .hx-qswitch-track { background: var(--accent); }
+.hx-qswitch[data-on="1"] .hx-qswitch-thumb { transform: translateX(11px); background: var(--accent-foreground); }
+.hx-qswitch:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+@media (hover: hover) { .hx-qswitch:hover { border-color: var(--border-strong); color: var(--foreground); } }
+@media (max-width: 560px) { .hx-qswitch-label { display: none; } }
 .empty-logo { display: block; height: auto; filter: grayscale(1) brightness(1.4); opacity: .9; }
 .empty h2, .onb-title { background: linear-gradient(180deg, #FFFFFF 15%, #B9B9C2 90%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: none; filter: none; }
 .empty h2::after { content: none; }
@@ -297,11 +309,13 @@ body, .composer textarea { font-weight: 300; }
 .hx-chat .hx-assistant-mark, .hx-chat .hx-empty-mark { width: auto; height: auto; background: none; border-radius: 0; }
 .hx-chat .hx-assistant-mark { width: 26px; padding-top: 3px; }
 .hx-chat .hx-empty-mark { margin-bottom: 4px; }
-.hx-chat .hx-empty-title { font-family: var(--font-serif); font-weight: 400; font-size: 56px; letter-spacing: -.02em; line-height: 1; background: linear-gradient(180deg, #FFFFFF 15%, #B9B9C2 90%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+/* Título da tela vazia: menor e mais leve (cigarra manda), cromo em movimento. */
+.hx-chat .hx-empty-title { font-family: var(--font-serif); font-weight: 400; font-size: 40px; letter-spacing: -.01em; line-height: 1.05; background: linear-gradient(100deg, #8A8A90 0%, #FFFFFF 20%, #E8E2D0 38%, #B9B9C2 55%, #FFFFFF 78%, #8A8A90 100%); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: hxChrome 5s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .hx-chat .hx-empty-title { animation: none; } }
 .hx-chat h2 { font-family: var(--font-body); font-weight: 500; letter-spacing: -.02em; }
 .hx-chat button[class*="suggestion"] { background: #08080A; border-color: #1F1F24; }
 .hx-chat [class*="suggestionTitle"] { font-weight: 500; }
-@media (max-width: 760px) { .hx-chat .hx-empty-title { font-size: 40px; } }
+@media (max-width: 760px) { .hx-chat .hx-empty-title { font-size: 30px; } }
 
 /* ── mensagens com cara de chat (dono, 15/11 22h) ── */
 .hx-chat [data-role="assistant"] { display: block; }

@@ -690,8 +690,7 @@ export function HereticChat() {
               <motion.span key={active?.title ?? "none"} className={styles.titleText} initial={reduceMotion ? false : { opacity: 0, y: 6, filter: `blur(${motionTokens.blur.soft}px)` }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={reduceMotion ? { duration: 0 } : { duration: motionTokens.duration.standard, ease: standard }}>{active?.title ?? "Chat"}</motion.span>
             </AnimatePresence>
           </h2>
-          {/* Desktop: Qualidade + legenda do modelo cabem no header. Mobile: header enxuto (menu + título + nova conversa); Qualidade fica junto do compositor e o modelo no seletor dele. */}
-          {!compact && plan === "pro" ? <button type="button" className="hx-qtoggle" data-on={quality ? "1" : "0"} onClick={() => setQuality(q => !q)} aria-pressed={quality} title={t("Quality mode: race 2 models, keep the best")}>{t("Quality")}</button> : null}
+          {/* Qualidade saiu do header para o compositor (switch com rótulo, estilo /fast). O header fica só com título + modelo. */}
           {!compact ? <span className={`${styles.model} hx-modelpill`}><span className={styles.modelDot} aria-hidden="true" />{model.short} · {t("Uncensored")}</span> : null}
           {compact ? <button type="button" className={styles.iconButton} onClick={newChat} aria-label={t("New chat")} title={t("New chat")}><SquarePen size={18} aria-hidden="true" /></button> : null}
         </header>
@@ -700,7 +699,7 @@ export function HereticChat() {
           <motion.div key={active?.id} ref={threadRef} className={styles.thread} initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={reduceMotion ? { duration: 0 } : { duration: motionTokens.duration.standard, ease: standard }}>
             {active && active.messages.length === 0 ? (
               <div className={styles.empty}>
-                <motion.span className={`${styles.emptyMark} hx-empty-mark`} aria-hidden="true" initial={reduceMotion ? false : { scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={pop}><CicadaMask w={150} h={56} shimmer={!reduceMotion} /></motion.span>
+                <motion.span className={`${styles.emptyMark} hx-empty-mark`} aria-hidden="true" initial={reduceMotion ? false : { scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={pop}><CicadaMask w={200} h={74} shimmer={!reduceMotion} /></motion.span>
                 <h3 className={`${styles.emptyTitle} hx-empty-title hx-chrome-text`}>{t("Ask anything.")}</h3>
               </div>
             ) : null}
@@ -745,11 +744,6 @@ export function HereticChat() {
         </div>
 
         <footer className={styles.composer}>
-          {compact && plan === "pro" ? (
-            <div className="hx-cbar">
-              <button type="button" className="hx-qtoggle" data-on={quality ? "1" : "0"} onClick={() => setQuality(q => !q)} aria-pressed={quality} title={t("Quality mode: race 2 models, keep the best")}>{t("Quality")}</button>
-            </div>
-          ) : null}
           <Composer
             ref={composerRef}
             models={models}
@@ -763,6 +757,9 @@ export function HereticChat() {
             blocked={outOfTokens ? OUT_OF_TOKENS : null}
             onSubmit={payload => send(withAttachments(payload), payload.text || payload.attachments[0]?.name)}
             onStop={() => finish("stopped")}
+            quality={quality}
+            onQuality={() => setQuality(q => !q)}
+            qualityAvailable={plan === "pro"}
           />
           {usage && usage.limit > 0 ? <UsageLine plan={plan} {...usage} /> : <p className={styles.hint}>{t("Uncensored. Enter sends, Shift+Enter adds a line.")}</p>}
         </footer>

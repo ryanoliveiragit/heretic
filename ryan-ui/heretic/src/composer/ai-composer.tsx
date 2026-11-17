@@ -43,6 +43,7 @@ import {
   TriangleAlert,
   Wrench,
   X,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { TextShimmer } from "@pro/text-shimmer/text-shimmer";
@@ -721,6 +722,10 @@ export interface ComposerProps {
   onStop: () => void;
   /** Screen-reader messages; the composer keeps its own live region when this is omitted. */
   announce?: (message: string) => void;
+  /** Modo Qualidade (Pro): switch no compositor. Só aparece quando qualityAvailable. */
+  quality?: boolean;
+  onQuality?: () => void;
+  qualityAvailable?: boolean;
 }
 
 type Option = { id: string; command: CommandOption };
@@ -741,6 +746,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     onSubmit,
     onStop,
     announce: announceProp,
+    quality = false,
+    onQuality,
+    qualityAvailable = false,
   },
   ref,
 ) {
@@ -1360,6 +1368,23 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               </Tooltip>
             ) : null}
             <ModelMenu models={models} model={model} reduced={reduced} onModel={onModel} />
+            {qualityAvailable && onQuality ? (
+              <Tooltip content={t("Quality mode: race 2 models, keep the best")}>
+                <button
+                  type="button"
+                  className="hx-qswitch"
+                  role="switch"
+                  aria-checked={!!quality}
+                  aria-label={t("Quality")}
+                  data-on={quality ? "1" : "0"}
+                  onClick={onQuality}
+                >
+                  <Zap aria-hidden="true" />
+                  <span className="hx-qswitch-label">{t("Quality")}</span>
+                  <span className="hx-qswitch-track" aria-hidden="true"><span className="hx-qswitch-thumb" /></span>
+                </button>
+              </Tooltip>
+            ) : null}
           </div>
           <div className={styles.toolGroup}>
             <AnimatePresence initial={false}>
