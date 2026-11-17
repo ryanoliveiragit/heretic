@@ -229,6 +229,22 @@ function trimHistory(messages, maxCtx) {
   return [...keep, ...tail];
 }
 
+// Busca automática (dono 17/11): a IA busca na web SOZINHA quando a pergunta pede fato atual,
+// repo/ferramenta, link ou algo que ela não saberia de cabeça. Sem botão, sem o usuário pedir.
+// Heurística barata (não gasta chamada extra); só anexa o plugin web do OpenRouter quando casa.
+const SEARCH_HINTS = new RegExp([
+  'repo(sit[óo]rio)?|github|gitlab|ferramenta|\\btool\\b|framework|biblioteca|\\blibrary\\b|pacote|\\bpackage\\b',
+  'hoje|atual|atuais|recent|[úu]ltim|agora|2024|2025|2026|latest|newest|novidade|not[íi]cia|lan[çc]ad|vers[ãa]o (mais|atual|nova)',
+  'encontr|procur|existe (um|algum)|tem (um|algum)|onde (baixo|acho|encontro|download)|link (do|da|de|para)|site oficial',
+  'quem [ée]\\b|cve-|changelog|release|download|cota[çc][ãa]o|pre[çc]o|quanto custa|qual o melhor|melhores (ferramentas|repos|modelos)',
+  'https?://|www\\.',
+].join('|'), 'i');
+function shouldSearch(text) {
+  const t = (text || '').trim();
+  if (t.length < 8) return false; // saudação/curto: não busca
+  return SEARCH_HINTS.test(t);
+}
+
 function buildSystemPrompt(userPersona, uncensored) {
   if (uncensored) return ANTI_CENSORSHIP_PREFIX + (userPersona || '');
   return userPersona || '';
@@ -302,6 +318,9 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
   let lastErr = null, emitted = false, lastRoundText = '';
   // Pedido original do usuário (o juiz precisa do pedido de verdade, não do FORCE_REMINDER).
   const userQuestion = (payload.messages || []).filter(m => m.role === 'user').pop()?.content || '';
+  // A IA decide sozinha se busca (sem botão): só no OpenRouter e quando a pergunta pede.
+  const webSearch = route.provider === 'openrouter' && shouldSearch(userQuestion);
+  if (webSearch) systemPrompt += '\n\n## Busca na web ativa\nVocê recebeu resultados de busca da web no contexto. Use-os para dar fatos atuais e LINKS REAIS (repos no GitHub, sites, versões), e cite os links de verdade. Nunca invente URL.';
   for (let forces = 0; forces <= MAX_FORCES; forces++) {
     const active = forces < MAX_FORCES; // a última rodada nunca corta: entrega a resposta como sair
     let hitRefusal = false, refusalText = '';
@@ -319,6 +338,8 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
           max_tokens: payload.max_tokens ?? 4096,
           frequency_penalty: payload.frequency_penalty ?? 0.4,
           presence_penalty: payload.presence_penalty ?? 0.1,
+          // Busca web automática (OpenRouter, plugin Exa). A IA decidiu que esta pergunta pede web.
+          ...(webSearch ? { plugins: [{ id: 'web', max_results: 3 }], web_search_options: { search_context_size: 'low' } } : {}),
         };
         const res = await fetch(url, {
           method: 'POST',
