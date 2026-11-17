@@ -2,6 +2,8 @@
 // Proxy to OpenRouter / Venice with streaming SSE. Reads keys from process.env.
 
 export const MODEL_CATALOG = [
+  // Heretic Max — cérebro de nuvem Claude (Anthropic) com server-side-fallback (técnica do drael). Gated em CLAUDE_KEY.
+  { id: 'claude-sonnet-5-5', label: 'Heretic Max 👑 nível Claude', provider: 'anthropic', price_in: 3.00, price_out: 15.00, ctx: 200000, tools: true, uncensored: true, note: 'Cérebro de nuvem (Claude). Lê contexto/ferramenta sem alucinar.' },
   // === Uncensored (pagos) ===
   { id: 'sao10k/l3.1-euryale-70b', label: 'Euryale 70B ⚡ melhor custo', provider: 'openrouter', price_in: 0.85, price_out: 0.85, ctx: 131072, tools: false, uncensored: true, note: '70B Llama 3.1, sem censura real' },
   { id: 'nousresearch/hermes-4-405b', label: 'Hermes 4 405B 🧠 melhor qualidade', provider: 'openrouter', price_in: 1.00, price_out: 3.00, ctx: 131072, tools: false, uncensored: true, note: '405B, sem censura, mais caro' },
@@ -201,8 +203,60 @@ function getApiKey(provider) {
   if (provider === 'openrouter') return process.env.OPENROUTER_API_KEY;
   // Venice desativada (dono 17/11). Reativar com VENICE_ENABLED=1 no ambiente.
   if (provider === 'venice') return process.env.VENICE_ENABLED === '1' ? process.env.VENICE_API_KEY : null;
+  // Heretic Max = cérebro de nuvem Claude (Anthropic), técnica do drael (server-side-fallback).
+  if (provider === 'anthropic') return process.env.CLAUDE_KEY || process.env.ANTHROPIC_API_KEY || null;
   if (provider === 'pollinations') return 'free'; // provedor 100% grátis, sem chave (sentinela p/ não cair no echo)
   return null;
+}
+
+// ---- Heretic Max: cérebro de nuvem Claude (porta a infra do drael-replica) ----
+// Anthropic /v1/messages + header beta "server-side-fallback": tira a recusa "cyber" do lado deles,
+// sem jailbreak. Nível Claude de verdade (lê ferramenta/contexto sem alucinar). Chamada não-stream;
+// o texto final é entregue em pedaços pro front animar.
+function toAnthropic(messages, systemPrompt) {
+  let system = systemPrompt || '';
+  const out = [];
+  const push = (role, text) => {
+    const last = out[out.length - 1];
+    if (last && last.role === role) { last.content += '\n\n' + text; return; }
+    out.push({ role, content: text });
+  };
+  for (const m of messages || []) {
+    if (!m || !m.role) continue;
+    const text = typeof m.content === 'string' ? m.content : String(m.content ?? '');
+    if (m.role === 'system') { system += (system ? '\n\n' : '') + text; continue; }
+    push(m.role === 'assistant' ? 'assistant' : 'user', text);
+  }
+  // Anthropic exige começar em user
+  while (out.length && out[0].role !== 'user') out.shift();
+  return { system, msgs: out.length ? out : [{ role: 'user', content: '.' }] };
+}
+
+async function* anthropicComplete({ model, systemPrompt, messages, payload, onToken }) {
+  const key = getApiKey('anthropic');
+  const { system, msgs } = toAnthropic(messages, systemPrompt);
+  const body = {
+    model, max_tokens: payload.max_tokens ?? 4096, system, messages: msgs,
+    temperature: typeof payload.temperature === 'number' ? payload.temperature : 0.7,
+  };
+  if (!/haiku/i.test(model)) body.fallbacks = 'default'; // server-side-fallback (não suportado no Haiku)
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 180000);
+  try {
+    const up = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+      body: JSON.stringify(body), signal: ctrl.signal,
+    });
+    const t = await up.text();
+    if (!up.ok) throw new Error(`anthropic ${up.status}: ${t.slice(0, 160)}`);
+    const data = JSON.parse(t);
+    let text = (data.content || []).filter(b => b.type === 'text' && b.text).map(b => b.text).join('\n');
+    if (data.stop_reason === 'refusal') text = `(O classificador da Anthropic recusou este pedido — categoria: ${data?.stop_details?.category || 'sem nome'}. Reformule ou troque de modelo.)`;
+    if (!text) text = '(sem resposta do cérebro de nuvem — tente de novo.)';
+    // entrega em pedaços pro front animar como streaming
+    for (let i = 0; i < text.length; i += 48) { if (onToken) onToken(text.slice(i, i + 48)); yield 1; }
+  } finally { clearTimeout(timer); }
 }
 
 function getBaseUrl(provider) {
@@ -345,6 +399,17 @@ export async function* streamChat(mode, payload, { onToken, onWarning, signal } 
   const url = getBaseUrl(route.provider);
   const uncensored = catalog?.uncensored || false;
   let systemPrompt = buildSystemPrompt(payload.systemPrompt, uncensored);
+
+  // Heretic Max = cérebro de nuvem Claude (Anthropic). Caminho próprio, fora do loop OpenAI.
+  if (route.provider === 'anthropic') {
+    try { yield* anthropicComplete({ model: route.model, systemPrompt, messages, payload, onToken }); }
+    catch (e) {
+      if (onWarning) onWarning({ type: 'rerouted', reason: `Max indisponível (${String(e.message).slice(0, 60)}) — caindo pro OpenRouter`, from: mode, to: 'openrouter' });
+      const fb = MODEL_CATALOG.find(m => m.id === 'nousresearch/hermes-4-405b');
+      if (fb && getApiKey('openrouter')) yield* streamWithProvider('openrouter', fb.id, fb, messages, systemPrompt, payload, { onToken, onWarning, signal });
+    }
+    return;
+  }
   const referer = process.env.OPENROUTER_REFERER || 'https://heretic.vercel.app';
 
   let lastErr = null, emitted = false, lastRoundText = '';
