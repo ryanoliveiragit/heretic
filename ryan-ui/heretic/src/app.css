@@ -415,6 +415,15 @@ body, .composer textarea { font-weight: 300; }
 .hx-keygo:hover{transform:translateY(-1px)}.hx-keygo:active{transform:scale(.97)}
 .hx-keygo:disabled{opacity:.4;cursor:default;transform:none}
 .hx-keyerr{margin:11px 0 0;font:300 12px/1.4 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;color:#FF6B6B}
+/* Bloco "API · uso externo": só no Pro. A própria chave autentica o POST /api/chat. */
+.hx-keyapi{margin-top:18px;padding-top:16px;border-top:1px solid #1C1C21}
+.hx-keyapilabel{display:block;font:300 10px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.hx-keyapihint{margin:9px 0 10px;font-size:12.5px;line-height:1.5;color:#9A9AA3}
+.hx-keyapihint code{padding:1px 5px;border-radius:5px;background:#16161A;color:#E6E6EA;font:400 .86em/1.4 "Geist Mono Variable",ui-monospace,monospace}
+.hx-keycurlwrap{position:relative}
+.hx-keycurlcopy{all:unset;position:absolute;top:8px;right:8px;display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:#16161A;color:var(--accent);cursor:pointer;transition:background .18s ease}
+.hx-keycurlcopy:hover{background:#1E1E24}
+.hx-keycurl{overflow-x:auto;margin:0;padding:12px 13px;border-radius:10px;background:#08080A;box-shadow:inset 0 0 0 1px #1F1F24;font:400 12px/1.6 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;color:#E6E6EA;white-space:pre}
 .hx-keyissued{margin-top:16px;padding:14px;border-radius:12px;background:#0C0C0F;border:1px dashed #2A2A30}
 .hx-keyissuedlabel{display:block;font:300 10px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#8A8A92;margin-bottom:9px}
 .hx-keycopy{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;border-radius:9px;background:#141417;color:var(--accent);cursor:pointer;transition:background .18s ease}

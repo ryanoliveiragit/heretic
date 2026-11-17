@@ -80,9 +80,9 @@ const fixedCodes = () => (process.env.ACCESS_CODES || '')
 export function planForKey(key) {
   if (!key) return null;
   const k = String(key).trim().toUpperCase();
+  // Pro é EXCLUSIVO do dono: só os códigos da allowlist (env ACCESS_CODES) dão Pro. Os códigos
+  // auto-assinados (HRTC-...-sig) foram desativados — não há mais geração pública de chave.
   if (fixedCodes().includes(k)) return 'pro';
-  const m = k.match(/^HRTC-(?:PRO|MAX|STD)-([A-Z0-9]+)-([A-Z0-9]+)$/);
-  if (m && codeSig(m[1]) === m[2]) return 'pro';
   return null;
 }
 

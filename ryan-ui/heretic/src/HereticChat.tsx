@@ -40,14 +40,14 @@ function LangSwitch() {
   );
 }
 
-// Access-key modal: paste a code to unlock Pro, or "buy" (stub) to get one.
+// Access-key modal: cole o código pra liberar o Pro (exclusivo do dono). A própria chave Pro
+// autentica a API (header x-heretic-key) pra uso externo. Sem geração pública de chave.
 function KeyModal({ open, plan, onClose, onPlan }: { open: boolean; plan: string; onClose: () => void; onPlan: (p: string) => void }) {
   const [code, setCode] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
-  const [issued, setIssued] = useState("");
   const [copied, setCopied] = useState(false);
-  useEffect(() => { if (open) { setErr(""); setIssued(""); setCopied(false); setCode(getKey()); } }, [open]);
+  useEffect(() => { if (open) { setErr(""); setCopied(false); setCode(getKey()); } }, [open]);
   if (!open) return null;
   const redeem = async () => {
     const c = code.trim();
@@ -60,37 +60,35 @@ function KeyModal({ open, plan, onClose, onPlan }: { open: boolean; plan: string
     } catch { setErr(t("That code isn't valid.")); }
     finally { setBusy(false); }
   };
-  const buy = async () => {
-    setBusy(true); setErr("");
-    try { const r = await api.checkout(); setIssued(r.code); setCode(r.code); }
-    catch { setErr(t("Could not get a code. Try again.")); }
-    finally { setBusy(false); }
-  };
-  const copy = async () => { try { await navigator.clipboard.writeText(issued); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* denied */ } };
   const unlink = () => { setKey(""); onPlan("free"); onClose(); };
+  const origin = typeof location !== "undefined" ? location.origin : "https://heretic-five.vercel.app";
+  const curl = `curl -N ${origin}/api/chat \\\n  -H "x-heretic-key: ${code || "SUA-CHAVE-PRO"}" \\\n  -H "Content-Type: application/json" \\\n  -d '{"model":"claude-sonnet-5-5","messages":[{"role":"user","content":"oi"}]}'`;
+  const copyCurl = async () => { try { await navigator.clipboard.writeText(curl); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* negado */ } };
   return (
     <div className="hx-keyov" role="dialog" aria-modal="true" aria-label={t("Access key")} onPointerDown={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="hx-keycard">
         <button type="button" className="hx-keyx" onClick={onClose} aria-label={t("Close")}><X size={16} aria-hidden="true" /></button>
         <div className="hx-keyicon">{plan === "pro" ? <Check size={18} aria-hidden="true" /> : <Lock size={18} aria-hidden="true" />}</div>
         <h3 className="hx-keytitle">{plan === "pro" ? t("Pro unlocked") : t("Unlock every model")}</h3>
-        <p className="hx-keysub">{plan === "pro" ? t("Your access key is active. All AIs are unlocked.") : t("Free is open to everyone. A code unlocks every AI, no daily limit.")}</p>
+        <p className="hx-keysub">{plan === "pro" ? t("Your access key is active. All AIs are unlocked.") : "O Pro é privado. O plano grátis está aberto a todos."}</p>
         <label className="hx-keylabel" htmlFor="hx-code">{t("Access code")}</label>
         <div className="hx-keyrow">
           <input id="hx-code" className="hx-keyinput" value={code} onChange={e => setCode(e.target.value)} onKeyDown={e => { if (e.key === "Enter") redeem(); }} placeholder="HRTC-••••-••••-••••" autoComplete="off" spellCheck={false} />
           <button type="button" className="hx-keygo" onClick={redeem} disabled={busy || !code.trim()}>{t("Enter")}</button>
         </div>
         {err ? <p className="hx-keyerr" role="alert">{err}</p> : null}
-        {issued ? (
-          <div className="hx-keyissued">
-            <span className="hx-keyissuedlabel">{t("Your code — copy and keep it")}</span>
-            <button type="button" className="hx-keycopy" onClick={copy}>{copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}<code>{issued}</code></button>
+        {plan === "pro" ? (
+          <div className="hx-keyapi">
+            <span className="hx-keyapilabel">API · uso externo</span>
+            <p className="hx-keyapihint">A sua chave acima autentica a API: mande o header <code>x-heretic-key</code> em <code>POST /api/chat</code>.</p>
+            <div className="hx-keycurlwrap">
+              <button type="button" className="hx-keycurlcopy" onClick={copyCurl} aria-label="Copiar exemplo">{copied ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}</button>
+              <pre className="hx-keycurl"><code>{curl}</code></pre>
+            </div>
           </div>
         ) : null}
         <div className="hx-keyfoot">
-          {plan === "pro"
-            ? <button type="button" className="hx-keylink" onClick={unlink}>{t("Sign out of Pro")}</button>
-            : <button type="button" className="hx-keybuy" onClick={buy} disabled={busy}><KeyRound size={14} aria-hidden="true" />{t("Get a code")}</button>}
+          {plan === "pro" ? <button type="button" className="hx-keylink" onClick={unlink}>{t("Sign out of Pro")}</button> : null}
         </div>
       </div>
     </div>

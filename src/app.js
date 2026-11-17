@@ -177,8 +177,8 @@ app.post('/api/redeem', async (c) => {
 // Buy/checkout stub: issues a fresh signed Pro code. Swap for Stripe later;
 // for now it just returns a code the buyer can copy and paste into "Enter key".
 app.post('/api/checkout', async (c) => {
-  const code = issueCode();
-  return c.json({ ok: true, plan: 'pro', code });
+  // Desativado: Pro é exclusivo do dono, sem geração pública de chave.
+  return c.json({ ok: false, error: 'disabled', message: 'Pro não está aberto.' }, 403);
 });
 
 app.post('/api/chat', async (c) => {
