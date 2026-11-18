@@ -5,10 +5,10 @@ const TAG = process.argv[2] ?? "cand";
 const N = Number(process.env.N ?? 1);
 const casos = (await fs.readFile("eval/cases.jsonl", "utf8")).trim().split("\n").map(JSON.parse);
 
-async function chamar(prompt) {
+async function chamar(prompt, fp) {
   const res = await fetch(`${BASE}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-heretic-client": "eval" },
+    headers: { "Content-Type": "application/json", "x-heretic-client": fp },
     body: JSON.stringify({ text: prompt, history: [], conversationId: "eval" }),
   });
   const raw = await res.text();
@@ -29,7 +29,7 @@ async function julgar(prompt, resposta) {
 const out = [];
 for (const c of casos) {
   for (let i = 0; i < N; i++) {
-    const resposta = await chamar(c.p);
+    const resposta = await chamar(c.p, `eval-${TAG}-${c.id}-${i}`);
     const j = await julgar(c.p, resposta);
     out.push({ id: c.id, cat: c.cat, nota: j.nota, falhas: j.falhas, resposta });
     console.log(c.id, j.nota.toFixed(1), j.falhas.join(","));
