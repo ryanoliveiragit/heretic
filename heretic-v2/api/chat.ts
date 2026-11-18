@@ -99,17 +99,20 @@ export default async function handler(req: Request) {
             }
           }
 
-          if (!chamadas.length) {
+          // índice de tool_call pode chegar com buraco (ex.: só o índice 1): sem isso o array
+          // fica esparso, o for..of entrega undefined e o turno morre em "reading 'name'".
+          const usadas = chamadas.filter((c) => c && c.name);
+          if (!usadas.length) {
             if (aviso) { msgs.push({ role: "user", content: aviso }); }
             return;
           }
 
           msgs.push({
             role: "assistant", content: "",
-            tool_calls: chamadas.map((c, i) => ({ id: c.id ?? `call_${i}`, type: "function", function: { name: c.name, arguments: c.args || "{}" } })),
+            tool_calls: usadas.map((c, i) => ({ id: c.id ?? `call_${i}`, type: "function", function: { name: c.name, arguments: c.args || "{}" } })),
           });
 
-          for (const c of chamadas) {
+          for (const c of usadas) {
             let args: any = {};
             try { args = JSON.parse(c.args || "{}"); } catch {}
             send("step", { ferramenta: c.name });
@@ -137,7 +140,7 @@ export default async function handler(req: Request) {
       } catch (e: any) {
         if (abortado) send("done", { content: acc, aborted: true });
         else if (e?.status === 429) send("error", { code: "turns_in_flight", message: "Muitos pedidos. Tente de novo." });
-        else send("error", { code: "upstream_unavailable", message: "O modelo não respondeu. Tente de novo." });
+        else { console.error("[upstream]", model, e?.status ?? "-", e?.message ?? e); send("error", { code: "upstream_unavailable", message: "O modelo não respondeu. Tente de novo." }); }
       } finally {
         sair(fp);
         ctrl.close();
