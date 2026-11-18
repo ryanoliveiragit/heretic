@@ -12,9 +12,11 @@ async function chamar(prompt, fp) {
     body: JSON.stringify({ text: prompt, history: [], conversationId: "eval" }),
   });
   const raw = await res.text();
-  return raw.split("\n").filter((l) => l.startsWith("data: "))
-    .map((l) => { try { return JSON.parse(l.slice(6)); } catch { return {}; } })
-    .filter((d) => d.t).map((d) => d.t).join("");
+  const evs = [...raw.matchAll(/^event: (\w+)\ndata: (.*)$/gm)].map((m) => [m[1], m[2]]);
+  const erro = evs.find(([e]) => e === "error");
+  const texto = evs.filter(([e]) => e === "token")
+    .map(([, d]) => { try { return JSON.parse(d).t ?? ""; } catch { return ""; } }).join("");
+  return { texto, erro: erro ? erro[1] : null };
 }
 
 async function julgar(prompt, resposta) {
@@ -29,10 +31,10 @@ async function julgar(prompt, resposta) {
 const out = [];
 for (const c of casos) {
   for (let i = 0; i < N; i++) {
-    const resposta = await chamar(c.p, `eval-${TAG}-${c.id}-${i}`);
+    const { texto: resposta, erro } = await chamar(c.p, `eval-${TAG}-${c.id}-${i}`);
     const j = await julgar(c.p, resposta);
-    out.push({ id: c.id, cat: c.cat, nota: j.nota, falhas: j.falhas, resposta });
-    console.log(c.id, j.nota.toFixed(1), j.falhas.join(","));
+    out.push({ id: c.id, cat: c.cat, nota: j.nota, falhas: j.falhas, resposta, erro });
+    console.log(c.id, j.nota.toFixed(1), erro ? `ERRO ${erro}` : j.falhas.join(","));
   }
 }
 
