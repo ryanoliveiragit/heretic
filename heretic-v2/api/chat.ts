@@ -1,6 +1,6 @@
 import { route } from "../server/router";
 import { buildParams } from "../server/params";
-import { CTX_REAL, MODELS, PRICE, REASONING, ctxPublicado } from "../server/models";
+import { CTX_REAL, MODELS, PRICE, REASONING, ctxPublicado, toolsOk } from "../server/models";
 import { compactar, cortarMeio, uso } from "../server/context";
 import { montar, blocosSistema, CONTRACT, CONTRACT_TOKENS } from "../server/persona";
 import { isRefusal, RETRY } from "../server/refusal";
@@ -81,7 +81,7 @@ export default async function handler(req: Request) {
       const rodar = async (extra?: string) => {
         for (let turno = 0; turno < TETO_TURNOS; turno++) {
           const ultimo = turno === TETO_TURNOS - 1;
-          const ferramentas = ultimo ? [] : CATALOGO;
+          const ferramentas = ultimo || !toolsOk(model) ? [] : CATALOGO;
           const payload = extra ? [...msgs, { role: "user", content: extra }] : msgs;
           const aviso = ultimo ? "\n\n[Último turno: responda com o que tem e diga o que não pôde checar.]" : "";
 

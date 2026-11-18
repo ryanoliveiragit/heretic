@@ -1,4 +1,4 @@
-import { CTX_REAL, MODELS, REASONING, ctxPublicado } from "../server/models";
+import { CTX_REAL, MODELS, REASONING, ctxPublicado, toolsOk } from "../server/models";
 
 export default async function handler() {
   const lista = Object.values(MODELS).map((id) => ({
@@ -8,7 +8,7 @@ export default async function handler() {
     max_model_len: ctxPublicado(id),
     context_real: CTX_REAL[id] ?? 128_000,
     attachment: true,
-    tool_call: !id.startsWith("cognitivecomputations") && !id.startsWith("claude"),
+    tool_call: toolsOk(id),
     reasoning: REASONING.includes(id),
   }));
   return new Response(JSON.stringify({ object: "list", data: lista }), {

@@ -37,3 +37,10 @@ export const REASONING = [
 
 /** Teto publicado é sempre menor que o real. */
 export const ctxPublicado = (model: string) => (CTX_REAL[model] ?? 128_000) - 8192;
+
+/**
+ * Ferramenta sem provedor ligado não é servida. O OpenRouter devolve 404
+ * "No endpoints found that support tool use" quando o catálogo vai para um
+ * modelo sem tool calling (dolphin), e o turno inteiro morre vazio.
+ */
+export const toolsOk = (id: string) => !id.startsWith("cognitivecomputations") && !id.startsWith("claude");
