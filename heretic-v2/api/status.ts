@@ -1,0 +1,5 @@
+export default async function handler() {
+  return new Response(JSON.stringify({ ok: true, at: new Date().toISOString() }), {
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
+}
