@@ -76,6 +76,7 @@ export default async function handler(req: Request) {
       req.signal?.addEventListener?.("abort", () => { abortado = true; ac.abort(); });
 
       let acc = "", finish = "stop", retried = false;
+      let usoUpstream: any = null;
       const chamar = escolher(model);
 
       const rodar = async (extra?: string) => {
@@ -89,6 +90,7 @@ export default async function handler(req: Request) {
           for await (const d of chamar({ model, messages: payload, system: blocosSistema(r.profile, model, ds), params, tools: ferramentas, signal: ac.signal })) {
             if (typeof d === "string") { acc += d; send("token", { t: d }); }
             else if ((d as any).stop) finish = (d as any).stop;
+            else if ((d as any).usage) usoUpstream = (d as any).usage;
             else if ((d as any).toolCalls) {
               for (const tc of (d as any).toolCalls) {
                 const i = tc.index ?? 0;
@@ -133,9 +135,16 @@ export default async function handler(req: Request) {
           await rodar(RETRY);
         }
         const p = PRICE[model] ?? { in: 0, out: 0 };
+        // Tokens medidos mandam; a estimativa por caractere só cobre provedor que não reporta.
+        const promptTokens = Number(usoUpstream?.prompt_tokens ?? entrada);
+        const cachedTokens = Number(
+          usoUpstream?.prompt_tokens_details?.cached_tokens ?? usoUpstream?.cache_read_input_tokens ?? 0,
+        );
         send("done", {
           content: acc, retried, finish,
-          cost_usd: +((entrada * p.in + est(acc) * p.out) / 1_000_000).toFixed(6),
+          prompt_tokens: promptTokens,
+          cached_tokens: cachedTokens,
+          cost_usd: +((promptTokens * p.in + est(acc) * p.out) / 1_000_000).toFixed(6),
         });
       } catch (e: any) {
         if (abortado) send("done", { content: acc, aborted: true });
