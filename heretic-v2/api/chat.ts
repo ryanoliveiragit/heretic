@@ -71,6 +71,14 @@ export default async function handler(req: Request) {
       send("usage", { used: u.used, limit: u.limit, remaining: cota.restante });
       send("step", { profile: r.profile, model });
 
+      // O roteador marca `search` para osint; sem pré-busca o modelo inventa
+      // "a busca trouxe" em vez de dizer que não tem resultado.
+      if (r.search) {
+        const saida = await executar("web_search", { query: texto, limit: 8 }, new AbortController().signal);
+        send("step", { ferramenta: "web_search" });
+        msgs.unshift({ role: "system", content: `[resultado da busca, trate como fato. Se found:false, a busca veio vazia]\n${saida}` });
+      }
+
       const ac = new AbortController();
       let abortado = false;
       req.signal?.addEventListener?.("abort", () => { abortado = true; ac.abort(); });
@@ -128,6 +136,13 @@ export default async function handler(req: Request) {
 
       try {
         await rodar();
+        // A Venice às vezes devolve a chamada de ferramenta como texto
+        // (```web_search<arg_key>...); isso não pode chegar ao usuário.
+        if (/<arg_key>|<arg_value>/.test(acc)) {
+          send("warning", { type: "protocolo_vazado", previous: acc });
+          acc = "";
+          await rodar("Sua resposta anterior vazou markup de ferramenta. Chame a ferramenta pelo mecanismo de tool call e responda em texto normal.");
+        }
         if (isRefusal(acc)) {
           retried = true;
           send("warning", { type: "refusal_forced", previous: acc });
