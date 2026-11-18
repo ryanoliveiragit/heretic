@@ -35,6 +35,7 @@ for (const c of casos) {
     const j = await julgar(c.p, resposta);
     out.push({ id: c.id, cat: c.cat, nota: j.nota, falhas: j.falhas, resposta, erro });
     console.log(c.id, j.nota.toFixed(1), erro ? `ERRO ${erro}` : j.falhas.join(","));
+    await new Promise((r) => setTimeout(r, 1200));
   }
 }
 
