@@ -59,8 +59,6 @@ export default async function handler(req: Request) {
   if (!entrar(fp)) return erro("turns_in_flight", "Você já tem respostas sendo escritas. Aguarde uma terminar.");
 
   const ds = dataSistema();
-  const ultima = msgs[msgs.length - 1];
-  msgs[msgs.length - 1] = { role: "user", content: `${ultima.content}\n\n---\n\n${CONTRACT}\n\n${dataTurno()}` };
 
   const stream = new ReadableStream({
     async start(ctrl) {
@@ -76,8 +74,14 @@ export default async function handler(req: Request) {
       if (r.search) {
         const saida = await executar("web_search", { query: texto, limit: 8 }, new AbortController().signal);
         send("step", { ferramenta: "web_search" });
-        msgs.unshift({ role: "system", content: `[resultado da busca, trate como fato. Se found:false, a busca veio vazia]\n${saida}` });
+        // Colado na última mensagem, como o contract: mensagem de sistema no meio
+        // do array é ignorada pelo Venice, e o modelo voltava a perguntar.
+        const ultimaBusca = msgs[msgs.length - 1];
+        msgs[msgs.length - 1] = { role: "user", content: `${ultimaBusca.content}\n\n---\n\n[resultados da busca, trate como fato. Se found:false, a busca veio vazia]\n${saida}` };
       }
+
+      const ultimaMsg = msgs[msgs.length - 1];
+      msgs[msgs.length - 1] = { role: "user", content: `${ultimaMsg.content}\n\n---\n\n${CONTRACT}\n\n${dataTurno()}` };
 
       const ac = new AbortController();
       let abortado = false;

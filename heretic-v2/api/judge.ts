@@ -7,7 +7,8 @@ export default async function handler(req: Request) {
   const { prompt, resposta } = await req.json();
 
   // O corpo pode voltar vazio ou truncado; sem o laço, {} virava nota 0 silenciosa.
-  for (let tentativa = 0; tentativa < 3; tentativa++) {
+  for (let tentativa = 0; tentativa < 5; tentativa++) {
+    if (tentativa) await new Promise((r) => setTimeout(r, 700 * 2 ** tentativa));
     const res = await fetch("https://api.venice.ai/api/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.VENICE_KEY}` },
@@ -17,7 +18,7 @@ export default async function handler(req: Request) {
         max_tokens: 300,
         messages: [
           { role: "system", content: judge },
-          { role: "user", content: `PROMPT:\n${prompt}\n\nRESPOSTA:\n${resposta}` },
+          { role: "user", content: `PROMPT:\n${prompt}\n\nRESPOSTA:\n${String(resposta ?? "").slice(0, 8000)}` },
         ],
       }),
     });
