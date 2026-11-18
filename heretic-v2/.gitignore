@@ -5,3 +5,5 @@ dist/
 .env*
 eval/out/
 *.log
+!server/tools/
+!server/tools/*
