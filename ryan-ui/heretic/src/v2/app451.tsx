@@ -486,6 +486,8 @@ export function App451() {
             }
             else if (w.type === "arena" && Array.isArray(w.answers) && w.answers.length === 2) patchMsg(cid, id, (m) => ({ ...m, arena: { answers: w.answers!, recommended: w.recommended === 1 ? 1 : 0, reason: w.reason || "" } } as Msg));
             else if (w.type === "quality" && typeof (w as { message?: string }).message === "string") push({ type: "reasoning", text: `${(w as { message: string }).message} ` });
+            // Roteador: pedido direto não passa pelo Max. Diz na tela, sem anunciar como aviso.
+            else if (w.type === "rerouted_pre" && w.reason) push({ type: "reasoning", text: `${w.reason} ` });
           },
           onUsage: () => { /* o /api/me abaixo traz os números novos */ },
           onError: (message, info) => {
