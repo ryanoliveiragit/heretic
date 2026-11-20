@@ -1,7 +1,7 @@
-// Heretic — service worker do PWA.
+// 451.sh — service worker do PWA.
 // Arquivos fixos (design system, vendor, assets do app, ícones, fontes): cache primeiro.
 // Páginas HTML: rede primeiro, cache se estiver offline. API: nunca entra no cache.
-const VERSION = "heretic-mwl7evll"; // trocado a cada build: o cache antigo é apagado no activate
+const VERSION = "451-mwnwf54f"; // trocado a cada build: o cache antigo é apagado no activate
 const SHELL = ["/", "/m.html", "/app/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -12,7 +12,7 @@ self.addEventListener("activate", (e) => {
   e.waitUntil((async () => {
     const keys = await caches.keys();
     // Se já existia um cache de versão anterior, isto é uma ATUALIZAÇÃO (não a 1ª visita).
-    const wasUpdate = keys.some((k) => k.startsWith("heretic-") && k !== VERSION);
+    const wasUpdate = keys.some((k) => (k.startsWith("451-") || k.startsWith("heretic-")) && k !== VERSION);
     await Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k)));
     await self.clients.claim();
     // Numa atualização, FORÇA o reload de cada janela aberta a partir do próprio SW —

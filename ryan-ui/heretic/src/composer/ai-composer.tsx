@@ -26,7 +26,7 @@ import {
   type RefObject,
 } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion, useMotionValue } from "motion/react";
 import {
   ArrowUp,
   Check,
@@ -35,6 +35,7 @@ import {
   Code,
   FileSpreadsheet,
   FileText,
+  Image as ImageIcon,
   Languages,
   Lightbulb,
   Lock,
@@ -44,13 +45,16 @@ import {
   Wrench,
   X,
   Zap,
+  PenLine,
   type LucideIcon,
 } from "lucide-react";
 import { TextShimmer } from "@pro/text-shimmer/text-shimmer";
+import { VoiceOrb } from "@pro/voice-orb/voice-orb";
 import { Tooltip } from "@pro/tooltip/tooltip";
 import { motionTokens } from "@pro/lib/motion-tokens";
 import styles from "./ai-composer.module.css";
 import { t, lang } from "../i18n";
+import type { WireAttachment } from "../api";
 import { KBD } from "../kbd";
 
 const { spring, duration, ease } = motionTokens;
@@ -81,6 +85,12 @@ export interface ModelOption {
   /** Small pill after the name; locked models show "Pro" when this is empty. */
   badge?: string;
   defaultEffort?: Effort;
+  /** Janela de contexto, em tokens. */
+  ctx?: number | null;
+  /** Contador de limites deste modelo (free, titan ou max). */
+  bucket?: string;
+  /** Guia honesto da aba "Modelos" (vem do /api/me, montado no servidor). */
+  guide?: import("../api").ModelGuide;
 }
 
 interface CommandOption {
@@ -108,6 +118,12 @@ const ALL_TOKENS = COMMANDS.map((command) => command.label);
 /* ---------- attachments: text-like files only ---------- */
 
 const MAX_FILE_BYTES = 200 * 1024;
+const MAX_FREE_FILE_BYTES = 40 * 1024;
+const MAX_PDF_BYTES = 2.4 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
+const MAX_IMAGE_SIDE = 1568;
+const MAX_ATTACHMENTS = 5;
+const MAX_WIRE_CHARS = 3_400_000;
 const CODE_EXTENSIONS = new Set([
   "ts", "tsx", "js", "jsx", "mjs", "cjs", "py", "go", "rs", "rb", "java", "kt", "swift", "c", "h", "cc",
   "cpp", "hpp", "cs", "php", "lua", "r", "dart", "scala", "sh", "bash", "zsh", "ps1", "sql", "css", "scss",
@@ -116,14 +132,16 @@ const CODE_EXTENSIONS = new Set([
 ]);
 const SHEET_EXTENSIONS = new Set(["csv", "tsv"]);
 const PLAIN_EXTENSIONS = new Set(["txt", "md", "markdown", "mdx", "log", "rst", "tex", "srt", "vtt"]);
-const ACCEPT = [...PLAIN_EXTENSIONS, ...SHEET_EXTENSIONS, ...CODE_EXTENSIONS].map((ext) => `.${ext}`).join(",");
+const ACCEPT = [...PLAIN_EXTENSIONS, ...SHEET_EXTENSIONS, ...CODE_EXTENSIONS, "pdf", "jpg", "jpeg", "png", "webp", "gif", "heic", "heif"].map((ext) => `.${ext}`).join(",") + ",image/*,application/pdf";
 
-type AttachmentKind = "code" | "sheet" | "text";
+type AttachmentKind = "code" | "sheet" | "text" | "image" | "pdf";
 
 const ATTACHMENT_ICONS: Record<AttachmentKind, LucideIcon> = {
   code: Code,
   sheet: FileSpreadsheet,
   text: FileText,
+  image: ImageIcon,
+  pdf: FileText,
 };
 
 type AttachmentStatus = "uploading" | "done" | "ready" | "error";
@@ -140,6 +158,8 @@ export interface Attachment {
   error?: string;
   /** File contents, once read. */
   text?: string;
+  /** Imagem ou PDF pronto para enviar ao servidor. */
+  wire?: WireAttachment;
 }
 
 export interface SubmitPayload {
@@ -152,9 +172,52 @@ export interface SubmitPayload {
 export function withAttachments({ text, attachments }: SubmitPayload): string {
   const files = attachments
     .filter((item) => item.text !== undefined && item.status !== "error")
-    .map((item) => `\n\n--- file: ${item.name} ---\n${item.text}`)
+    .map((item) => `\n\n--- ${item.source === "paste" ? "texto colado" : "file"}: ${item.name} ---\n${item.text}`)
     .join("");
   return `${text}${files}`.trim();
+}
+
+/** Imagens e PDFs desta mensagem, no formato que o servidor recebe. */
+export const wireAttachments = ({ attachments }: SubmitPayload): WireAttachment[] =>
+  attachments.flatMap((item) => (item.wire && item.status !== "error" ? [item.wire] : []));
+
+const isImageFile = (file: File) => file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name);
+const isPdfFile = (file: File) => file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+
+/** Reduz a imagem no aparelho: arquivo menor custa menos e cabe no limite de envio. */
+function imageToWire(file: File): Promise<WireAttachment> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("decode")); };
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("canvas")); return; }
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      let data = "";
+      for (const quality of [0.85, 0.7, 0.55]) {
+        data = canvas.toDataURL("image/jpeg", quality).split(",")[1] ?? "";
+        if (data.length <= 1_100_000) break;
+      }
+      if (!data) { reject(new Error("encode")); return; }
+      resolve({ kind: "image", name: file.name || "imagem.jpg", mime: "image/jpeg", data });
+    };
+    img.src = url;
+  });
+}
+
+async function pdfToWire(file: File): Promise<WireAttachment> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return { kind: "pdf", name: file.name || "arquivo.pdf", mime: "application/pdf", data: btoa(binary) };
 }
 
 const extensionOf = (name: string) => (name.includes(".") ? (name.split(".").pop() ?? "").toLowerCase() : "");
@@ -262,12 +325,15 @@ function detectTrigger(text: string, caret: number, ranges: TokenRange[]): Trigg
   return { start: index, query };
 }
 
-function ModelMask({ size = 14 }: { size?: number }) {
+/** Mini cigarra da marca (desenho "Heretic - App Início e Modelos", opção a): prata nos grátis, osso nos Pro.
+ *  Substitui a máscara antiga (direitos de terceiros). Proporção 24×14. */
+function ModelMask({ size = 14, pro }: { size?: number; pro?: boolean }) {
   return (
     <span
       className={cx("mask", styles.modelMask)}
+      data-pro={pro ? "" : undefined}
       aria-hidden="true"
-      style={{ width: size, height: Math.round(size * 1.2) }}
+      style={{ width: Math.round(size * 1.43), height: Math.round(size * 0.86) }}
     />
   );
 }
@@ -509,6 +575,8 @@ interface ModelMenuProps {
   model: ModelOption;
   reduced: boolean;
   onModel: (id: string) => void;
+  /** Modelo bloqueado (Pro no plano grátis) clicado: abre a compra do Pro. */
+  onLocked?: (id: string) => void;
 }
 
 /** "≈$0.033/100" — só o custo (o provedor de terceiros fica escondido; a marca é Heretic). */
@@ -520,7 +588,7 @@ function modelMeta(option: ModelOption): string {
   return "";
 }
 
-function ModelMenu({ models, model, reduced, onModel }: ModelMenuProps) {
+function ModelMenu({ models, model, reduced, onModel, onLocked }: ModelMenuProps) {
   const trigger = useRef<HTMLButtonElement>(null);
   const pointer = useRef(false);
   const anyLocked = models.some((option) => option.locked);
@@ -539,9 +607,9 @@ function ModelMenu({ models, model, reduced, onModel }: ModelMenuProps) {
             pointer.current = false;
           }}
         >
-          <ModelMask />
+          <ModelMask pro />
           <WidthMorph reduced={reduced} className={styles.modelText}>
-            <span className={styles.modelName}>{model.short.replace(/^Heretic\s+/, "")}</span>
+            <span className={styles.modelName}>{model.short.replace(/^(Heretic|451)\s+/, "")}</span>
           </WidthMorph>
           <ChevronDown className={styles.chevron} aria-hidden="true" />
         </button>
@@ -579,10 +647,13 @@ function ModelMenu({ models, model, reduced, onModel }: ModelMenuProps) {
                 <DropdownMenu.RadioItem
                   key={option.id}
                   value={option.id}
-                  disabled={option.locked}
+                  // Pro no plano grátis: aparece e é clicável, mas abre a compra do Pro em vez de selecionar (dono, 18/11).
+                  data-locked={option.locked ? "" : undefined}
+                  aria-label={option.locked ? `${option.name}, bloqueado: assinar o Pro` : undefined}
+                  onSelect={option.locked ? () => onLocked?.(option.id) : undefined}
                   className={cx(styles.menuItem, styles.modelItem)}
                 >
-                  <ModelMask />
+                  <ModelMask pro={option.tier === "pro"} />
                   <span className={styles.modelItemText}>
                     <span className={styles.modelItemName}>
                       {option.name}
@@ -717,6 +788,8 @@ export interface ComposerProps {
   models: ModelOption[];
   model: ModelOption;
   onModel: (id: string) => void;
+  /** Modelo bloqueado clicado no menu (plano grátis): abre a compra do Pro. */
+  onLockedModel?: (id: string) => void;
   busy: boolean;
   /** Reply progress, 0 to 1; `null` spins the ring instead. */
   progress?: number | null;
@@ -727,6 +800,10 @@ export interface ComposerProps {
   reduced?: boolean;
   /** When set, sending is unavailable and this is the reason (shown as the send label). */
   blocked?: string | null;
+  /** Modelo pago selecionado: aceita imagem e PDF. */
+  richFiles?: boolean;
+  /** Quantos anexos ainda cabem nos limites de uso. */
+  attachLeft?: { images: number; files: number };
   onSubmit: (payload: SubmitPayload) => void;
   onStop: () => void;
   /** Screen-reader messages; the composer keeps its own live region when this is omitted. */
@@ -735,6 +812,10 @@ export interface ComposerProps {
   quality?: boolean;
   onQuality?: () => void;
   qualityAvailable?: boolean;
+  /** Agente afinador (Pro): reescreve o pedido antes de enviar. Só aparece quando enhanceAvailable. */
+  enhance?: boolean;
+  onEnhance?: () => void;
+  enhanceAvailable?: boolean;
 }
 
 type Option = { id: string; command: CommandOption };
@@ -744,6 +825,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     models,
     model,
     onModel,
+    onLockedModel,
     busy,
     progress = null,
     progressSeconds = 0,
@@ -752,12 +834,17 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     maxLength = 16000,
     reduced: reducedProp,
     blocked = null,
+    richFiles = false,
+    attachLeft,
     onSubmit,
     onStop,
     announce: announceProp,
     quality = false,
     onQuality,
     qualityAvailable = false,
+    enhance = false,
+    onEnhance,
+    enhanceAvailable = false,
   },
   ref,
 ) {
@@ -799,6 +886,37 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const discard = useRef(false);
   const listId = useId();
   const hintId = useId();
+
+  // Volume do microfone (0..1) para o orbe reagir à voz enquanto dita. Fonte própria (getUserMedia +
+  // AnalyserNode), em paralelo ao reconhecimento de fala; desliga junto com o ditado.
+  const micLevel = useMotionValue(0);
+  useEffect(() => {
+    if (!dictation) return;
+    let ctx: AudioContext | null = null, raf = 0, stream: MediaStream | null = null, stop = false;
+    (async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (stop) { stream.getTracks().forEach(t => t.stop()); return; }
+        const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        ctx = new AC();
+        const src = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 512;
+        src.connect(analyser);
+        const buf = new Uint8Array(analyser.frequencyBinCount);
+        const tick = () => {
+          analyser.getByteTimeDomainData(buf);
+          let sum = 0;
+          for (let i = 0; i < buf.length; i++) { const v = (buf[i]! - 128) / 128; sum += v * v; }
+          const rms = Math.sqrt(sum / buf.length); // 0..~0.5 na fala normal
+          micLevel.set(Math.min(1, rms * 2.6));
+          raf = requestAnimationFrame(tick);
+        };
+        tick();
+      } catch { /* sem permissão de microfone: o orbe fica parado */ }
+    })();
+    return () => { stop = true; cancelAnimationFrame(raf); micLevel.set(0); if (ctx) ctx.close().catch(() => {}); if (stream) stream.getTracks().forEach(t => t.stop()); };
+  }, [dictation, micLevel]);
 
   const ranges = useMemo(() => findTokens(value, tokens), [value, tokens]);
   const caretInfo = useMemo(
@@ -906,13 +1024,29 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const addFiles = useCallback(
     (files: File[]) => {
       if (!files.length) return;
+      const pending = attachments.filter((item) => item.status !== "error");
+      let total = pending.length;
+      let imagesLeft = (attachLeft?.images ?? Infinity) - pending.filter((item) => item.kind === "image").length;
+      let filesLeft = (attachLeft?.files ?? Infinity) - pending.filter((item) => item.kind !== "image" && item.source === "file").length;
+      const maxText = richFiles ? MAX_FILE_BYTES : MAX_FREE_FILE_BYTES;
       const items = files.map((file) => {
         const extension = extensionOf(file.name);
-        const error = !isTextFile(file) ? t("Text files only") : file.size > MAX_FILE_BYTES ? t("Over 200 KB") : undefined;
+        const image = isImageFile(file);
+        const pdf = !image && isPdfFile(file);
+        let error: string | undefined;
+        if ((image || pdf) && !richFiles) error = "Imagem e PDF só nos modelos Pro";
+        else if (!image && !pdf && !isTextFile(file)) error = "Tipo de arquivo não aceito";
+        else if (image && file.size > MAX_IMAGE_BYTES) error = "Imagem acima de 15 MB";
+        else if (pdf && file.size > MAX_PDF_BYTES) error = "PDF acima de 2,4 MB";
+        else if (!image && !pdf && file.size > maxText) error = richFiles ? "Arquivo acima de 200 KB" : "Arquivo acima de 40 KB no plano grátis";
+        else if (total >= MAX_ATTACHMENTS) error = "Máximo de 5 anexos por mensagem";
+        else if (image && imagesLeft <= 0) error = "Limite de imagens enviadas atingido";
+        else if (!image && filesLeft <= 0) error = "Limite de arquivos atingido";
+        if (!error) { total += 1; if (image) imagesLeft -= 1; else filesLeft -= 1; }
         return {
           id: nextAttachmentId(),
           source: "file",
-          kind: fileKind(file.name),
+          kind: image ? "image" : pdf ? "pdf" : fileKind(file.name),
           name: file.name || t("Pasted file"),
           size: file.size,
           meta: `${extension ? extension.toUpperCase() : "Text"}, ${formatSize(file.size)}`,
@@ -924,7 +1058,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       setAttachments((current) => [...current, ...items]);
       const errors = items.filter((item) => item.status === "error");
       if (errors.length) {
-        announce(`${errors.map((item) => item.name).join(", ")}: only text files up to 200 KB can be attached`);
+        announce(`${errors.map((item) => `${item.name}: ${item.error}`).join(", ")}`);
       } else {
         announce(items.length === 1 ? `Reading ${items[0]?.name}` : `Reading ${items.length} files`);
       }
@@ -933,6 +1067,19 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         if (item.status === "error" || !file) return;
         const settleItem = (patch: Partial<Attachment>) =>
           setAttachments((current) => current.map((entry) => (entry.id === item.id ? { ...entry, ...patch } : entry)));
+        if (item.kind === "image" || item.kind === "pdf") {
+          (item.kind === "image" ? imageToWire(file) : pdfToWire(file)).then(
+            (wire) => setAttachments((current) => {
+              const others = current.reduce((sum, entry) => sum + (entry.id !== item.id && entry.status !== "error" ? entry.wire?.data.length ?? 0 : 0), 0);
+              const over = others + wire.data.length > MAX_WIRE_CHARS;
+              return current.map((entry) => (entry.id !== item.id ? entry : over
+                ? { ...entry, status: "error" as const, error: "Anexos acima do tamanho total" }
+                : { ...entry, status: "done" as const, progress: 1, wire }));
+            }),
+            () => settleItem({ status: "error", error: "Não consegui abrir este arquivo" }),
+          );
+          return;
+        }
         file.text().then(
           (text) =>
             text.includes("\u0000")
@@ -942,8 +1089,16 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         );
       });
     },
-    [announce],
+    [announce, attachments, attachLeft, richFiles],
   );
+
+  // Trocou para um modelo sem anexos: imagem e PDF já escolhidos deixam de valer.
+  useEffect(() => {
+    if (richFiles) return;
+    setAttachments((current) => current.map((item) => (item.kind === "image" || item.kind === "pdf") && item.status !== "error"
+      ? { ...item, status: "error", error: "Imagem e PDF só nos modelos Pro", wire: undefined }
+      : item));
+  }, [richFiles]);
 
   const fill = useCallback(
     (text: string) => {
@@ -1306,43 +1461,48 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             {dictation && (
               <motion.div
                 key="dictation"
-                className={styles.dictation}
-                initial={reduced ? { opacity: 0 } : { opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
+                className={styles.voiceOverlay}
+                initial={reduced ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0, transition: { duration: duration.fast } }}
                 transition={{ duration: duration.standard, ease: [...ease.enter] }}
+                role="dialog"
+                aria-label={t("Dictate")}
               >
-                <Tooltip content={t("Cancel dictation")}>
-                  <button
-                    type="button"
-                    className={styles.dictationButton}
-                    aria-label={t("Cancel dictation")}
-                    onClick={cancelDictation}
-                  >
-                    <X aria-hidden="true" />
-                  </button>
-                </Tooltip>
-                {heard ? (
-                  <span className={styles.transcript} aria-hidden="true">
-                    <span>{heard}</span>
-                  </span>
-                ) : (
-                  <span className={styles.transcribing}>
-                    <TextShimmer>{dictation.phase === "listening" ? t("Listening") : t("Transcribing")}</TextShimmer>
-                  </span>
-                )}
-                <DictationTimer from={dictation.startedAt} />
-                <Tooltip content={t("Insert the transcript")}>
-                  <button
-                    type="button"
-                    className={cx(styles.dictationButton, styles.dictationDone)}
-                    aria-label={t("Insert the transcript")}
-                    onClick={finishDictation}
-                    disabled={dictation.phase !== "listening"}
-                  >
-                    <Check aria-hidden="true" />
-                  </button>
-                </Tooltip>
+                <div className={styles.voiceStage}>
+                  <VoiceOrb
+                    state={dictation.phase === "listening" ? "listening" : "thinking"}
+                    level={micLevel}
+                    size={168}
+                    showLabel={false}
+                    label={t("Dictate")}
+                    onPress={dictation.phase === "listening" ? finishDictation : undefined}
+                  />
+                  <p className={styles.voiceText} aria-live="polite">
+                    {heard
+                      ? heard
+                      : <TextShimmer>{dictation.phase === "listening" ? t("Listening") : t("Transcribing")}</TextShimmer>}
+                  </p>
+                  <div className={styles.voiceControls}>
+                    <Tooltip content={t("Cancel dictation")}>
+                      <button type="button" className={styles.voiceBtn} aria-label={t("Cancel dictation")} onClick={cancelDictation}>
+                        <X aria-hidden="true" />
+                      </button>
+                    </Tooltip>
+                    <DictationTimer from={dictation.startedAt} />
+                    <Tooltip content={t("Insert the transcript")}>
+                      <button
+                        type="button"
+                        className={cx(styles.voiceBtn, styles.voiceBtnPrimary)}
+                        aria-label={t("Insert the transcript")}
+                        onClick={finishDictation}
+                        disabled={dictation.phase !== "listening"}
+                      >
+                        <Check aria-hidden="true" />
+                      </button>
+                    </Tooltip>
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1351,11 +1511,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         <div className={styles.toolbar}>
           {/* Barra igual ao mockup do Claude Design: [+] [mic] [modelo] à esquerda; [⌘K] [enviar] à direita. */}
           <div className={styles.toolGroup}>
-            <Tooltip content={t("Attach a text file")}>
+            <Tooltip content={richFiles ? "Anexar imagem, PDF ou arquivo" : "Anexar arquivo de texto"}>
               <button
                 type="button"
                 className={styles.iconButton}
-                aria-label={t("Attach a text file")}
+                aria-label={richFiles ? "Anexar imagem, PDF ou arquivo" : "Anexar arquivo de texto"}
                 onClick={() => fileInput.current?.click()}
               >
                 <Plus aria-hidden="true" />
@@ -1376,7 +1536,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 </button>
               </Tooltip>
             ) : null}
-            <ModelMenu models={models} model={model} reduced={reduced} onModel={onModel} />
+            <ModelMenu models={models} model={model} reduced={reduced} onModel={onModel} onLocked={onLockedModel} />
             {qualityAvailable && onQuality ? (
               <Tooltip content={t("Quality mode: race 2 models, keep the best")}>
                 <button
@@ -1390,6 +1550,23 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 >
                   <Zap aria-hidden="true" />
                   <span className="hx-qswitch-label">{t("Quality")}</span>
+                  <span className="hx-qswitch-track" aria-hidden="true"><span className="hx-qswitch-thumb" /></span>
+                </button>
+              </Tooltip>
+            ) : null}
+            {enhanceAvailable && onEnhance ? (
+              <Tooltip content={t("Agent: rewrites your prompt for a better answer")}>
+                <button
+                  type="button"
+                  className="hx-qswitch"
+                  role="switch"
+                  aria-checked={!!enhance}
+                  aria-label={t("Agent")}
+                  data-on={enhance ? "1" : "0"}
+                  onClick={onEnhance}
+                >
+                  <PenLine aria-hidden="true" />
+                  <span className="hx-qswitch-label">{t("Agent")}</span>
                   <span className="hx-qswitch-track" aria-hidden="true"><span className="hx-qswitch-thumb" /></span>
                 </button>
               </Tooltip>

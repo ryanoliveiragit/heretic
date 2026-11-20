@@ -1,0 +1,23 @@
+/* Assinar o Pro: preço grande centrado, formas de pagamento em lista (estilo da imagem do dono). */
+.hx-paydlg { width: min(640px, calc(100vw - 32px)); }
+.hx-pay { display: flex; flex-direction: column; gap: var(--space-3, 12px); padding-top: var(--space-2, 8px); }
+.hx-pay-period { display: flex; justify-content: center; }
+.hx-pay-price {
+  display: flex; justify-content: center; margin-top: var(--space-4, 16px);
+  font-family: var(--font-display, "Instrument Serif", serif); font-weight: 400;
+  font-size: clamp(44px, 9vw, 64px); line-height: 1; letter-spacing: -0.01em; color: var(--foreground);
+}
+.hx-pay-sub { margin: 0; text-align: center; color: var(--text-secondary); }
+.hx-pay-note { margin: 0 auto; max-width: 30em; text-align: center; font-size: var(--text-sm, 13px); line-height: 1.5; color: var(--text-muted); }
+.hx-pay-k { margin: var(--space-4, 16px) 0 0; font-size: var(--text-sm, 13px); color: var(--text-secondary); }
+.hx-pay-err { margin: 0; font-size: var(--text-sm, 13px); color: var(--danger, #f0335a); }
+.hx-pay-actions { display: flex; justify-content: flex-end; gap: var(--space-2, 8px); margin-top: var(--space-2, 8px); flex-wrap: wrap; }
+.hx-pay-foot { margin: 0; text-align: center; font-size: var(--text-xs, 12px); color: var(--text-muted); }
+.hx-pay-key { display: flex; align-items: center; gap: var(--space-2, 8px); flex-wrap: wrap; justify-content: center; }
+.hx-pay-key code { font-family: "Geist Mono", ui-monospace, monospace; font-size: 13px; word-break: break-all; color: var(--foreground); }
+/* Controles com o acento do tema (a ryan-ui usa lime por padrão). */
+.hx-paydlg { --control-on: var(--accent); --control-fill: var(--accent); --control-thumb-on: #151515; --control-glyph: #151515; }
+@media (max-width: 560px) {
+  .hx-pay-actions { flex-direction: column-reverse; }
+  .hx-pay-actions > * { width: 100%; }
+}

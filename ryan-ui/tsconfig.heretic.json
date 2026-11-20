@@ -1,0 +1,30 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@pro/*": [
+        "../ryan-ui-work/rebrand/site-impl/src/components/ryan/*"
+      ],
+      "@app/*": [
+        "./heretic/src/*"
+      ],
+      "@beui/*": [
+        "./heretic/src/v2/beui/*"
+      ]
+    }
+  },
+  "include": [
+    "heretic/src/**/*.ts",
+    "heretic/src/**/*.tsx",
+    "heretic/src/**/*.d.ts",
+    "*.d.ts",
+    "registry/**/*.d.ts",
+    "heretic-home/**/*.tsx"
+  ]
+}

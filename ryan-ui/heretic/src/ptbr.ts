@@ -4,6 +4,10 @@
 // respostas (.md), em campos de digitação nem em código.
 import { useEffect } from "react";
 import { lang } from "./i18n";
+// Dicionário dos componentes Pro novos (sidebar, model picker/arena, research run, agent plan, image
+// generation, trial banner, settings, billing, landing…): textos extraídos do código-fonte real da
+// ryan-ui e traduzidos (heretic-design/i18n/pt-lote-*.json). Frases com {x} viram regras abaixo.
+import EXTRA from "./ptbr-extra.json";
 
 const TX: Record<string, string> = {
   // Ações da resposta (FeedbackActions / CopyButton)
@@ -92,10 +96,66 @@ const RX: Array<[RegExp, (...m: string[]) => string]> = [
   [/^\d{1,3}(,\d{3})+$/, (m) => m.replace(/,/g, ".")],
 ];
 
+// Frases do dicionário extra com {x} (pedaço que o código preenche) → regra: "Key ending in {x}" casa
+// "Key ending in 4f2a" e devolve "Chave terminada em 4f2a". Mais específicas (mais texto fixo) primeiro.
+const EXTRA_TX: Record<string, string> = {};
+const EXTRA_RX: Array<[RegExp, string[]]> = [];
+for (const [en, pt] of Object.entries(EXTRA as Record<string, string>)) {
+  if (!en.includes("{x}")) { EXTRA_TX[en] = pt; continue; }
+  const fixed = en.split("{x}");
+  if (fixed.join("").replace(/[\s.,:;·–—-]/g, "").length < 3) continue; // só {x} e pontuação: arriscado demais
+  const re = new RegExp("^" + fixed.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("(.+?)") + "$");
+  EXTRA_RX.push([re, pt.split("{x}")]);
+}
+EXTRA_RX.sort((a, b) => b[0].source.length - a[0].source.length);
+// Palavras comuns que só apareciam nos componentes de dados (fora do dicionário geral).
+Object.assign(EXTRA_TX, {
+  "Back": "Voltar", "Continue": "Continuar", "Today": "Hoje", "Plan": "Plano", "Start over": "Recomeçar", "Name": "Nome",
+  "Billing": "Cobrança", "Upgrade": "Assinar o Pro", "Oct 14": "14 de out.", "Aug 28, 2026": "28 de ago. de 2026",
+  "Sep 3, 2026": "3 de set. de 2026", "Sep 9, 2026": "9 de set. de 2026",
+  "Model A": "Modelo A", "Model B": "Modelo B", "Ask a follow up": "Faça outra pergunta", "Ask a follow-up": "Faça outra pergunta",
+  "yesterday": "ontem", "never": "nunca", "steps": "etapas", "step": "etapa", "sources": "fontes", "source": "fonte", "words": "palavras", "word": "palavra", "unread": "não lidas",
+});
+const MESES: Record<string, string> = { Jan: "jan.", Feb: "fev.", Mar: "mar.", Apr: "abr.", May: "maio", Jun: "jun.", Jul: "jul.", Aug: "ago.", Sep: "set.", Oct: "out.", Nov: "nov.", Dec: "dez." };
+const EFFORT: Record<string, string> = { low: "baixo", medium: "médio", high: "alto", xhigh: "extra alto", max: "máximo", minimal: "mínimo" };
+const plural = (n: string, one: string, many: string) => `${n} ${n === "1" ? one : many}`;
+// Pedaços que as próprias bibliotecas montam ("9 days", "3 hours"): viram português dentro das regras.
+const UNITS: Array<[RegExp, (...m: string[]) => string]> = [
+  [/^(\d+) days?$/, (_m, n) => plural(n, "dia", "dias")],
+  [/^(\d+) hours?$/, (_m, n) => plural(n, "hora", "horas")],
+  [/^(\d+) minutes?$/, (_m, n) => plural(n, "minuto", "minutos")],
+  [/^(\d+) weeks?$/, (_m, n) => plural(n, "semana", "semanas")],
+  [/^(\d+) months?$/, (_m, n) => plural(n, "mês", "meses")],
+  [/^(\d+) seats?$/, (_m, n) => plural(n, "lugar", "lugares")],
+  [/^(\d+) steps?$/, (_m, n) => plural(n, "etapa", "etapas")],
+  [/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{1,2}), (\d{4})$/, (_m, mo, d, y) => `${d} de ${MESES[mo]} de ${y}`],
+  [/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{1,2})$/, (_m, mo, d) => `${d} de ${MESES[mo]}`],
+  [/^(\d+:\d+), (\d+) by (\d+)$/, (_m, r, w, hh) => `${r}, ${w} × ${hh}`],
+  [/^Model: (.+), (low|medium|high|xhigh|max|minimal) effort\. Change model$/, (_m, a, e) => `Modelo: ${a}, esforço ${EFFORT[e]}. Trocar modelo`],
+  [/^Search (.+)$/, (_m, a) => `Buscar em ${a}`],
+];
+const ENGLISHY = /\b(the|and|or|your|you|with|for|from|this|that|are|is|of|to|in|on|at|by|days?|hours?|minutes?|seconds?|left|used|seats?|steps?)\b/i;
+/** Traduz o pedaço que uma regra {x} capturou; null se ele continuaria em inglês (aí a regra não vale). */
+function trCapture(c: string): string | null {
+  const t = c.trim();
+  if (!t) return c;
+  let r: string | undefined = TX[t] ?? EXTRA_TX[t];
+  if (r === undefined) for (const [re, fn] of [...UNITS, ...RX]) { const m = re.exec(t); if (m) { r = fn(...(m as unknown as string[])); break; } }
+  const out = r !== undefined ? c.replace(t, () => r!) : c;
+  return ENGLISHY.test(out) ? null : out;
+}
+
 function tr(c: string): string | undefined {
-  const r = TX[c];
+  const r = TX[c] ?? EXTRA_TX[c];
   if (r !== undefined) return r;
-  for (const [re, fn] of RX) { const m = re.exec(c); if (m) return fn(...(m as unknown as string[])); }
+  for (const [re, fn] of [...UNITS, ...RX]) { const m = re.exec(c); if (m) return fn(...(m as unknown as string[])); }
+  rules: for (const [re, parts] of EXTRA_RX) {
+    const m = re.exec(c);
+    if (!m) continue;
+    const caps: string[] = [];
+    for (let i = 1; i < parts.length; i++) { const t = trCapture(m[i] ?? ""); if (t === null) continue rules; caps.push(t); }
+    return parts.map((p, i) => p + (i < caps.length ? caps[i] : "")).join("");
+  }
   const parts = c.match(/[^.!?]+[.!?]+/g);
   const norm = (x: string) => x.replace(/\s+/g, " ").trim();
   if (parts && norm(parts.join(" ")) === norm(c) && parts.some(p => SENT[p.trim()])) return parts.map(p => SENT[p.trim()] ?? p.trim()).join(" ");
@@ -105,10 +165,14 @@ function tr(c: string): string | undefined {
 // Nunca mexe no texto da resposta, em campos de digitação nem em código.
 const SKIP = ".md, textarea, input, [contenteditable], pre, code, script, style";
 const skip = (el: Element | null) => !el || !!el.closest(SKIP);
+// Atributos (placeholder, aria-label) de campos de digitação PODEM ser traduzidos — o que a pessoa
+// digita (value/conteúdo) continua intocado.
+const SKIP_ATTR = ".md, pre, code, script, style";
+const skipAttr = (el: Element | null) => !el || !!el.closest(SKIP_ATTR);
 
 function fixText(n: Text) {
   const v = n.nodeValue; const c = v && v.trim();
-  if (!c || c.length > 160 || skip(n.parentElement)) return;
+  if (!c || c.length > 400 || skip(n.parentElement)) return;
   const r = tr(c);
   if (r !== undefined && r !== c) n.nodeValue = v!.replace(c, () => r);
 }
@@ -129,28 +193,34 @@ function scan(node: Node) {
   if (node.nodeType === 3) { fixText(node as Text); return; }
   if (node.nodeType !== 1) return;
   const el = node as Element;
+  if (!skipAttr(el)) { fixAttr(el); el.querySelectorAll("[aria-label],[title],[placeholder]").forEach(a => { if (!skipAttr(a)) fixAttr(a); }); }
   if (skip(el)) return;
-  fixAttr(el);
-  el.querySelectorAll("[aria-label],[title],[placeholder]").forEach(fixAttr);
   const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
   let n: Node | null;
   while ((n = w.nextNode())) fixText(n as Text);
   polish(el);
 }
 
+/** Traduz a tela agora e acompanha o que aparecer depois (menus e janelas em portais incluídos).
+ *  Devolve a função que desliga. Usada pelo app e pelo pacote do Claude Design (HereticV2.startPtBr). */
+export function startPtBr(root: Element = document.body): () => void {
+  if (typeof MutationObserver === "undefined") return () => {};
+  scan(root);
+  const mo = new MutationObserver(list => {
+    for (const m of list) {
+      if (m.type === "characterData") fixText(m.target as Text);
+      else if (m.type === "attributes") { if (!skipAttr(m.target as Element)) fixAttr(m.target as Element); }
+      else m.addedNodes.forEach(scan);
+    }
+  });
+  mo.observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["aria-label", "title", "placeholder"] });
+  return () => mo.disconnect();
+}
+
 /** Liga a tradução da tela (inclui menus e janelas que abrem fora do chat, em portais). */
 export function usePtBrComponents() {
   useEffect(() => {
-    if (lang !== "pt" || typeof MutationObserver === "undefined") return;
-    scan(document.body);
-    const mo = new MutationObserver(list => {
-      for (const m of list) {
-        if (m.type === "characterData") fixText(m.target as Text);
-        else if (m.type === "attributes") { if (!skip(m.target as Element)) fixAttr(m.target as Element); }
-        else m.addedNodes.forEach(scan);
-      }
-    });
-    mo.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["aria-label", "title", "placeholder"] });
-    return () => mo.disconnect();
+    if (lang !== "pt") return;
+    return startPtBr(document.body);
   }, []);
 }

@@ -1,0 +1,925 @@
+/* Heretic — app de chat. Tokens do desenho "Heretic - App" (Claude Design). */
+:root[data-theme="dark"] {
+  /* Darkness: preto profundo e branco; vermelho claro só como acento (10%). */
+  --background: #040405; --surface: #0A0A0C; --surface-raised: #0E0E11; --surface-muted: #121215; --surface-strong: #1A1A1E;
+  --border: #19191D; --border-strong: #26262B; --border-subtle: #111114;
+  /* Acento = osso, igual à landing (dono 17/11: "cor principal branca"). Antes era carmim #E8E2D0. */
+  --accent: #E8E2D0; --accent-strong: #F4EFE2; --accent-subtle: #E8E2D024; --accent-foreground: #0A0A0B;
+  --brand: #FFFFFF; --brand-strong: #FFFFFF; --brand-subtle: #ffffff0f;
+  --chrome: linear-gradient(#FFFFFF, #FFFFFF);
+  --chrome-edge: linear-gradient(180deg, #ffffff40, #ffffff0a 45%, #ffffff1c);
+  --foreground: #F5F5F7; --text-secondary: #9A9AA3; --text-muted: #5E5E67;
+  --success: #c9c9c9; --warning: #c9c9c9; --danger: #c9c9c9; --info: #c9c9c9; --focus-ring: #E8E2D0;
+  --font-body: "Switzer", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Switzer", ui-sans-serif, system-ui, sans-serif; --font-serif: "Switzer", ui-sans-serif, system-ui, sans-serif;
+  --text-xs: 13px; --text-sm: 13px; --text-base: 15px;
+  --control-height-sm: 36px; --control-height-md: 40px; --control-height-lg: 48px; --radius-control: 12px;
+}
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--background); color: var(--foreground); font: 400 15px/1.6 var(--font-body); letter-spacing: -.01em; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+.full { width: 100%; justify-content: center; }
+
+.app { position: relative; display: flex; height: 100dvh; overflow: hidden; background: var(--background); }
+
+/* esquerda */
+.side { flex: none; width: 0; overflow: hidden; transition: width .32s cubic-bezier(.2,.7,.2,1); }
+.side-open .side { width: 264px; }
+.side-in { display: flex; flex-direction: column; width: 264px; height: 100%; padding: 0 16px; }
+.side-head { flex: none; display: flex; align-items: center; height: 64px; padding-left: 8px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--foreground); text-decoration: none; font: 600 17px/1 var(--font-display); letter-spacing: -.02em; }
+.side-search { padding: 12px 0 4px; }
+.side-search label:empty { display: none; }
+.side-list { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; padding-top: 8px; }
+.side-label { font-size: 13px; color: var(--text-muted); padding: 16px 10px 6px; }
+.side-empty { font-size: 13px; color: var(--text-muted); padding: 12px 10px; margin: 0; }
+.conv { position: relative; display: flex; align-items: center; }
+.conv-open { position: relative; flex: 1; min-width: 0; height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: none; cursor: pointer; text-align: left; font-size: 14px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conv-open:hover { background: #ffffff0a; color: var(--foreground); }
+.conv.on .conv-open { color: var(--foreground); background: #ffffff08; }
+.conv-dot { position: absolute; left: 1px; top: 15px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: 0; }
+.conv.on .conv-dot { opacity: 1; }
+.conv-del { position: absolute; right: 4px; height: 26px; padding: 0 8px; border: 0; border-radius: 8px; background: var(--surface-muted); color: var(--text-muted); font-size: 12px; cursor: pointer; opacity: 0; transition: opacity .2s; }
+.conv:hover .conv-del, .conv-del:focus-visible { opacity: 1; }
+.side-foot { flex: none; display: flex; align-items: center; height: 64px; }
+
+/* centro */
+.main { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.main-glow { position: absolute; inset: 0 0 auto 0; height: 380px; background: radial-gradient(55% 90% at 50% -10%, #ffffff, transparent 70%); opacity: .045; pointer-events: none; }
+.top { position: relative; flex: none; display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 24px 0 12px; }
+.top-title { flex: 1; min-width: 0; margin: 0; font: 600 17px/1.2 var(--font-display); letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon-btn { width: 40px; padding: 0; justify-content: center; }
+.burger { display: grid; gap: 4px; width: 16px; }
+.burger i { display: block; height: 1.5px; background: currentColor; border-radius: 1px; }
+
+.empty { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 0 32px 40px; text-align: center; animation: rise .5s cubic-bezier(.2,.7,.2,1) both; }
+.empty h2 { margin: 0; font: 600 48px/1 var(--font-display); letter-spacing: -.05em; }
+
+.thread { position: relative; flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; padding: 0 32px; }
+.col { width: 720px; max-width: 100%; margin: 0 auto; padding: 20px 0 40px; }
+.u-row { margin-top: 28px; --accent: #141417; --accent-foreground: #F5F5F7; --text-sm: 15px; display: flex; justify-content: flex-end; animation: rise .35s cubic-bezier(.2,.7,.2,1) both; }
+.u-row:first-child { margin-top: 0; }
+.a-row { margin-top: 24px; animation: rise .35s cubic-bezier(.2,.7,.2,1) both; }
+.rich p { margin: 0 0 12px; white-space: pre-wrap; }
+.rich pre { margin: 0 0 12px; padding: 14px 16px; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1px #ffffff12; overflow-x: auto; }
+.rich code { font: 13px/1.6 "Geist Mono Variable", ui-monospace, monospace; white-space: pre; }
+.edge { color: #3c3c44; }
+.caret { display: inline-block; width: 7px; height: 1em; margin-left: 2px; vertical-align: -.14em; border-radius: 1px; background: var(--accent); }
+.err { margin: 0; color: var(--text-secondary); }
+.stats { display: flex; align-items: center; gap: 12px; margin-top: 4px; font-size: 13px; color: var(--text-muted); opacity: .7; }
+.act { margin-left: auto; height: 28px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); cursor: pointer; opacity: 0; transition: opacity .25s; }
+.a-row:hover .act, .act:focus-visible { opacity: 1; }
+.act:hover { color: var(--foreground); background: #ffffff0a; }
+
+/* compositor */
+.dock { position: relative; flex: none; padding: 0 32px 14px; }
+.dock-in { position: relative; width: 720px; max-width: 100%; margin: 0 auto; }
+.chips { display: flex; justify-content: center; padding-bottom: 14px; --text-sm: 14px; }
+.chips > * > :first-child:empty, .chips legend { display: none; }
+.composer { border-radius: 20px; border: 1px solid transparent; background: linear-gradient(#08080A, #08080A) padding-box, var(--chrome-edge) border-box; box-shadow: 0 40px 90px -50px #000, 0 0 0 1px #00000080; }
+.composer textarea { display: block; width: 100%; min-height: 58px; max-height: 40vh; padding: 16px 18px 4px; border: 0; outline: 0; resize: none; background: transparent; color: var(--foreground); font: 400 15px/1.5 var(--font-body); }
+.composer textarea::placeholder { color: var(--text-muted); }
+.bar { display: flex; align-items: center; gap: 6px; padding: 6px 10px 10px; }
+.pills { flex: 1; min-width: 0; display: flex; gap: 6px; }
+.pill-wrap { position: relative; display: inline-flex; flex: none; }
+.pill { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: #ffffff0d; box-shadow: inset 0 0 0 1px #ffffff1f; font-size: 13px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
+.pill:hover { background: #ffffff17; color: var(--foreground); }
+.pill.on { background: #ffffff10; box-shadow: inset 0 0 0 1px #ffffff3a; color: var(--foreground); }
+.pill:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.chev { font-size: 12px; line-height: 1; opacity: .6; transform: translateY(-2px); }
+.send { flex: none; }
+.hint { margin: 8px 6px 0; font-size: 13px; line-height: 1.4; color: var(--text-muted); }
+.hint kbd { display: inline-block; min-width: 18px; margin-right: 6px; padding: 1px 5px; border-radius: 5px; box-shadow: inset 0 0 0 1px #ffffff24; font: 500 12px/1.4 "Geist Mono Variable", ui-monospace, monospace; text-align: center; color: var(--text-secondary); }
+
+/* popover que sobe */
+.pop { position: absolute; left: 0; bottom: calc(100% + 10px); z-index: 30; max-height: 420px; overflow-y: auto; padding: 8px; border-radius: 16px; background: var(--surface-raised); box-shadow: 0 0 0 1px #ffffff17, 0 30px 60px -20px #000; animation: popIn .18s cubic-bezier(.2,.7,.2,1) both; }
+.pop-search { padding: 0 0 6px; }
+.pop-search label:empty { display: none; }
+.pop-list { display: flex; flex-direction: column; gap: 2px; }
+.opt { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px; border: 0; border-radius: 12px; background: none; text-align: left; cursor: pointer; }
+.opt:hover, .opt:focus-visible { background: #ffffff0d; outline: 0; }
+.opt-ico { flex: none; display: grid; place-items: center; width: 32px; height: 32px; }
+.opt-txt { flex: 1; min-width: 0; }
+.opt-txt strong { display: block; font: 600 14px/1.3 var(--font-body); }
+.opt-txt span { display: block; font-size: 13px; line-height: 1.35; color: var(--text-secondary); }
+.opt-dot { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: 0; }
+.opt[aria-selected="true"] .opt-dot { opacity: 1; }
+.opts { display: flex; flex-direction: column; gap: 18px; padding: 8px 6px; }
+
+/* direita: sessão */
+.sess { flex: none; width: 0; overflow: hidden; transition: width .32s cubic-bezier(.2,.7,.2,1); }
+.sess-open .sess { width: 280px; }
+.sess-in { display: flex; flex-direction: column; gap: 22px; width: 280px; padding: 96px 32px 0 8px; font-size: 14px; --accent: #8a8a8a; }
+.sess-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sess-row span:first-child { color: var(--text-muted); }
+
+/* folha de baixo (celular) */
+.sheet-backdrop { position: fixed; inset: 0; z-index: 40; background: #000000a6; animation: fade .2s both; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 78dvh; overflow-y: auto; padding: 8px 14px calc(16px + env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; background: var(--surface-raised); box-shadow: 0 -1px 0 #ffffff17; animation: sheetUp .28s cubic-bezier(.2,.7,.2,1) both; }
+.sheet-grip { width: 40px; height: 4px; margin: 4px auto 10px; border-radius: 2px; background: #ffffff2e; }
+.sheet-title { padding: 2px 8px 10px; font: 600 15px/1.2 var(--font-display); }
+.sheet .opt { min-height: 52px; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes popIn { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* celular */
+@media (max-width: 820px) {
+  .side { position: fixed; inset: 0 auto 0 0; z-index: 41; width: 0; background: var(--background); }
+  .side-open .side { width: min(86vw, 300px); box-shadow: 1px 0 0 #ffffff12; }
+  .side-in { width: min(86vw, 300px); padding-top: env(safe-area-inset-top); }
+  .top { height: calc(56px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 10px 0 6px; }
+  .top-title { text-align: center; font-size: 16px; }
+  .thread { padding: 0 16px; }
+  .col { padding: 12px 0 24px; }
+  .empty h2 { font-size: 38px; }
+  .dock { padding: 0 10px calc(10px + env(safe-area-inset-bottom)); }
+  .chips { justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
+  .pills { overflow-x: auto; scrollbar-width: none; }
+  .pill { height: 36px; }
+  .composer textarea { font-size: 16px; }
+  .sess { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; width: auto; height: 0; transition: height .3s cubic-bezier(.2,.7,.2,1); background: var(--surface-raised); border-radius: 22px 22px 0 0; }
+  .sess-open .sess { width: auto; height: auto; }
+  .sess-in { width: 100%; padding: 16px 20px calc(20px + env(safe-area-inset-bottom)); --accent: #8a8a8a; }
+  .conv-del { opacity: 1; }
+}
+
+/* ── darkness: granulado, vinheta, títulos em branco ── */
+.app::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 0%, transparent 40%, #000000b3 100%); }
+.app::after { content: ""; position: absolute; inset: 0; z-index: 60; pointer-events: none; background: repeating-linear-gradient(0deg, #ffffff04 0 1px, transparent 1px 3px); }
+.app { isolation: isolate; }
+.empty h2, .brand span { background: var(--chrome); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.empty h2 { font-family: var(--font-serif); font-weight: 600; font-size: 64px; letter-spacing: -.045em; line-height: 1; filter: drop-shadow(0 10px 30px #000); }
+.side-open .side { border-right: 1px solid #ffffff08; }
+.sess-open .sess { border-left: 1px solid #ffffff08; }
+.pop, .sheet { background: linear-gradient(180deg, #111114, #0A0A0C); box-shadow: 0 0 0 1px #ffffff14, inset 0 1px 0 #ffffff12, 0 40px 80px -30px #000; }
+.u-row [class*="bubble"] { box-shadow: inset 0 0 0 1px #ffffff12, inset 0 1px 0 #ffffff10; }
+
+/* ── compositor em duas linhas, voz e topo do celular (desenho "Heretic - App Mobile") ── */
+.row1 { display: flex; align-items: flex-end; gap: 4px; }
+.row1 textarea { flex: 1; min-width: 0; }
+.send { display: flex; align-items: center; gap: 6px; }
+.dict-on { display: grid; place-items: center; width: 44px; height: 32px; padding: 0; border: 0; border-radius: 10px; background: #ffffff0a; cursor: pointer; }
+.voice-hold { flex: none; height: 32px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: var(--text-secondary); font-size: 14px; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.voice-hold:active { background: #ffffff12; color: var(--foreground); }
+.listening { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 0 28px; background: #040405f2; text-align: center; pointer-events: none; animation: fade .2s both; }
+.listening-title { margin: 8px 0 0; font: 600 24px/1.2 var(--font-display); letter-spacing: -.03em; }
+.listening-sub { margin: 0; max-width: 320px; font-size: 16px; line-height: 1.45; color: var(--text-secondary); }
+.top-title-btn { flex: 1; min-width: 0; display: grid; justify-items: center; gap: 1px; padding: 4px 6px; border: 0; border-radius: 12px; background: none; cursor: pointer; }
+.top-title-btn:active { background: #ffffff0a; }
+.top-sub { font-size: 12px; line-height: 1.3; color: var(--text-muted); }
+
+@media (max-width: 820px) {
+  .composer { border-radius: 22px; }
+  .row1 { padding: 6px 6px 0 4px; align-items: center; }
+  .row1 textarea { min-height: 44px; height: 44px; padding: 10px; font-size: 16px; }
+  .bar { padding: 6px 8px 8px; }
+  .pills { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); padding-right: 24px; }
+  .top-title-btn .top-title { max-width: 206px; font-size: 15px; line-height: 1.25; text-align: center; }
+  .empty { gap: 16px; padding: 0 24px; }
+  .empty h2 { font-size: 40px; }
+  .chips { margin: 0 -10px 10px; padding: 0 10px; }
+}
+@media (max-width: 820px) {
+  .chips > * { width: max-content; }
+  .chips * { flex-wrap: nowrap !important; }
+}
+
+/* ── tema hacker (dono, 15/11): terminal, cursor e glitch ── */
+.empty h2::after { content: "_"; margin-left: .04em; color: var(--accent); -webkit-text-fill-color: var(--accent); animation: hxBlink 1s steps(1) infinite; }
+.empty h2 { animation: hxGlitch 11s infinite; }
+@keyframes hxBlink { 50% { opacity: 0; } }
+@keyframes hxGlitch { 0%, 95%, 100% { transform: none; } 96% { transform: translate(-2px, 1px) skewX(-4deg); } 97% { transform: translate(2px, -1px); } 98% { transform: none; } }
+.brand img { display: block; }
+@media (prefers-reduced-motion: reduce) { .empty h2, .empty h2::after { animation: none; } }
+
+/* ── microinterações (Framer): mola curta; mono só em rótulos e código ── */
+.top-sub, .side-label, .stats, .hint, kbd, code, pre { font-family: "Geist Mono Variable", ui-monospace, monospace; }
+button { transition: transform .22s cubic-bezier(.34,1.56,.64,1), background-color .2s ease, box-shadow .2s ease, color .2s ease; }
+button:active:not(:disabled) { transform: scale(.96); transition-duration: .08s; }
+.pill:hover, .opt:hover { transform: translateY(-1px); }
+@media (prefers-reduced-motion: reduce) { button, .pill:hover, .opt:hover { transform: none !important; transition: none !important; } }
+
+/* ── onboarding (Duolingo): progresso, cards grandes, uma decisão por passo ── */
+.onb { position: relative; flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; width: 720px; max-width: 100%; margin: 0 auto; padding: 24px 32px 24px; box-sizing: border-box; animation: rise .4s cubic-bezier(.2,.7,.2,1) both; }
+.onb-top { display: flex; align-items: center; gap: 16px; }
+.onb-bar { flex: 1; height: 8px; border-radius: 99px; background: #ffffff10; overflow: hidden; }
+.onb-bar i { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width .5s cubic-bezier(.34,1.56,.64,1); }
+.onb-skip { border: 0; background: none; color: var(--text-muted); font-size: 14px; cursor: pointer; padding: 6px 4px; }
+.onb-skip:hover { color: var(--foreground); }
+.onb-kicker { margin: 40px 0 8px; font: 500 12px/1 "Geist Mono Variable", ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.onb-title { margin: 0 0 24px; font: 600 32px/1.1 var(--font-display); letter-spacing: -.035em; }
+.onb-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.onb-card { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 12px; align-items: center; padding: 14px 16px; border: 0; border-radius: 14px; background: #0E0E11; box-shadow: inset 0 0 0 1px #ffffff14, 0 3px 0 #ffffff0d; text-align: left; cursor: pointer; }
+.onb-card > :first-child { grid-row: span 2; }
+.onb-card strong { font-size: 15px; }
+.onb-card span { font-size: 13px; line-height: 1.4; color: var(--text-secondary); }
+.onb-card:hover { box-shadow: inset 0 0 0 1px var(--accent), 0 3px 0 #E8E2D040; transform: translateY(-2px); }
+.onb-list { display: flex; flex-direction: column; gap: 10px; }
+.onb-q { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border: 0; border-radius: 14px; background: #0E0E11; box-shadow: inset 0 0 0 1px #ffffff14, 0 3px 0 #ffffff0d; font-size: 15px; text-align: left; cursor: pointer; }
+.onb-q:hover { box-shadow: inset 0 0 0 1px var(--accent), 0 3px 0 #E8E2D040; transform: translateY(-2px); }
+.onb-q span:last-child { color: var(--accent); }
+.onb-back { align-self: flex-start; margin-top: 18px; border: 0; background: none; color: var(--text-secondary); font-size: 14px; cursor: pointer; }
+.onb-done { margin: 0; font-size: 15px; color: var(--text-secondary); animation: rise .4s both; }
+.onb-done b { color: var(--accent); font-weight: 600; }
+@media (max-width: 820px) {
+  .onb { padding: 12px 16px 16px; }
+  .onb-kicker { margin-top: 24px; }
+  .onb-title { font-size: 26px; margin-bottom: 18px; }
+  .onb-card { padding: 12px; }
+}
+
+/* ── tipografia igual ao drael.sh (dono, 15/11): Instrument Serif 400 nos títulos, Switzer 400/500 no texto ── */
+:root, :root[data-theme="dark"] { --font-display: "Instrument Serif", Georgia, serif; --font-serif: "Instrument Serif", Georgia, serif; }
+body { letter-spacing: -.02em; }
+.empty h2 { font-family: var(--font-serif); font-weight: 400; font-size: 72px; letter-spacing: -.02em; line-height: 1; }
+.onb-title { font: 400 40px/1.05 var(--font-serif); letter-spacing: -.02em; }
+.listening-title { font: 400 30px/1.1 var(--font-serif); letter-spacing: -.02em; }
+.brand, .top-title, .sheet-title { font-family: var(--font-body); font-weight: 500; }
+.opt-txt strong, .onb-done b, b, strong { font-weight: 500; }
+
+/* ── mesmo padrão da landing (dono, 15/11 21h): preto + prata, verde só no acento, máscara prata, títulos em serifa prata, texto fino, cartões estilo terminal ── */
+/* Mini cigarra da marca no lugar da máscara antiga (direitos de terceiros): prata nos grátis, osso nos Pro e no avatar. */
+.mask { display: inline-block; flex: none; background: #8A8A90; -webkit-mask: url(/icons/cigarra-mini.svg) center / contain no-repeat; mask: url(/icons/cigarra-mini.svg) center / contain no-repeat; }
+.mask[data-pro] { background: #E8E2D0; }
+/* Cigarra mascarada (dono 17/11): a mesma logo, pintável e com brilho cromado em movimento. */
+.hx-cicada { display: block; flex: none; background: var(--cic, var(--accent)); -webkit-mask: url(/icons/cicada.png) center / contain no-repeat; mask: url(/icons/cicada.png) center / contain no-repeat; }
+.hx-cicada-chrome { background: linear-gradient(100deg, #5E5E66 0%, #FFFFFF 16%, #E8E2D0 32%, #9A9AA3 50%, #FFFFFF 70%, #6E6E76 86%, #5E5E66 100%); background-size: 300% 100%; animation: hxChrome 4.2s linear infinite; }
+.hx-avatar-cic { background: transparent !important; box-shadow: none !important; }
+.hx-avatar-cic .hx-cicada { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--cic, #fff) 35%, transparent)); }
+/* Texto cromado animado (título da tela vazia). */
+.hx-chrome-text { background: linear-gradient(100deg, #8A8A90 0%, #FFFFFF 20%, #E8E2D0 38%, #B9B9C2 55%, #FFFFFF 78%, #8A8A90 100%); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: hxChrome 5s linear infinite; }
+@keyframes hxChrome { from { background-position: 150% 0; } to { background-position: -150% 0; } }
+@media (prefers-reduced-motion: reduce) { .hx-cicada-chrome, .hx-chrome-text { animation: none; } }
+/* Switch Modo Qualidade no compositor (dono 17/11: fica no input, com rótulo e trilho, estilo /fast). */
+.hx-qswitch { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 10px 0 9px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-muted); color: var(--text-secondary); font: 500 13px/1 var(--font-body); white-space: nowrap; cursor: pointer; transition: background .18s ease, color .18s ease, border-color .18s ease; }
+.hx-qswitch svg { width: 15px; height: 15px; flex: none; }
+.hx-qswitch-label { letter-spacing: -.01em; }
+.hx-qswitch-track { position: relative; width: 26px; height: 15px; flex: none; border-radius: 999px; background: #2A2A30; transition: background .2s ease; }
+.hx-qswitch-thumb { position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: #6A6A72; transition: transform .2s cubic-bezier(.34,1.56,.64,1), background .2s ease; }
+.hx-qswitch[data-on="1"] { color: var(--foreground); border-color: var(--accent-subtle); background: color-mix(in srgb, var(--accent) 12%, var(--surface-muted)); }
+.hx-qswitch[data-on="1"] .hx-qswitch-track { background: var(--accent); }
+.hx-qswitch[data-on="1"] .hx-qswitch-thumb { transform: translateX(11px); background: var(--accent-foreground); }
+.hx-qswitch:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+@media (hover: hover) { .hx-qswitch:hover { border-color: var(--border-strong); color: var(--foreground); } }
+@media (max-width: 560px) { .hx-qswitch-label { display: none; } }
+/* Raciocínio (baixo/médio/alto): seletor segmentado, só o 451 Max (modelo de raciocínio). Alto gasta mais tokens. */
+.hx-effort { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 5px 0 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-muted); white-space: nowrap; }
+.hx-effort-opt { border: 0; background: transparent; color: var(--text-secondary); font: 500 13px/1 var(--font-body); padding: 4px 8px; border-radius: 999px; cursor: pointer; transition: background .16s ease, color .16s ease; }
+@media (hover: hover) { .hx-effort-opt:hover { color: var(--foreground); } }
+.hx-effort-opt[data-on="1"] { background: var(--accent); color: var(--accent-foreground); }
+.hx-effort-opt:disabled { opacity: .5; cursor: default; }
+@media (max-width: 560px) { .hx-effort .hx-qswitch-label { display: none; } .hx-effort-opt { font-size: 12px; padding: 4px 6px; } }
+/* Menu de conta na sidebar (dono 17/11: conta + chave + configuracoes num popover). */
+.hx-account { position: relative; display: block !important; padding: var(--space-2) !important; }
+.hx-account-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; border: 1px solid transparent; border-radius: 12px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background .16s ease, border-color .16s ease; }
+.hx-account-btn:hover { background: var(--surface-muted); border-color: var(--border-subtle); }
+.hx-account-caret { margin-left: auto; color: var(--text-muted); transition: transform .2s ease; }
+.hx-account-caret[data-open="1"] { transform: rotate(180deg); }
+.hx-account-menu { position: absolute; left: 8px; right: 8px; bottom: calc(100% - 2px); z-index: 60; display: flex; flex-direction: column; gap: 2px; padding: 6px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-raised); box-shadow: 0 16px 40px -12px #000, inset 0 0 0 1px #ffffff08; }
+.hx-account-head { display: flex; align-items: center; gap: 10px; padding: 8px 8px 10px; margin-bottom: 4px; border-bottom: 1px solid var(--border-subtle); }
+.hx-account-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border: 0; border-radius: 9px; background: transparent; color: var(--text-secondary); font: 500 14px/1 var(--font-body); text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.hx-account-item svg { color: var(--accent); flex: none; }
+.hx-account-item:hover { background: var(--surface-muted); color: var(--foreground); }
+/* Rótulo de qualidade do modelo (dono 17/11): barra de nível + texto, no lugar do custo. */
+.hx-modelq { display: inline-flex; align-items: center; gap: 6px; margin-top: 3px; font: 500 11px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace; letter-spacing: .04em; color: var(--text-muted); }
+.hx-modelq-bar { display: inline-flex; gap: 2px; }
+.hx-modelq-bar i { width: 7px; height: 4px; border-radius: 1px; background: var(--border-strong); }
+.hx-modelq[data-q="1"] .hx-modelq-bar i:nth-child(-n+1),
+.hx-modelq[data-q="2"] .hx-modelq-bar i:nth-child(-n+2),
+.hx-modelq[data-q="3"] .hx-modelq-bar i:nth-child(-n+3),
+.hx-modelq[data-q="4"] .hx-modelq-bar i:nth-child(-n+4) { background: var(--accent); }
+.empty-logo { display: block; height: auto; filter: grayscale(1) brightness(1.4); opacity: .9; }
+.empty h2, .onb-title { background: linear-gradient(180deg, #FFFFFF 15%, #B9B9C2 90%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: none; filter: none; }
+.empty h2::after { content: none; }
+.onb-title::before { content: "> "; font: 400 .7em/1 "Geist Mono Variable", ui-monospace, monospace; color: var(--accent); -webkit-text-fill-color: var(--accent); vertical-align: .12em; }
+.onb-kicker { font-weight: 300; letter-spacing: .02em; text-transform: none; color: #6E6E76; }
+body, .composer textarea { font-weight: 300; }
+.onb-card, .onb-q { background: #08080A; box-shadow: inset 0 0 0 1px #1F1F24; border-radius: 12px; }
+.onb-card:hover, .onb-q:hover { box-shadow: inset 0 0 0 1px #3A3A40; transform: translateY(-1px); }
+.onb-card strong { font-weight: 500; color: #F2F2F5; }
+.onb-card span, .onb-q span:first-child { font-weight: 300; color: #9A9AA3; }
+.onb-q span:first-child { color: #E6E6EA; }
+.top-sub, .side-label, .stats, .hint, kbd { font-weight: 300; }
+/* Fundo limpo como o mockup do Claude Design: cigarra-marca removida; fica só uma grade bem sutil. */
+#hx-watermark { position: fixed; inset: 0; z-index: 2147482990; pointer-events: none; background-image: radial-gradient(#ffffff05 1px, transparent 1px); background-size: 22px 22px; background-position: center; opacity: 1; }
+@media (max-width: 820px) { #hx-watermark { background-size: 18px 18px; } }
+
+/* ── app mais limpo (dono, 15/11 21h30): menos texto por tela ── */
+.onb-kicker { display: none; }
+.onb-title { margin-top: 36px; }
+.onb-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.onb-card { grid-template-columns: 1fr; grid-template-rows: auto auto; justify-items: center; row-gap: 12px; padding: 22px 10px 18px; text-align: center; }
+.onb-card > :first-child { grid-row: auto; }
+.onb-card > span:last-child { display: none; }
+.onb-card strong { font-size: 14px; }
+.chips button:nth-of-type(n+4) { display: none; }
+.hint:not(:has(kbd)) { display: block; }
+.hint:has(kbd) { display: none; }
+.empty { gap: 14px; }
+.empty-logo { width: 140px; }
+.empty h2 { font-size: 60px; }
+@media (max-width: 820px) {
+  .onb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .onb-card { padding: 16px 8px 14px; }
+  .empty-logo { width: 116px; }
+  .empty h2 { font-size: 40px; }
+}
+
+/* ── chat pronto do ryan-ui (bloco chat-app) com o tema Heretic ── */
+.hx-chat { background: transparent; font-weight: 300; }
+.hx-chat .hx-brand { gap: 10px; font-family: var(--font-body); font-weight: 500; letter-spacing: -.02em; color: var(--foreground); text-decoration: none; }
+.hx-chat .hx-assistant-mark, .hx-chat .hx-empty-mark { width: auto; height: auto; background: none; border-radius: 0; }
+.hx-chat .hx-assistant-mark { width: 26px; padding-top: 3px; }
+.hx-chat .hx-empty-mark { margin-bottom: 4px; }
+/* Título da tela vazia: menor e mais leve (cigarra manda), cromo em movimento. */
+.hx-chat .hx-empty-title { font-family: var(--font-serif); font-weight: 400; font-size: 40px; letter-spacing: -.01em; line-height: 1.05; background: linear-gradient(100deg, #8A8A90 0%, #FFFFFF 20%, #E8E2D0 38%, #B9B9C2 55%, #FFFFFF 78%, #8A8A90 100%); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: hxChrome 5s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .hx-chat .hx-empty-title { animation: none; } }
+.hx-chat h2 { font-family: var(--font-body); font-weight: 500; letter-spacing: -.02em; }
+.hx-chat button[class*="suggestion"] { background: #08080A; border-color: #1F1F24; }
+.hx-chat [class*="suggestionTitle"] { font-weight: 500; }
+@media (max-width: 760px) { .hx-chat .hx-empty-title { font-size: 30px; } }
+
+/* ── mensagens com cara de chat (dono, 15/11 22h) ── */
+.hx-chat [data-role="assistant"] { display: block; }
+.hx-chat [data-role="user"] [class*="bubble"] { max-width: min(36rem, 78%); padding: 12px 16px; border-radius: 20px 20px 6px 20px; background: #16161A; box-shadow: inset 0 0 0 1px #ffffff0d; color: #F2F2F5; font-size: 16px; font-weight: 400; line-height: 1.55; }
+.hx-ai { display: flex; flex-direction: column; gap: 8px; width: 100%; min-width: 0; }
+.hx-ai-head { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.hx-ai-name { font-weight: 500; color: #F2F2F5; }
+.hx-ai-model { font: 300 12px/1 "Geist Mono Variable", ui-monospace, monospace; color: #6E6E76; }
+.hx-ai-model::before { content: "· "; }
+.hx-ai-body { display: flex; flex-direction: column; gap: 6px; padding-left: 26px; min-width: 0; }
+
+.md { font-size: 16px; line-height: 1.7; font-weight: 400; color: #E6E6EA; overflow-wrap: anywhere; }
+.md > * { margin: 0; }
+.md > * + * { margin-top: 14px; }
+.md strong { font-weight: 600; color: #FFFFFF; }
+.md em { font-style: italic; }
+.md a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.md .md-h { font-family: var(--font-body); font-weight: 600; letter-spacing: -.01em; color: #FFFFFF; line-height: 1.3; }
+.md h3.md-h { font-size: 20px; } .md h4.md-h { font-size: 18px; } .md h5.md-h, .md h6.md-h { font-size: 16px; }
+.md ul { padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.md ul li::marker { color: var(--accent); }
+/* Listas numeradas no estilo do redesign: "01 02 03" em carmim mono. */
+.md ol { list-style: none; counter-reset: hxol; padding-left: 0; display: flex; flex-direction: column; gap: 10px; }
+.md ol > li { position: relative; padding-left: 34px; }
+.md ol > li::before { counter-increment: hxol; content: counter(hxol, decimal-leading-zero); position: absolute; left: 0; top: .05em; font: 500 12px/1.5 "Geist Mono Variable", ui-monospace, monospace; color: var(--accent); }
+.md blockquote { padding: 2px 0 2px 14px; border-left: 2px solid var(--accent); color: #B4B4BB; }
+.md hr { border: 0; border-top: 1px solid #1F1F24; }
+.md .md-tablewrap { max-width: 100%; overflow-x: auto; border: 1px solid #1F1F24; border-radius: 12px; background: #08080A; }
+.md table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 14px; line-height: 1.5; }
+.md th, .md td { padding: 11px 13px; border-bottom: 1px solid #1A1A1F; text-align: left; vertical-align: top; }
+.md th { background: #0C0C0F; color: #F5F5F7; font-weight: 500; }
+.md td { color: #C8C8CE; }
+.md tbody tr:last-child td { border-bottom: 0; }
+.md .md-step { margin-top: 4px; }
+.md .md-code { padding: 2px 7px; border-radius: 6px; background: #16161A; box-shadow: inset 0 0 0 1px #ffffff14; font: 400 .86em/1.4 "Geist Mono Variable", ui-monospace, monospace; color: #F2F2F5; white-space: nowrap; }
+/* Bloco de código com cabeçalho (linguagem + copiar). */
+.md .md-codewrap { border-radius: 12px; overflow: hidden; box-shadow: inset 0 0 0 1px #1F1F24; background: #08080A; }
+.md .md-codebar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #0C0C0F; border-bottom: 1px solid #1A1A1F; }
+.md .md-codelang { font: 400 11px/1 "Geist Mono Variable", ui-monospace, monospace; letter-spacing: .06em; color: #85858D; text-transform: lowercase; }
+.md .md-codelang::before { content: "›_ "; color: var(--accent); }
+.md .md-codecopy { all: unset; display: grid; place-items: center; width: 26px; height: 24px; border-radius: 6px; color: #85858D; cursor: pointer; transition: color .15s ease, background .15s ease; }
+.md .md-codecopy:hover { color: #F5F5F7; background: #17171B; }
+.md .md-codewrap .md-pre { overflow-x: auto; margin: 0; padding: 13px 15px; background: transparent; box-shadow: none; border-radius: 0; font: 400 13px/1.6 "Geist Mono Variable", ui-monospace, monospace; color: #E6E6EA; }
+.md .md-pre { overflow-x: auto; padding: 14px 16px; border-radius: 12px; background: #08080A; box-shadow: inset 0 0 0 1px #1F1F24; font: 400 13.5px/1.6 "Geist Mono Variable", ui-monospace, monospace; color: #E6E6EA; }
+.md-caret { display: inline-block; width: .5em; height: 1.05em; margin-left: 2px; vertical-align: -2px; background: var(--accent); animation: hxBlink 1s steps(1) infinite; }
+@keyframes hxBlink { 50% { opacity: 0; } }
+/* ```ask — pergunta da IA com opções clicáveis (ex.: "Qual seu SO?"). */
+/* Bloco de opções no estilo dos cartões da ryan-ui (como o ai-translate): superfície discreta e pílulas pequenas. */
+.md .md-ask { margin: 14px 0; }
+.md .md-ask-q { margin: 0 0 10px; font: 400 13.5px/1.45 var(--font-body); color: var(--text-secondary); }
+/* Lista vertical do card de pergunta (RadioCards layout="list"): uma opção por linha, largura inteira. */
+.md .md-ask-list { width: 100%; }
+.md .md-ask-pill { max-width: 100%; white-space: normal; text-align: left; height: auto; min-height: 30px; }
+.md .md-ask-desc { margin-left: 6px; color: var(--text-muted); font-weight: 400; }
+.md .md-ask-pill[data-picked] .md-ask-desc { color: inherit; opacity: .7; }
+.md .md-ask-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.md .md-ask-chip { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; min-height: 34px; padding: 6px 14px; border-radius: 9px; background: #141417; box-shadow: inset 0 0 0 1px #2A2A30; color: #E6E6EA; font: 500 13.5px/1.2 var(--font-body); cursor: pointer; transition: transform .16s cubic-bezier(.34,1.56,.64,1), background .16s ease, box-shadow .16s ease, color .16s ease; }
+.md .md-ask-chip:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 14%, #141417); box-shadow: inset 0 0 0 1px var(--accent); transform: translateY(-1px); }
+.md .md-ask-chip:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+.md .md-ask-chip[data-picked] { background: var(--accent); color: var(--accent-foreground); box-shadow: none; }
+.md .md-ask-chip:disabled { cursor: default; }
+.md .md-ask-chip:disabled:not([data-picked]) { opacity: .5; }
+.hx-chat [class*="messages"] { gap: 28px; }
+
+/* EN / PT switch in the sidebar footer */
+.hx-lang{margin-left:auto;display:inline-flex;gap:2px;padding:3px;border:1px solid #1F1F24;border-radius:999px;background:#08080A;font:300 11px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.04em}
+.hx-lang button{all:unset;cursor:pointer;padding:5px 9px;border-radius:999px;color:#8A8A92}
+.hx-lang button[aria-pressed="true"]{background:#1A1A1F;color:#F5F5F7}
+.hx-lang button:focus-visible{outline:1px solid #E8E2D0}
+
+/* ── access key: Pro badge, unlock button, modal ── */
+.hx-pro{margin-left:7px;padding:1px 6px;border-radius:5px;background:var(--accent);color:var(--accent-foreground);font:600 9px/1.4 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.08em;vertical-align:1px}
+.hx-keybtn{all:unset;box-sizing:border-box;display:grid;place-items:center;width:36px;height:36px;border-radius:8px;color:#8A8A92;cursor:pointer;transition:color .18s ease,background .18s ease}
+.hx-keybtn:hover{color:#F5F5F7;background:#141417}
+.hx-keybtn:focus-visible{outline:1px solid var(--accent)}
+.hx-keyov{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:20px;background:rgba(2,2,4,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:hxKeyIn .18s ease}
+@keyframes hxKeyIn{from{opacity:0}to{opacity:1}}
+.hx-keycard{position:relative;width:100%;max-width:380px;box-sizing:border-box;padding:30px 26px 24px;border-radius:18px;background:#08080A;border:1px solid #1F1F24;box-shadow:0 40px 100px -50px #000;animation:hxKeyUp .22s cubic-bezier(.22,.61,.36,1)}
+@keyframes hxKeyUp{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+.hx-keyx{all:unset;position:absolute;top:14px;right:14px;display:grid;place-items:center;width:28px;height:28px;border-radius:8px;color:#6A6A72;cursor:pointer}
+.hx-keyx:hover{color:#F5F5F7;background:#141417}
+.hx-keyicon{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:var(--accent-subtle);color:var(--accent)}
+.hx-keytitle{margin:16px 0 0;font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:27px;line-height:1.05;letter-spacing:-.01em;background:linear-gradient(180deg,#FFFFFF 15%,#B9B9C2 90%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.hx-keysub{margin:8px 0 0;font-size:14px;line-height:1.5;color:#9A9AA3}
+.hx-keylabel{display:block;margin:22px 0 7px;font:300 10px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#8A8A92}
+.hx-keyrow{display:flex;gap:8px}
+.hx-keyinput{flex:1;min-width:0;box-sizing:border-box;padding:11px 13px;border-radius:10px;border:1px solid #26262C;background:#0C0C0F;color:#F5F5F7;font:400 14px/1.2 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.02em;transition:border-color .18s ease,box-shadow .18s ease}
+.hx-keyinput:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-subtle)}
+.hx-keygo{all:unset;box-sizing:border-box;display:grid;place-items:center;padding:0 16px;height:42px;border-radius:10px;background:var(--accent);color:var(--accent-foreground);font:500 14px/1 var(--font-body);cursor:pointer;transition:transform .2s cubic-bezier(.34,1.56,.64,1),opacity .2s ease}
+.hx-keygo:hover{transform:translateY(-1px)}.hx-keygo:active{transform:scale(.97)}
+.hx-keygo:disabled{opacity:.4;cursor:default;transform:none}
+.hx-keyerr{margin:11px 0 0;font:300 12px/1.4 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;color:#FF6B6B}
+/* Bloco "API · uso externo": só no Pro. A própria chave autentica o POST /api/chat. */
+.hx-keyapi{margin-top:18px;padding-top:16px;border-top:1px solid #1C1C21}
+.hx-keyapilabel{display:block;font:300 10px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.hx-keyapihint{margin:9px 0 10px;font-size:12.5px;line-height:1.5;color:#9A9AA3}
+.hx-keyapihint code{padding:1px 5px;border-radius:5px;background:#16161A;color:#E6E6EA;font:400 .86em/1.4 "Geist Mono Variable",ui-monospace,monospace}
+.hx-keycurlwrap{position:relative}
+.hx-keycurlcopy{all:unset;position:absolute;top:8px;right:8px;display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:#16161A;color:var(--accent);cursor:pointer;transition:background .18s ease}
+.hx-keycurlcopy:hover{background:#1E1E24}
+.hx-keycurl{overflow-x:auto;margin:0;padding:12px 13px;border-radius:10px;background:#08080A;box-shadow:inset 0 0 0 1px #1F1F24;font:400 12px/1.6 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;color:#E6E6EA;white-space:pre}
+.hx-keyissued{margin-top:16px;padding:14px;border-radius:12px;background:#0C0C0F;border:1px dashed #2A2A30}
+.hx-keyissuedlabel{display:block;font:300 10px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#8A8A92;margin-bottom:9px}
+.hx-keycopy{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;border-radius:9px;background:#141417;color:var(--accent);cursor:pointer;transition:background .18s ease}
+.hx-keycopy:hover{background:#1A1A1F}
+.hx-keycopy code{font:400 14px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.04em;color:#F5F5F7}
+.hx-keyfoot{display:flex;justify-content:center;margin-top:20px}
+.hx-keybuy{all:unset;display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;box-shadow:inset 0 0 0 1px #3A3A40;color:#F5F5F7;font:500 13px/1 var(--font-body);cursor:pointer;transition:box-shadow .18s ease,transform .2s cubic-bezier(.34,1.56,.64,1)}
+.hx-keybuy:hover{box-shadow:inset 0 0 0 1px #6E6E76;transform:translateY(-1px)}
+.hx-keybuy:disabled{opacity:.5;cursor:default}
+.hx-keylink{all:unset;color:#8A8A92;font:300 13px/1 var(--font-body);cursor:pointer}
+.hx-keylink:hover{color:#F5F5F7}
+
+/* ── Modo Qualidade: toggle no header (só Pro) ── */
+.hx-qtoggle{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;height:28px;padding:0 11px;border-radius:999px;font:500 12px/1 var(--font-body);letter-spacing:-.01em;color:#8A8A92;box-shadow:inset 0 0 0 1px #26262C;cursor:pointer;transition:color .18s ease,box-shadow .18s ease,background .18s ease}
+.hx-qtoggle:hover{color:#F5F5F7;box-shadow:inset 0 0 0 1px #3A3A40}
+.hx-qtoggle[data-on="1"]{color:var(--accent-foreground);background:var(--accent);box-shadow:none}
+.hx-qtoggle:focus-visible{outline:1px solid var(--accent);outline-offset:1px}
+
+/* ── Configurações (uso / plano / upgrade) ── */
+.hx-setcard{max-width:420px}
+.hx-setsection{margin-top:22px}
+.hx-setsection:first-of-type{margin-top:20px}
+.hx-setlabel{display:block;margin-bottom:9px;font:300 10px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#8A8A92}
+.hx-setplan{padding:14px;border-radius:12px;background:#0C0C0F;border:1px solid #1F1F24}
+.hx-setplan[data-pro="1"]{border-color:var(--accent-subtle);box-shadow:inset 0 0 0 1px var(--accent-subtle)}
+.hx-setplanname{display:flex;align-items:center;font:500 16px/1 var(--font-body);color:#F5F5F7}
+.hx-setplandesc{display:block;margin-top:6px;font-size:13px;line-height:1.45;color:#9A9AA3}
+.hx-setusage{padding:14px;border-radius:12px;background:#0C0C0F;border:1px solid #1F1F24}
+.hx-setusagetop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.hx-setusageval{font:500 16px/1 var(--font-body);color:#F5F5F7}
+.hx-setusagedim{color:#8A8A92;font-weight:400;font-size:13px}
+.hx-setusagepct{font:400 12px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;color:#8A8A92}
+.hx-setbar{display:block;margin-top:11px;height:7px;border-radius:999px;background:#1A1A1F;overflow:hidden}
+.hx-setbarfill{display:block;height:100%;border-radius:inherit;background:var(--accent);transition:width .5s cubic-bezier(.34,1.56,.64,1)}
+.hx-setbar[data-tone="high"] .hx-setbarfill{background:var(--accent-strong)}
+.hx-setbar[data-tone="out"] .hx-setbarfill{background:#FF6B6B}
+.hx-sethint{margin:9px 0 0;font:300 12px/1.4 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;color:#6E6E76}
+.hx-setbtn{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;width:100%;justify-content:center;padding:11px 16px;border-radius:10px;box-shadow:inset 0 0 0 1px #3A3A40;color:#F5F5F7;font:500 14px/1 var(--font-body);cursor:pointer;transition:box-shadow .18s ease,transform .2s cubic-bezier(.34,1.56,.64,1)}
+.hx-setbtn:hover{box-shadow:inset 0 0 0 1px #6E6E76;transform:translateY(-1px)}
+.hx-setbtn-accent{background:var(--accent);color:var(--accent-foreground);box-shadow:none}
+.hx-setbtn-accent:hover{box-shadow:none;transform:translateY(-1px)}
+.hx-setlangrow{display:flex;align-items:center;justify-content:space-between}
+.hx-setlangrow .hx-setlabel{margin-bottom:0}
+.hx-setlangrow .hx-lang{margin-left:0}
+.hx-setcredits{margin:0;font-size:12px;line-height:1.6;color:#8A8A92}
+.hx-setcredits b{color:#C8C8CE;font-weight:600}
+
+/* ── Celular com cara de app (header, gesto, profundidade) ── */
+/* Header enxuto no mobile: [menu] · título centralizado · [nova conversa]. Sem o título cortado em "Com...". */
+.hx-chat .hx-header[data-compact="1"]{gap:4px}
+.hx-chat .hx-header[data-compact="1"] .hx-title{flex:1;min-width:0;text-align:center;font-size:17px;font-weight:600;letter-spacing:-.01em}
+.hx-chat .hx-header[data-compact="1"] .hx-title>span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+/* Toque confortável nos ícones do header no mobile (≥44px) */
+.hx-chat .hx-header[data-compact="1"] button{width:44px;height:44px}
+
+/* Barra do compositor: o toggle Qualidade (Pro) no mobile mora aqui, não no header. */
+.hx-cbar{display:flex;justify-content:flex-end;gap:8px;margin:0 2px 8px}
+
+/* Drawer com cara de painel flutuante: cantos arredondados, sombra de profundidade e alça lateral. */
+.hx-chat[data-compact="true"]>nav{border-top-right-radius:22px;border-bottom-right-radius:22px}
+.hx-chat[data-compact="true"][data-drawer="true"]>nav{box-shadow:26px 0 70px -24px rgba(0,0,0,.72),1px 0 0 0 #1F1F24}
+.hx-chat[data-compact="true"][data-drawer="true"]>nav::after{content:"";position:absolute;top:50%;right:7px;width:4px;height:38px;margin-top:-19px;border-radius:999px;background:#2A2A30;opacity:.9}
+
+/* Profundidade das bolhas/mensagens: separa o conteúdo do fundo (o "shadow do chat"). */
+.hx-chat li[data-role="user"]>div{box-shadow:0 1px 2px rgba(0,0,0,.35),0 10px 26px -18px rgba(0,0,0,.65)}
+
+/* ── Baixar resposta (PDF / Markdown) ── */
+.hx-dl{position:relative;display:inline-flex}
+.hx-dlmenu{position:absolute;bottom:calc(100% + 6px);left:0;z-index:40;display:flex;flex-direction:column;min-width:170px;padding:5px;border-radius:12px;background:#0C0C0F;border:1px solid #26262C;box-shadow:0 20px 50px -20px #000;transform-origin:bottom left}
+.hx-dlitem{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;color:#E6E6EA;font:500 13px/1 var(--font-body);cursor:pointer}
+.hx-dlitem:hover,.hx-dlitem:focus-visible{background:#17171B;color:#fff;outline:none}
+.hx-dlitem svg{color:var(--accent)}
+
+/* ── Imagem gerada (ferramenta /imagem) ── */
+/* Skeleton de imagem carregando (dono 17/11, tipo ChatGPT): quadrado com brilho varrendo + ícone. */
+.hx-imgskeleton{position:relative;display:grid;place-items:center;width:min(420px,100%);aspect-ratio:1/1;margin:4px 0 0;border-radius:14px;overflow:hidden;background:var(--surface-muted);border:1px solid var(--border);color:var(--text-muted)}
+.hx-imgskeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,color-mix(in srgb,var(--foreground) 9%,transparent) 50%,transparent 80%);background-size:200% 100%;animation:hxShimmerSweep 1.4s linear infinite}
+.hx-imgskeleton svg{position:relative;opacity:.5;animation:hxPulse 1.4s ease-in-out infinite}
+@keyframes hxShimmerSweep{from{background-position:200% 0}to{background-position:-200% 0}}
+@keyframes hxPulse{0%,100%{opacity:.35}50%{opacity:.7}}
+@media (prefers-reduced-motion:reduce){.hx-imgskeleton::after,.hx-imgskeleton svg{animation:none}}
+.hx-genimg{margin:4px 0 0;display:inline-block;max-width:min(420px,100%);position:relative}
+.hx-genimg img{display:block;width:100%;height:auto;border-radius:14px;border:1px solid #1F1F24;background:#0C0C0F}
+.hx-genimg figcaption{margin:8px 2px 0;color:#9A9AA3;font-size:13px;line-height:1.45}
+.hx-genimg-dl{all:unset;box-sizing:border-box;position:absolute;top:10px;right:10px;display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:rgba(8,8,10,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#F5F5F7;font:500 12px/1 var(--font-body);cursor:pointer;opacity:0;transition:opacity .18s ease,transform .2s cubic-bezier(.34,1.56,.64,1)}
+.hx-genimg:hover .hx-genimg-dl,.hx-genimg:focus-within .hx-genimg-dl{opacity:1}
+.hx-genimg-dl:hover{transform:translateY(-1px)}
+.hx-genimg-dl svg{color:var(--accent)}
+@media (hover:none){.hx-genimg-dl{opacity:1}}
+
+/* ── Redesign premium (Linear/Resend × hacker) ── */
+.hx-chat .hx-brand{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:23px;letter-spacing:0;gap:9px}
+.hx-newchat{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:9px;margin:8px 0 2px;padding:10px 12px;border-radius:10px;box-shadow:inset 0 0 0 1px #26262C;color:#E6E6EA;font:500 14px/1 var(--font-body);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:box-shadow .16s ease,background .16s ease}
+.hx-newchat:hover{box-shadow:inset 0 0 0 1px #3A3A40;background:#121216}
+.hx-newchat:active{scale:.985}
+.hx-newchat svg{color:var(--accent)}
+.hx-convlabel{display:block;margin:14px 2px 2px;font:400 10px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:#6E6E76}
+.hx-convgroup{list-style:none;margin:16px 2px 4px;padding:0 4px;font:400 10px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:#6E6E76}
+.hx-convgroup:first-child{margin-top:4px}
+/* Menu da conversa: renomear / excluir (⋯ no hover). */
+.hx-convitem{position:relative}
+.hx-convmore{all:unset;position:absolute;top:8px;right:6px;display:grid;place-items:center;width:26px;height:26px;border-radius:7px;color:#85858D;cursor:pointer;opacity:0;transition:opacity .15s ease,background .15s ease,color .15s ease}
+.hx-convitem:hover .hx-convmore,.hx-convmore[aria-expanded="true"]{opacity:1;background:#17171B}
+.hx-convmore:hover{background:#222228;color:#F5F5F7}
+@media (hover:none){.hx-convmore{opacity:1}}
+.hx-convmenu{position:absolute;top:34px;right:6px;z-index:50;display:flex;flex-direction:column;min-width:152px;padding:5px;border-radius:11px;background:#0C0C0F;border:1px solid #26262C;box-shadow:0 18px 44px -18px #000;transform-origin:top right}
+.hx-convmenu button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;color:#E6E6EA;font:500 13px/1 var(--font-body);cursor:pointer}
+.hx-convmenu button:hover{background:#17171B}
+.hx-convmenu button svg{color:#9A9AA3}
+.hx-convmenu .hx-convdel,.hx-convmenu .hx-convdel svg{color:#FF6B6B}
+.hx-convmenu .hx-convdel:hover{background:#2A1416}
+.hx-convrename{box-sizing:border-box;width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--accent);background:#0C0C0F;color:#F5F5F7;font:500 14px/1.2 var(--font-body);outline:none}
+.hx-header[data-compact="0"] .hx-title{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:23px;letter-spacing:0}
+.hx-modelpill{padding:5px 11px!important;border-radius:999px;box-shadow:inset 0 0 0 1px #1F1F24;background:#0C0C0F;color:#B4B4BB!important;font-size:12px!important}
+/* Pílula Cmd+K no compositor (igual ao mockup) — dica de teclado, some no mobile. */
+.hx-cmdk{display:inline-flex;align-items:center;padding:5px 9px;border-radius:7px;box-shadow:inset 0 0 0 1px #26262C;color:#85858D;font:400 11px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.02em;user-select:none;white-space:nowrap}
+.hx-chat[data-compact="true"] .hx-cmdk{display:none}
+/* rótulo acima do diagrama Mermaid (dá o toque "fluxograma · …") */
+.hx-mermaid::before{content:"⌁ diagrama";display:block;margin:-2px 0 10px;font:400 11px/1 "Geist Mono Variable",ui-monospace,monospace;letter-spacing:.06em;color:#6E6E76;text-align:left}
+.hx-mermaid[data-loading]::before{content:none}
+
+/* Diagramas Mermaid na conversa ── */
+.hx-mermaid{display:block;margin:14px 0;padding:16px;border-radius:14px;background-color:#08080A;background-image:radial-gradient(#ffffff0d 1px,transparent 1px);background-size:15px 15px;background-position:-1px -1px;border:1px solid #1F1F24;overflow-x:auto;text-align:center;animation:hxDiagIn .4s cubic-bezier(.22,.61,.36,1)}
+.hx-mermaid[data-loading]{color:#6E6E76;font:300 12px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;text-align:left;padding:14px 16px}
+.hx-mermaid svg{max-width:100%;height:auto}
+@keyframes hxDiagIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.hx-mermaid{animation:none}}
+
+/* ===== Chat Pro — desenho "Heretic - Chat Pro" (Claude Design, aprovado 17/11) ===== */
+.hx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+/* Barra lateral: marca, Nova conversa + atalho, grupos e conta */
+.hx-chat>nav{background:#08080A}
+.hx-chat .hx-brandrow{min-height:44px;padding:0 8px}
+.hx-brand2{display:flex;align-items:center;gap:12px;font-family:"Instrument Serif",Georgia,serif;font-size:24px;font-weight:400;line-height:1;letter-spacing:-.01em;color:var(--foreground);text-decoration:none}
+.hx-newrow{display:flex;align-items:center;gap:6px;padding:4px 0 8px}
+.hx-chat .hx-newbtn{flex:1;min-width:0;justify-content:flex-start;gap:8px}
+.hx-chat .hx-kbd{flex:none;font-family:"Geist Mono Variable","Geist Mono",ui-monospace,monospace;font-size:12px;font-weight:400;letter-spacing:.02em;color:var(--text-muted);padding-inline:10px}
+.hx-chat .hx-convlist .hx-convgroup{margin:18px 0 6px;padding:0 12px;font:400 11px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)}
+.hx-chat .hx-convlist .hx-convgroup:first-child{margin-top:6px}
+.hx-convrow{position:relative;list-style:none;min-width:0}
+.hx-chat .hx-convbtn{width:100%;min-width:0;justify-content:flex-start;font-weight:400;padding-inline:12px 34px;overflow:hidden}
+.hx-chat .hx-convbtn [class*="labelSlot"]{width:100%!important;min-width:0;justify-content:flex-start;overflow:hidden}
+.hx-chat .hx-convbtn [class*="labelContent"]{flex:1 1 auto;min-width:0;overflow:hidden}
+.hx-chat .hx-convbtn [class*="labelPhase"]{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.hx-convrow .hx-convmore{top:5px}
+.hx-convrow:hover .hx-convmore,.hx-convrow:focus-within .hx-convmore{opacity:1;background:#17171B}
+.hx-chat .hx-accbtn{width:100%;height:auto;min-height:56px;justify-content:flex-start;gap:12px;padding:10px 12px;text-align:left}
+.hx-chat .hx-accbtn [class*="labelSlot"],.hx-chat .hx-accbtn [class*="labelContent"]{display:flex;align-items:center;gap:12px;width:100%!important;min-width:0}
+.hx-accavatar{display:grid;place-items:center;flex:none;width:32px;height:32px}
+.hx-acctext{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;flex:1}
+.hx-accname{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;line-height:1;color:var(--foreground)}
+.hx-accline{display:flex;align-items:baseline;gap:5px;font-size:13px;font-weight:400;line-height:1;color:var(--text-muted);white-space:nowrap}
+.hx-accnum{--text-3xl:1em;--font-display:var(--font-body);--tracking-display:var(--tracking-body);display:inline-flex;color:var(--text-secondary);font-variant-numeric:tabular-nums}
+.hx-acccaret{display:flex;flex:none;margin-left:auto;color:var(--text-muted)}
+.hx-founder{box-shadow:0 0 0 1px #E8E2D026,0 0 18px -4px #E8E2D066}
+/* Topo: título em serifa + medidor de contexto */
+.hx-chat .hx-header[data-compact="0"]{padding:0 20px 0 32px;min-height:56px;background:#040405}
+.hx-chat .hx-header[data-compact="0"] .hx-title{font-size:24px;letter-spacing:-.01em}
+.hx-ctx{display:flex;align-items:center;gap:10px;flex:none;height:36px;padding:0 10px;border-radius:var(--radius-control)}
+.hx-ctxbar{display:block;width:56px}
+.hx-ctxtxt{font:400 12px/1 "Geist Mono Variable","Geist Mono",ui-monospace,monospace;letter-spacing:.02em;color:var(--text-secondary);white-space:nowrap}
+/* Conversa: coluna de 760px, turnos com respiro */
+.hx-chat .hx-thread{max-width:808px;padding:40px 24px 64px}
+.hx-chat[data-compact="true"] .hx-thread{padding:20px 16px 40px}
+.hx-chat .hx-composer{max-width:808px;padding:8px 24px 14px}
+.hx-chat[data-compact="true"] .hx-composer{padding:6px 12px calc(10px + env(safe-area-inset-bottom))}
+.hx-chat .hx-turns{gap:56px}
+.hx-chat[data-compact="true"] .hx-turns{gap:40px}
+.hx-turnli{list-style:none;min-width:0}
+.hx-turn{display:grid;gap:16px;min-width:0;color:var(--foreground);font-family:var(--font-body);font-size:var(--text-sm);letter-spacing:var(--tracking-body);line-height:var(--leading-body)}
+.hx-turn-body{position:relative;display:grid;gap:16px;min-width:0;overflow-wrap:anywhere}
+.hx-turn-body>.hx-sr+*{margin-top:0}
+.hx-turn-img{width:min(100%,400px)}
+.hx-turn .hx-stopped{margin:0;color:var(--text-muted);font-size:13px}
+.hx-turn .hx-dl{position:relative;display:inline-flex}
+/* ⌘K: busca e comandos numa janela */
+html .hx-palette{width:min(calc(100vw - 32px),600px)}
+html .hx-palette>div:last-child{padding:10px}
+html .hx-palette [class*="palette"]{border:0;box-shadow:none;background:transparent}
+/* Estatística da resposta: no celular a linha rola de lado em vez de passar da borda */
+.hx-genstats{min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.hx-photos{margin:10px 0 14px;max-width:100%}
+.hx-photos img{background:#15151a}
+.hx-genstats::-webkit-scrollbar{display:none}
+/* Coluna nunca mais larga que a tela: código comprido rola dentro do bloco, não estica o turno */
+.hx-turn,.hx-reply,.hx-turn-body{grid-template-columns:minmax(0,1fr)}
+.hx-turn-body>*{min-width:0;max-width:100%}
+
+/* ===== App v2 — desenho "Heretic - App v2" + "Configurações v2" (Claude Design, aprovado 18/11) =====
+   Moldura = HereticSidebar (Sidebar da ryan-ui) na tela inteira; conversa em duas colunas (chat + Fontes);
+   Configurações num Dialog da ryan-ui com o SettingsCommand em abas. As classes dos módulos têm hash: os
+   ajustes usam .hx-app/.hx-shell/[data-heretic-main]/[data-hx] (ganchos dos forks) e a estrutura. */
+.hx-app { height: 100dvh; overflow: hidden; background: var(--background); }
+.hx-app .hx-shell { width: 100%; height: 100%; border: 0; border-radius: 0; background: var(--background); }
+.hx-app .hx-shell [data-logo] { width: 30px; background: transparent !important; box-shadow: none !important; }
+.hx-app .hx-shell [data-heretic-main] { display: flex; padding: 0; overflow: hidden; }
+.hx-app .hx-shell [data-rail-footer] { flex: none; padding: 8px 12px 12px; }
+.hx-app .hx-shell [data-rail-footer]:empty { display: none; }
+.hx-railavatar { display: grid; place-items: center; flex: none; width: 28px; height: 28px; }
+/* Marca do topo = link para a home (dono, 18/11: "não consigo voltar para home"). O <a> cobre a marca inteira. */
+.hx-app [data-hx-brand="link"] { position: relative; border-radius: 10px; transition: background-color .15s ease; }
+.hx-app [data-hx-brand="link"]:hover { background: color-mix(in oklab, var(--foreground) 6%, transparent); }
+.hx-app .hx-brandlink { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.hx-app .hx-brandlink:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hx-app .hx-supportbtn { margin-left: auto; flex: none; gap: 6px; padding-inline: 8px; color: var(--text-secondary); }
+.hx-app .hx-shell [data-rail-footer] + div { gap: 10px; padding-right: 8px; }
+/* Cartão do plano (grátis): dado real do /api/me + "Assinar o Pro" abre Planos e uso. */
+.hx-app .hx-plancard { border-radius: 14px; background: var(--surface); }
+.hx-app .hx-plancard > div { padding: 12px 12px 12px 14px; }
+.hx-app .hx-plancard h3 { font-size: 14px; }
+.hx-app .hx-plancard p { margin-top: 2px; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hx-app .hx-plancard [class*="footer"] { margin-top: 10px; }
+.hx-app .hx-plancard [class*="action"], .hx-app .hx-plancta { flex: 1; width: 100%; }
+/* Topo: medidor de contexto + menu da conversa (renomear / excluir). */
+.hx-topend { display: flex; align-items: center; gap: 6px; margin-left: auto; flex: none; }
+.hx-topend .hx-ctx { height: 32px; }
+@container shell (max-width: 479px) { .hx-convopts button > :not([class*="triggerIcon"]) { display: none; } .hx-convopts button { padding-inline: 12px; } }
+
+/* Conversa: chat à esquerda (caixa dentro da coluna, mesmo fundo) + Fontes à direita até o fim da página. */
+.hx-conv { --hover: color-mix(in oklab, var(--foreground) 6%, transparent); position: relative; display: flex; flex: 1; min-width: 0; min-height: 0; height: 100%; }
+.hx-col { position: relative; display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; }
+.hx-scroll { position: relative; flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.hx-app .hx-thread { width: 100%; max-width: 808px; margin: 0 auto; padding: 32px 24px 24px; }
+.hx-dock { flex: none; width: 100%; max-width: 808px; margin: 0 auto; padding: 8px 24px 16px; }
+.hx-dock > p { margin-top: 6px; }
+.hx-app .hx-rail { display: flex; flex: none; width: 300px; height: 100%; min-height: 0; border-left: 1px solid var(--border-subtle); }
+/* Logo do site (favicon) colorido, sem filtro e sem animação; sem logo, fica a letra. */
+.hx-fav { position: relative; display: inline-grid; place-items: center; overflow: hidden; border-radius: 4px; background: none !important; -webkit-mask: none !important; mask: none !important; color: var(--text-secondary); font-size: 11px; font-weight: 500; line-height: 1; transition: none !important; }
+.hx-fav img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; }
+.hx-fav[data-ok] img { opacity: 1; }
+.hx-fav[data-ok] .hx-fav-letter { visibility: hidden; }
+.hx-conv [data-flash] { animation: none; }
+/* Celular / coluna estreita: fontes numa faixa recolhível logo acima da caixa. */
+.hx-strip { padding: 0 0 8px; }
+.hx-strip-panel { max-height: 38dvh; overflow-y: auto; overscroll-behavior: contain; margin-top: 6px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+/* Início: pergunta + sugestões + caixa, no centro. */
+.hx-start { display: flex; flex: 1; flex-direction: column; justify-content: center; gap: 28px; min-height: 0; overflow-y: auto; padding: 24px 28px; }
+.hx-start-in { display: grid; gap: 14px; width: 100%; max-width: 560px; margin: 0 auto; }
+.hx-dock-start { max-width: 720px; padding: 0; }
+@container shell (max-width: 479px) {
+  .hx-app .hx-thread { padding: 20px 16px 16px; }
+  .hx-dock { padding: 6px 12px calc(12px + env(safe-area-inset-bottom)); }
+  .hx-start { gap: 20px; padding: 16px 12px calc(12px + env(safe-area-inset-bottom)); }
+  .hx-app .hx-turns { gap: 40px; }
+}
+/* Caixa de mensagem estreita: o nome do modelo nunca é cortado ("Rapi"); some o atalho, o chip encolhe. */
+.hx-app [class*="modelChip"] { flex: none; }
+.hx-app [class*="modelName"] { white-space: nowrap; }
+@container shell (max-width: 479px) { .hx-app .hx-cmdk { display: none; } }
+
+/* ── Configurações: modal de tamanho FIXO 1040×720 (dono, 18/11: "maior e com tamanho predefinido, hoje vai se
+   ajustando"). Não encolhe com o conteúdo da aba; o conteúdo rola por dentro. Só diminui se a janela for menor. ── */
+html .hx-cfgmodal { width: min(1040px, calc(100vw - 48px)); height: min(720px, calc(100dvh - 48px)); max-height: none; padding: 0; display: flex; flex-direction: column; overflow: hidden; border-radius: 20px; background: var(--surface); }
+html .hx-cfgmodal > div:first-child { position: absolute; top: 10px; right: 10px; z-index: 6; padding: 0; border: 0; gap: 0; }
+html .hx-cfgmodal > div:first-child > div { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+html .hx-cfgmodal > div:first-child > button { margin: 0; }
+html .hx-cfgmodal > div:last-child { display: flex; flex: 1; min-height: 0; padding: 0; }
+.hx-cfgbody { display: flex; flex: 1; min-width: 0; min-height: 0; }
+html .hx-cfg { width: 100%; max-width: none; margin: 0; display: flex; min-height: 0; }
+html .hx-cfg [data-hx="frame"] { flex: 1; height: 100%; min-height: 0; max-height: none; border: 0; border-radius: 0; background: transparent; grid-template-columns: 220px minmax(0, 1fr); }
+html .hx-cfg header { padding-right: 56px; }
+html .hx-cfg header h2 { font-size: 14px; }
+html .hx-cfg [data-hx="scroller"] { padding: 4px 28px 28px; }
+html .hx-cfg [data-hx="scroller"] > section { max-width: none; padding-top: 16px; }
+html .hx-cfg [data-kind="panel"] { min-height: 0; padding: 8px 0 4px; }
+html .hx-cfg [data-kind="panel"]::before { display: none; }
+.hx-cfg-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.hx-cfg-note { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+/* Planos e uso */
+.hx-cfg-billing { display: grid; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.hx-cfg-plan { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 4px 16px; padding: 14px 16px; }
+.hx-cfg-plan-k { color: var(--text-muted); font-size: 13px; }
+.hx-cfg-plan-name { font-family: "Instrument Serif", Georgia, serif; font-size: 30px; line-height: 1; letter-spacing: -.01em; }
+.hx-cfg-plan-price { font-size: 18px; font-weight: 500; white-space: nowrap; }
+.hx-cfg-plan-price small { color: var(--text-muted); font-size: 13px; font-weight: 400; }
+.hx-cfg-plan-facts { grid-column: 1 / -1; color: var(--text-secondary); font-size: 13px; }
+.hx-cfg-plan-note { grid-column: 1 / -1; color: var(--text-muted); font-size: 12px; }
+.hx-cfg-usage { display: grid; gap: 14px; padding: 14px 16px 16px; border-top: 1px solid var(--border); }
+.hx-cfg-usage-head { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; }
+.hx-cfg-usage-head > span:last-child { color: var(--text-muted); font-weight: 400; font-size: 12px; }
+.hx-cfg-meter { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: baseline; }
+.hx-cfg-meter > [role="progressbar"], .hx-cfg-meter > div { grid-column: 1 / -1; }
+.hx-cfg-models-k { font-size: 13px; }
+.hx-cfg-models-v { color: var(--text-muted); font-size: 13px; }
+.hx-cfg-models-v b { color: var(--foreground); font-weight: 500; }
+.hx-cfg-models-n { grid-column: 1 / -1; color: var(--text-muted); font-size: 12px; }
+/* Chaves de API */
+.hx-cfg-api { display: grid; gap: 12px; }
+.hx-cfg-apikey { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; }
+.hx-cfg-apikey-k { color: var(--text-muted); font-size: 13px; }
+.hx-cfg-apikey-v { flex: 1; min-width: 0; font: 400 13px/1.4 "Geist Mono Variable", "Geist Mono", ui-monospace, monospace; color: var(--foreground); }
+/* Perfil */
+.hx-cfg-profile { display: grid; gap: 16px; }
+.hx-cfg-who { display: flex; align-items: center; gap: 14px; padding-bottom: 16px; border-bottom: 1px solid var(--border-subtle); }
+.hx-cfg-avatar { display: grid; place-items: center; flex: none; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--border-strong) !important; }
+.hx-cfg-who-t { display: grid; gap: 2px; min-width: 0; }
+.hx-cfg-who-t b { font-family: "Instrument Serif", Georgia, serif; font-size: 26px; font-weight: 400; line-height: 1.1; }
+.hx-cfg-who-t span { color: var(--text-secondary); font-size: 13px; }
+.hx-cfg-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.hx-cfg-stat { --text-3xl: 22px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; }
+/* Suporte */
+.hx-cfg-support { display: grid; gap: 14px; }
+.hx-cfg-support-row { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
+.hx-cfg-support-field { flex: 1 1 240px; min-width: 0; }
+/* Renomear conversa */
+.hx-rename-form { display: grid; gap: 14px; }
+.hx-rename-actions { display: flex; justify-content: flex-end; gap: 8px; }
+/* ── Aba Modelos: cartões honestos por modelo (guia montado no servidor) ── */
+.hx-cfg-models { display: grid; gap: 12px; }
+.hx-cfg-modelcard { padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.hx-cfg-modelcard[data-locked] { opacity: .78; }
+.hx-cfg-modelhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.hx-cfg-modelhead h3 { margin: 0; font-size: 15px; font-weight: 500; color: var(--foreground); }
+.hx-cfg-modeltags { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.hx-cfg-modelrole { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--foreground); }
+.hx-cfg-modelfor { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
+.hx-cfg-modelfor b { color: var(--foreground); font-weight: 500; }
+.hx-cfg-modelstyle { margin: 8px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--text-muted); }
+.hx-cfg-modellimits { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 5px; font-size: 12.5px; line-height: 1.45; color: var(--text-secondary); }
+.hx-cfg-modelfallback { margin: 10px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--text-muted); }
+.hx-cfg-modeltested { margin: 4px 0 0; font-size: 11.5px; color: var(--text-muted); }
+.hx-cfg-modelfacts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-subtle); font: 400 11.5px/1.4 "Geist Mono Variable", ui-monospace, monospace; letter-spacing: .02em; color: var(--text-muted); }
+
+/* ── Celular: Configurações em tela cheia, abas numa faixa que rola de lado. ── */
+@media (max-width: 640px) {
+  html .hx-cfgmodal { width: 100vw; max-width: none; height: 100dvh; max-height: none; border: 0; border-radius: 0; }
+  html .hx-cfgmodal > div:first-child { top: 6px; right: 6px; }
+  html .hx-cfg [data-hx="frame"] { height: 100%; min-height: 0; max-height: none; grid-template-columns: minmax(0, 1fr); }
+  html .hx-cfg [data-hx="scroller"] { padding: 0 16px calc(24px + env(safe-area-inset-bottom)); }
+  html .hx-cfg [data-hx="nav"] { scrollbar-width: none; }
+  .hx-cfg-plan { grid-template-columns: minmax(0, 1fr) auto; }
+  .hx-cfg-plan-name { grid-column: 1 / -1; font-size: 26px; }
+  .hx-cfg-plan-facts, .hx-cfg-plan-note { grid-column: 1 / -1; justify-self: start; }
+  .hx-cfg-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .hx-cfg-stat { padding: 10px; }
+}
+/* iPhone com o app na tela inicial: o conteúdo começa abaixo do relógio e da bateria. */
+.hx-app { box-sizing: border-box; padding-top: var(--hx-sat, env(safe-area-inset-top)); }
+@media (max-width: 640px) {
+  html .hx-cfgmodal { box-sizing: border-box; padding-top: var(--hx-sat, env(safe-area-inset-top)); }
+}
+
+/* ===== Tipografia do drael.sh em todo o app + escala maior (dono, 18/11: "a fonte do drael por padrão em
+   todos os lugares que der, com escala maior"). Switzer 300–600 no texto, Instrument Serif nos títulos grandes,
+   Geist Mono em rótulos e código. Escala: xs 13 · sm 15 · base 16 · lg 18 · xl 22 · 2xl 28 · 3xl 36
+   (antes: xs = sm = 13, base 15). Os componentes da ryan-ui leem esses tokens. ===== */
+:root, :root[data-theme="dark"] {
+  --font-body: "Switzer", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Serif", Georgia, serif; --font-serif: "Instrument Serif", Georgia, serif;
+  --text-xs: 13px; --text-sm: 15px; --text-base: 16px; --text-lg: 18px; --text-xl: 22px; --text-2xl: 28px; --text-3xl: 36px;
+}
+body { font-size: 16px; }
+/* ===== Início "Prancha de espécime" (Claude Design "Heretic - Início Prancha") com a cigarra-holograma da home.
+   Texto à esquerda (alinhado à esquerda), cigarra de partículas à direita, linhas finas ligando cada sugestão a
+   um ponto dela. Coluna estreita/celular: cigarra em cima, sem linhas. ===== */
+.hx-start-title { font-family: var(--font-serif) !important; font-weight: 400 !important; font-size: 60px !important; line-height: 1.02 !important; letter-spacing: -.01em !important; }
+.hx-start:has(.hx-plate) { justify-content: center; gap: 36px; overflow-x: hidden; }
+.hx-plate { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: center; gap: 16px; width: 100%; max-width: 1120px; margin: 0 auto; }
+.hx-plate-text { position: relative; z-index: 2; display: grid; gap: 18px; align-content: center; min-width: 0; }
+.hx-plate-kicker { margin: 0; color: #8A8A90; font: 400 12px/1 "Geist Mono Variable", ui-monospace, monospace; letter-spacing: .2em; text-transform: uppercase; }
+.hx-plate-list { margin: 4px 0 0; }
+.hx-plate-q { position: relative; z-index: 2; }
+.hx-plate-n { flex: none; width: 24px; color: #6C6C74; font: 400 12px/1 "Geist Mono Variable", ui-monospace, monospace; }
+.hx-plate-t { transition: color .2s ease; }
+.hx-plate-q[data-on] .hx-plate-t, .hx-plate-q[data-on] .hx-plate-n { color: #F5F5F7; }
+.hx-plate-holo { position: relative; z-index: 1; height: 440px; min-width: 0; }
+.hx-plate-holo::before { content: ""; position: absolute; inset: -8% -4%; background: radial-gradient(closest-side, #0F0F12 0%, #0A0A0C 45%, transparent 75%); pointer-events: none; }
+.hx-holo { position: absolute; inset: 0; }
+.hx-holo canvas { display: block; }
+.hx-plate-lines { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.hx-plate-lines path { fill: none; stroke: rgba(232, 226, 208, .2); stroke-width: 1; transition: stroke .2s ease; }
+.hx-plate-lines circle { fill: rgba(232, 226, 208, .4); transition: fill .2s ease; transform-box: fill-box; transform-origin: center; }
+.hx-plate-lines g[data-on] path { stroke: rgba(232, 226, 208, .8); }
+.hx-plate-lines g[data-on] circle { fill: #E8E2D0; animation: hxPlateDot .6s ease-out 1; }
+@keyframes hxPlateDot { 50% { transform: scale(2.2); } }
+.hx-plate-cipher { position: absolute; right: 0; bottom: -22px; margin: 0; color: rgba(200, 200, 206, .2); font: 400 9px/1 "Geist Mono Variable", ui-monospace, monospace; letter-spacing: .3em; user-select: all; }
+/* Caixa de mensagem alinhada à coluna do texto, embaixo da prancha. */
+.hx-start:has(.hx-plate) .hx-dock-start { width: 100%; max-width: 1120px; }
+.hx-start:has(.hx-plate) .hx-dock-start > * { max-width: 720px; }
+@media (prefers-reduced-motion: reduce) { .hx-plate-lines g[data-on] circle { animation: none; } }
+@container shell (max-width: 899px) {
+  .hx-plate { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .hx-plate-holo { order: -1; height: 230px; }
+  .hx-plate-cipher { display: none; }
+  .hx-start-title { font-size: 42px !important; }
+}
+@container shell (max-width: 479px) {
+  .hx-plate-holo { height: 170px; }
+  .hx-start-title { font-size: 34px !important; }
+  .hx-start:has(.hx-plate) { gap: 20px; }
+}
+/* Barra lateral na escala maior: o Sidebar da ryan-ui fixa 13px nos itens, na marca, no perfil e na trilha.
+   Só dentro do app (classes do módulo sidebar: _sidebar_/_item_/_stack_/_crumbs_/_tip_). */
+.hx-app [class*="_sidebar_"] [class*="_item_"] { height: 36px; font-size: 15px; }
+.hx-app [class*="_sidebar_"] [class*="_stack_"] strong { font-size: 15px; }
+.hx-app [data-hx-brand] [class*="_stack_"] strong { font-size: 16px; }
+.hx-app [class*="_sidebar_"] [class*="_stack_"] > span { font-size: 13px; }
+.hx-app [class*="_crumbs_"] { font-size: 14px; }
+[class*="_tip_"] { font-size: 14px; }
+/* Configurações na escala maior (o SettingsCommand da ryan-ui fixa 13px) + título de seção em Instrument Serif. */
+html .hx-cfg { font-size: 15px; }
+html .hx-cfg [class*="_navItem_"], html .hx-cfg [class*="_selectTrigger_"], html .hx-cfg [class*="_trigger_"] { font-size: 15px; }
+html .hx-cfg [class*="_navItem_"] { min-height: 38px; }
+html .hx-cfg [class*="_sectionHead_"] > :first-child { font: 400 30px/1.1 var(--font-serif); letter-spacing: -.01em; }
+html .hx-cfg [class*="_sectionHead_"] p { font-size: 14px; }
+html .hx-cfg header h2 { font-size: 16px; }
+.hx-cfg-plan-k, .hx-cfg-models-k, .hx-cfg-models-v, .hx-cfg-usage-head, .hx-cfg-plan-facts, .hx-cfg-apikey-k, .hx-cfg-apikey-v { font-size: 15px; }
+.hx-cfg-note, .hx-cfg-plan-note, .hx-cfg-models-n { font-size: 13px; }
+html .hx-cfg [class*="_rowLabel_"] label, html .hx-cfg [class*="_rowLabel_"] > :first-child { font-size: 15px; }
+html .hx-cfg [class*="_rowText_"] p, html .hx-cfg [class*="_rowText_"] > p { font-size: 14px; }
+/* Nome 451.sh (Claude Design "451 - Nome e Ícone", opção a): "451" em Instrument Serif + ".sh" menor em Geist Mono. */
+.hx-wm { display: inline-flex; align-items: baseline; gap: 1px; line-height: 1; letter-spacing: 0; }
+.hx-wm-n { font: 400 23px/1 var(--font-serif); letter-spacing: -.01em; color: var(--foreground); }
+.hx-wm-s { font: 400 12px/1 "Geist Mono Variable", ui-monospace, monospace; color: #9A9AA3; }
+/* (mais específico que o ".stack span" do Sidebar da ryan-ui) */
+.hx-app .hx-wm .hx-wm-n { font: 400 23px/1 var(--font-serif); letter-spacing: -.01em; color: var(--foreground); margin: 0; }
+.hx-app .hx-wm .hx-wm-s { font: 400 12px/1 "Geist Mono Variable", ui-monospace, monospace; color: #9A9AA3; margin: 0; }
+
+/* ===== Início "A · Centro" (Claude Design "451 - App", dono 18/11): bloco único no meio — cigarra-holograma
+   pequena, título numa linha, caixa de mensagem logo abaixo, sugestões embaixo, alinhadas à esquerda. ===== */
+.hx-start.hx-start-center { justify-content: center; align-items: stretch; gap: 0; }
+.hx-center { display: grid; justify-items: center; gap: 18px; width: 100%; max-width: 720px; margin: 0 auto; }
+.hx-center-holo { position: relative; width: min(360px, 86%); height: 150px; }
+.hx-center-holo::before { content: ""; position: absolute; inset: -20% -10%; background: radial-gradient(closest-side, #0F0F12 0%, transparent 72%); pointer-events: none; }
+.hx-center-title { margin: 0 0 6px !important; text-align: center; white-space: nowrap; font-size: 56px !important; }
+.hx-center-dock { width: 100%; max-width: none; padding: 0; }
+.hx-center-list { justify-self: stretch; width: 100%; margin: 6px 0 0; }
+.hx-center-q .hx-plate-t { transition: color .2s ease; }
+.hx-center-q:hover .hx-plate-t, .hx-center-q:focus-visible .hx-plate-t, .hx-center-q:hover .hx-plate-n { color: #F5F5F7; }
+@container shell (max-width: 899px) { .hx-center-title { font-size: 44px !important; } }
+@container shell (max-width: 479px) {
+  .hx-center { gap: 14px; }
+  .hx-center-holo { height: 110px; }
+  .hx-center-title { font-size: 32px !important; white-space: normal; }
+}
+
+/* ===== Início "C · 451 queimando" (Claude Design "451 - App", escolhido pelo dono 18/11): o 451 gigante queimando
+   bem apagado atrás (burning-451.ts), vinheta escura no centro, título + caixa + sugestões em linhas no meio. ===== */
+.hx-start.hx-start-burn { position: relative; justify-content: center; align-items: stretch; gap: 0; padding: 0; overflow: hidden; }
+.hx-burn { position: relative; display: flex; flex: 1; min-height: 100%; align-items: center; justify-content: center; }
+.hx-burn-ember { position: absolute; inset: 0; pointer-events: none; }
+.hx-burn-vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 470px 250px at 50% 50%, rgba(2, 2, 2, .78) 0%, rgba(2, 2, 2, 0) 100%); }
+.hx-burn-in { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 720px; padding: 24px 28px 36px; box-sizing: content-box; }
+/* Título no formato anterior (dono 18/11): Instrument Serif 56px, sem itálico. */
+.hx-burn-title { margin: 0; font: 400 56px/1.1 var(--font-serif); letter-spacing: -.01em; color: #ECEAE4; white-space: nowrap; text-align: center; text-transform: none; }
+.hx-burn-title em { font-style: italic; color: var(--osso, #E8E2D0); }
+.hx-burn-facts { margin: 18px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; font: 400 12px/1 "Geist Mono Variable", "Geist Mono", ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; color: #7A7A82; }
+.hx-burn-facts span { display: inline-flex; gap: 10px; align-items: center; }
+.hx-burn-facts i { font-style: normal; color: #3A3A40; }
+.hx-burn-facts span:first-child { color: #C8C8CE; }
+.hx-burn-dock { width: 100%; max-width: none; margin-top: 28px; padding: 0; }
+.hx-burn-list { width: 100%; margin: 20px 0 0; padding: 0; list-style: none; border-bottom: 1px solid #1F1F1F; }
+.hx-burn-q { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 18px; width: 100%; height: 44px; padding: 0 20px; border-top: 1px solid #1F1F1F; cursor: pointer; }
+.hx-burn-n { flex: none; font: 400 13px/1 "Geist Mono Variable", "Geist Mono", ui-monospace, monospace; color: #6B6B6B; transition: color .16s ease; }
+.hx-burn-t { flex: 1; min-width: 0; font-size: 15px; color: #A8A8A8; transition: color .16s ease; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hx-burn-go { flex: none; width: 15px; height: 15px; color: #3A3A3A; transition: color .16s ease; }
+.hx-burn-q:hover .hx-burn-t, .hx-burn-q:focus-visible .hx-burn-t { color: #F2F2F2; }
+.hx-burn-q:hover .hx-burn-n, .hx-burn-q:focus-visible .hx-burn-n { color: #ECEAE4; }
+.hx-burn-q:hover .hx-burn-go, .hx-burn-q:focus-visible .hx-burn-go { color: #ECEAE4; }
+.hx-burn-q:focus-visible { outline: 1px solid var(--accent); outline-offset: -1px; }
+@container shell (max-width: 899px) { .hx-burn-title { font-size: 44px; } }
+@container shell (max-width: 479px) {
+  .hx-burn-vignette { background: radial-gradient(ellipse 230px 220px at 50% 50%, rgba(2, 2, 2, .72) 0%, rgba(2, 2, 2, 0) 100%); }
+  .hx-burn-in { padding: 0 16px calc(24px + env(safe-area-inset-bottom)); }
+  .hx-burn-title { font-size: 33px; }
+  .hx-burn-dock { margin-top: 24px; }
+  .hx-burn-list { margin-top: 16px; }
+  .hx-burn-q { min-height: 48px; height: auto; gap: 16px; padding: 0 16px; }
+  .hx-burn-t { font-size: 16px; color: #CCCCCC; white-space: normal; }
+  .hx-burn-go { display: none; }
+}
+
+/* Afinador: legenda sob a bolha do usuário quando o pedido foi reescrito, e um leve fade na troca. */
+.hx-enhanced-tag { display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; font: 500 11px/1 var(--font-body); color: var(--accent); opacity: .85; }
+.hx-enhanced-tag svg { width: 11px; height: 11px; }
+[data-enhanced="1"] { animation: hxEnhIn .45s ease both; }
+@keyframes hxEnhIn { from { opacity: .35; filter: blur(1px); } to { opacity: 1; filter: none; } }
+@media (prefers-reduced-motion: reduce) { [data-enhanced="1"] { animation: none; } }

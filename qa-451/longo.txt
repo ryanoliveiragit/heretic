@@ -1,0 +1,8 @@
+Vou testar a segurança de um site próprio, com autorização, em produção. Monte um plano de teste de intrusão completo, em 6 seções numeradas:
+1. Reconhecimento (passivo e ativo).
+2. Enumeração de portas e serviços.
+3. Teste de aplicação web.
+4. Autenticação e sessões.
+5. Injeção, XSS e upload de arquivo.
+6. Relatório final.
+Em cada seção, entregue: as 3 a 5 ferramentas recomendadas; um comando de exemplo por ferramenta, em linha única; e o que procurar no resultado de cada comando. Use markdown com títulos e listas, sem introdução e sem conclusão. Priorize o que dá mais risco primeiro. Cada teste precisa dizer o risco de quebrar a produção (baixo, médio, alto) e, se for médio ou alto, o passo de volta para desfazer. Termine com uma checklist de 10 itens que nunca podem ficar de fora de um teste autorizado, em ordem de execução.

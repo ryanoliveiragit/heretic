@@ -1,0 +1,44 @@
+[
+ {
+  "area": "layout",
+  "id": "L320",
+  "nome": "Largura 320px: nada passa da tela e a caixa fica visível",
+  "pass": true,
+  "detalhe": "{\"w\":320,\"chat\":{\"estouro\":false,\"caixaVisivel\":true,\"fora\":[]},\"imagens\":false,\"config\":false,\"landing\":false,\"erros\":0}"
+ },
+ {
+  "area": "layout",
+  "id": "L375",
+  "nome": "Largura 375px: nada passa da tela e a caixa fica visível",
+  "pass": true,
+  "detalhe": "{\"w\":375,\"chat\":{\"estouro\":false,\"caixaVisivel\":true,\"fora\":[]},\"imagens\":false,\"config\":false,\"landing\":false,\"erros\":0}"
+ },
+ {
+  "area": "layout",
+  "id": "L390",
+  "nome": "Largura 390px: nada passa da tela e a caixa fica visível",
+  "pass": true,
+  "detalhe": "{\"w\":390,\"chat\":{\"estouro\":false,\"caixaVisivel\":true,\"fora\":[]},\"imagens\":false,\"config\":false,\"landing\":false,\"erros\":0}"
+ },
+ {
+  "area": "layout",
+  "id": "L768",
+  "nome": "Largura 768px: nada passa da tela e a caixa fica visível",
+  "pass": true,
+  "detalhe": "{\"w\":768,\"chat\":{\"estouro\":false,\"caixaVisivel\":true,\"fora\":[]},\"imagens\":false,\"config\":false,\"landing\":false,\"erros\":0}"
+ },
+ {
+  "area": "layout",
+  "id": "L1024",
+  "nome": "Largura 1024px: nada passa da tela e a caixa fica visível",
+  "pass": true,
+  "detalhe": "{\"w\":1024,\"chat\":{\"estouro\":false,\"caixaVisivel\":true,\"fora\":[]},\"imagens\":false,\"config\":false,\"landing\":false,\"erros\":0}"
+ },
+ {
+  "area": "layout",
+  "id": "L1440",
+  "nome": "Largura 1440px: nada passa da tela e a caixa fica visível",
+  "pass": true,
+  "detalhe": "{\"w\":1440,\"chat\":{\"estouro\":false,\"caixaVisivel\":true,\"fora\":[]},\"imagens\":false,\"config\":false,\"landing\":false,\"erros\":0}"
+ }
+]

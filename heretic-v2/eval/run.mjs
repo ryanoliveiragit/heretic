@@ -14,15 +14,16 @@ async function chamar(prompt, fp) {
   const raw = await res.text();
   const evs = [...raw.matchAll(/^event: (\w+)\ndata: (.*)$/gm)].map((m) => [m[1], m[2]]);
   const erro = evs.find(([e]) => e === "error");
+  const busca = evs.some(([e, d]) => e === "step" && d.includes("web_search"));
   const texto = evs.filter(([e]) => e === "token")
     .map(([, d]) => { try { return JSON.parse(d).t ?? ""; } catch { return ""; } }).join("");
-  return { texto, erro: erro ? erro[1] : null };
+  return { texto, erro: erro ? erro[1] : null, busca };
 }
 
-async function julgar(prompt, resposta) {
+async function julgar(prompt, resposta, busca) {
   const res = await fetch(`${BASE}/api/judge`, {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, resposta }),
+    body: JSON.stringify({ prompt, resposta, busca }),
   });
   const j = await res.json().catch(() => ({}));
   return { nota: Number(j.nota) || 0, falhas: j.falhas ?? [] };
@@ -31,9 +32,13 @@ async function julgar(prompt, resposta) {
 const out = [];
 for (const c of casos) {
   for (let i = 0; i < N; i++) {
-    const { texto: resposta, erro } = await chamar(c.p, `eval-${TAG}-${c.id}-${i}`);
-    const j = await julgar(c.p, resposta);
-    out.push({ id: c.id, cat: c.cat, nota: j.nota, falhas: j.falhas, resposta, erro });
+    const { texto: resposta, erro, busca } = await chamar(c.p, `eval-${TAG}-${c.id}-${i}`);
+    let j = await julgar(c.p, resposta, busca);
+    for (let t = 0; t < 2 && j.falhas?.includes("judge_vazio"); t++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      j = await julgar(c.p, resposta, busca);
+    }
+    out.push({ id: c.id, cat: c.cat, nota: j.nota, falhas: j.falhas, busca, resposta, erro });
     console.log(c.id, j.nota.toFixed(1), erro ? `ERRO ${erro}` : j.falhas.join(","));
     await new Promise((r) => setTimeout(r, 1200));
   }
@@ -50,6 +55,6 @@ console.log("falhas:", cont);
 
 await fs.mkdir("eval/out", { recursive: true });
 await fs.writeFile(`eval/out/${TAG}.json`, JSON.stringify({
-  tag: TAG, media: media(out),
+  tag: TAG, media: media(out), modo: process.env.HERETIC_EVAL_OR === "1" ? "openrouter" : "venice",
   porCat: Object.fromEntries(Object.entries(porCat).map(([k, v]) => [k, media(v)])), cont, out,
 }, null, 2));

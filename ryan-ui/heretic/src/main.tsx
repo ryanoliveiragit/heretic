@@ -3,14 +3,30 @@ import "@fontsource-variable/geist-mono";
 import "@fontsource-variable/inter";
 import "@/registry/foundation.css";
 import "./app.css";
+import "./v2/explore.css";
+import "./v2/beui.css";
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { HereticChat } from "./HereticChat";
+import { App451 } from "./v2/app451";
+
+/* iPhone com o app instalado: a altura de tela vem sem a barra de status e sobra um vão embaixo.
+   Medimos a tela inteira e passamos como --app-h (dono 19/11: "tem um buraco no pwa"). */
+function alturaApp() {
+  const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const instalado = window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  if (!ios || !instalado) { document.documentElement.style.removeProperty("--app-h"); return; }
+  const retrato = window.matchMedia("(orientation: portrait)").matches;
+  const tela = retrato ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+  document.documentElement.style.setProperty("--app-h", `${Math.max(tela, window.innerHeight)}px`);
+}
+alturaApp();
+window.addEventListener("resize", alturaApp);
+window.addEventListener("orientationchange", () => setTimeout(alturaApp, 250));
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <HereticChat />
+    <App451 />
   </StrictMode>,
 );
 

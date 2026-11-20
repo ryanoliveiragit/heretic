@@ -1,0 +1,86 @@
+[
+ {
+  "area": "falhas",
+  "id": "F1",
+  "nome": "Servidor com erro 500: aviso na tela, app segue usável",
+  "pass": true,
+  "detalhe": "Falha simulada no servidor"
+ },
+ {
+  "area": "falhas",
+  "id": "F2",
+  "nome": "Rede caindo no envio: aviso na tela",
+  "pass": true,
+  "detalhe": "Sem conexão com o 451. Confira a internet e tente de novo."
+ },
+ {
+  "area": "falhas",
+  "id": "F3",
+  "nome": "Resposta cortada no meio (sem \"done\") não fica girando para sempre",
+  "pass": true,
+  "detalhe": "teste de corte no meio Começo da resposta que vai ser cortada no meio por uma queda de rede. Mais texto aqui para passar do filtro inicial d"
+ },
+ {
+  "area": "falhas",
+  "id": "F4",
+  "nome": "Falha da GPU: aviso na imagem e botão Fechar",
+  "pass": true,
+  "detalhe": "Não consegui gerar a imagem agora. Tente de novo."
+ },
+ {
+  "area": "falhas",
+  "id": "F5",
+  "nome": "Nenhum erro de página com as falhas",
+  "pass": true,
+  "detalhe": "limpo"
+ },
+ {
+  "area": "offline",
+  "id": "O1",
+  "nome": "Sem internet, o app instalado ainda abre",
+  "pass": false,
+  "detalhe": "service worker sem controle"
+ },
+ {
+  "area": "layout",
+  "id": "L320",
+  "nome": "Largura 320px: nada passa da tela e a caixa fica visível",
+  "pass": false,
+  "detalhe": "{\"w\":320,\"chat\":{\"estouro\":false,\"caixaVisivel\":true,\"fora\":[]},\"imagens\":false,\"config\":false,\"landing\":true,\"erros\":0}"
+ },
+ {
+  "area": "layout",
+  "id": "L375",
+  "nome": "Largura 375px: nada passa da tela e a caixa fica visível",
+  "pass": true,
+  "detalhe": "{\"w\":375,\"chat\":{\"estouro\":false,\"caixaVisivel\":true,\"fora\":[]},\"imagens\":false,\"config\":false,\"landing\":false,\"erros\":0}"
+ },
+ {
+  "area": "layout",
+  "id": "L390",
+  "nome": "Largura 390px: nada passa da tela e a caixa fica visível",
+  "pass": true,
+  "detalhe": "{\"w\":390,\"chat\":{\"estouro\":false,\"caixaVisivel\":true,\"fora\":[]},\"imagens\":false,\"config\":false,\"landing\":false,\"erros\":0}"
+ },
+ {
+  "area": "layout",
+  "id": "L768",
+  "nome": "Largura 768px: nada passa da tela e a caixa fica visível",
+  "pass": true,
+  "detalhe": "{\"w\":768,\"chat\":{\"estouro\":false,\"caixaVisivel\":true,\"fora\":[]},\"imagens\":false,\"config\":false,\"landing\":false,\"erros\":0}"
+ },
+ {
+  "area": "layout",
+  "id": "L1024",
+  "nome": "Largura 1024px: nada passa da tela e a caixa fica visível",
+  "pass": false,
+  "detalhe": "{\"w\":1024,\"chat\":{\"estouro\":false,\"caixaVisivel\":true,\"fora\":[]},\"imagens\":false,\"config\":false,\"landing\":true,\"erros\":0}"
+ },
+ {
+  "area": "layout",
+  "id": "L1440",
+  "nome": "Largura 1440px: nada passa da tela e a caixa fica visível",
+  "pass": false,
+  "detalhe": "{\"w\":1440,\"chat\":{\"estouro\":false,\"caixaVisivel\":true,\"fora\":[]},\"imagens\":false,\"config\":false,\"landing\":true,\"erros\":0}"
+ }
+]

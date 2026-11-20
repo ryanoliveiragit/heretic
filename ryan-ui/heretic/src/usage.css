@@ -1,0 +1,26 @@
+/* Anel do uso no avatar do rodapé: a parte acesa é o que ainda resta da janela mais apertada. */
+.hx-usage-ring {
+  --hx-usage-on: var(--accent);
+  /* O anel fica por fora do avatar sem ocupar espaço: o nome ao lado não perde largura. */
+  position: relative; display: inline-grid; place-items: center; border-radius: 999px; padding: 3px; margin: -3px;
+  background: conic-gradient(var(--hx-usage-on) var(--hx-usage, 100%), color-mix(in oklab, var(--foreground) 14%, transparent) 0);
+  cursor: default; outline: none;
+}
+.hx-usage-ring::before { content: ""; position: absolute; inset: 2px; border-radius: inherit; background: var(--background, #040405); }
+.hx-usage-ring > * { position: relative; }
+.hx-usage-ring[data-low] { --hx-usage-on: var(--warning, #f5a524); }
+.hx-usage-ring:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+
+/* Cartão "Uso" */
+.hx-usage { display: grid; gap: 10px; min-width: 260px; max-width: min(340px, calc(100vw - 32px)); }
+.hx-usage-h { margin: 0; font-size: var(--text-sm, 13px); font-weight: 500; color: var(--foreground); }
+.hx-usage-row {
+  display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name name" "win left" "bar bar" "pct pct";
+  gap: 2px 8px; font-size: 12px; color: var(--text-secondary);
+}
+.hx-usage-name { grid-area: name; color: var(--foreground); font-weight: 500; }
+.hx-usage-win { grid-area: win; }
+.hx-usage-left { grid-area: left; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.hx-usage-bar { grid-area: bar; margin: 2px 0; }
+.hx-usage-pct { grid-area: pct; font-variant-numeric: tabular-nums; }
+.hx-usage-pct[data-low] { color: var(--warning, #f5a524); }

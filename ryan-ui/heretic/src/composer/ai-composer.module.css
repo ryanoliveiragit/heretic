@@ -772,6 +772,18 @@
 .modelItem[data-disabled] .modelMask {
   opacity: 0.55;
 }
+/* Pro no plano grátis: continua clicável (abre a compra do Pro), mas com cara de bloqueado. */
+.modelItem[data-locked] {
+  cursor: pointer;
+}
+.modelItem[data-locked] .modelItemName,
+.modelItem[data-locked] .modelItemNote,
+.modelItem[data-locked] .modelMask {
+  opacity: 0.6;
+}
+.modelItem[data-locked][data-highlighted] .modelItemName {
+  opacity: 0.9;
+}
 .modelItemName {
   display: inline-flex;
   align-items: center;
@@ -861,3 +873,48 @@
     transition: opacity var(--duration-instant) linear;
   }
 }
+
+/* Orbe de voz (estilo OpenBot): overlay em tela cheia enquanto dita, com o VoiceOrb central. */
+.voiceOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklab, var(--background) 86%, transparent);
+  backdrop-filter: blur(6px);
+}
+.voiceStage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding: 24px;
+  text-align: center;
+}
+.voiceText {
+  margin: 0;
+  max-width: 30ch;
+  min-height: 1.5em;
+  font: 500 16px/1.5 var(--font-body);
+  color: var(--foreground);
+  text-wrap: pretty;
+}
+.voiceControls { display: flex; align-items: center; gap: 16px; }
+.voiceBtn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease, border-color .18s ease;
+}
+.voiceBtn svg { width: 18px; height: 18px; }
+@media (hover: hover) { .voiceBtn:hover { color: var(--foreground); border-color: var(--border-strong); } }
+.voiceBtn:disabled { opacity: .4; cursor: default; }
+.voiceBtnPrimary { background: var(--accent); color: var(--accent-foreground); border-color: var(--accent); }

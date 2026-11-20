@@ -9,7 +9,7 @@
 // e o Dolphin seguem como opções grátis.
 // Padrão grátis = Heretic Rapid (GLM 5.3): nos testes rendeu respostas mais inteligentes, longas e
 // estáveis (sem loop) que o Gemma, pelo MESMO preço ($0,020/100). Gemma/Venice UC/Dolphin seguem grátis.
-export const FREE_MODEL = 'cognitivecomputations/dolphin-mistral-24b-venice-edition';
+export const FREE_MODEL = 'sao10k/l3.1-euryale-70b';
 export const FREE_DAILY_TOKENS = Number(process.env.FREE_DAILY_TOKENS) || 20000;
 
 import { MODEL_CATALOG } from './upstream.js';
@@ -31,15 +31,60 @@ export const PUBLIC_MODELS_RAW = [
   // Catálogo ENXUTO — só os melhores custo-benefício (nomes de marca Heretic; ids de terceiros escondidos).
   // Dono (16/11): cortado de 14 p/ 4 — "não adianta ter vários e ruins".
   // Ordem = pior → melhor (dono 17/11). quality: 1=Baixo, 2=Médio, 3=Alto, 4=Máximo (mostrado no seletor no lugar do custo).
-  { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', name: 'Heretic Free', short: 'Heretic Free', note: 'Uncensored, rápido e barato (Dolphin 24B)', tier: 'free', quality: 1 },
-  { id: 'thedrummer/cydonia-24b-v4.1', name: 'Heretic Swift', short: 'Heretic Swift', note: 'Equilíbrio de velocidade e qualidade (Cydonia 24B)', tier: 'free', quality: 2 },
-  { id: 'sao10k/l3.1-euryale-70b', name: 'Heretic Rapid', short: 'Heretic Rapid', note: 'Mais esperto, melhor custo (Euryale 70B)', tier: 'free', quality: 3 },
+  // guide = a aba "Modelos" das Configurações. Texto honesto: nada prometido que o código não faça
+  // (tools/server), limites medidos no teste de 18/11 (mesma pergunta de defesa SSH, sem recusa em nenhum).
+  // Grátis = UM modelo só (dono 18/11): o melhor dos três. Dolphin e Cydonia ficam de reserva
+  // invisível no servidor (FREE_RESERVES em upstream.js), sem opção de seleção.
+  {
+    id: 'sao10k/l3.1-euryale-70b', name: '451 Free', short: '451 Free', note: 'Sem censura, direto e rápido', tier: 'free', quality: 3,
+    guide: {
+      role: 'O modelo do plano grátis: sem censura e direto ao ponto.',
+      bestFor: 'Conversa do dia a dia, perguntas rápidas e decisões sem enrolação.',
+      style: 'Testado em 18/11: resposta concisa em prosa corrida, 13 s, cerca de 1,5 mil caracteres, sem recusa.',
+      limits: [
+        'Responde curto por padrão: para tutorial longo, peça "passo a passo completo".',
+        'Aceita arquivo de texto. Imagem e PDF são dos modelos Pro.',
+        'Não roda comandos. Conversa muito longa mantém só as últimas 8 mensagens.',
+      ],
+      fallback: 'Se o provedor falhar, o servidor troca de modelo sozinho e a conversa continua.',
+      tested: 'Testado em 18/11/2026.',
+    },
+  },
   // Pro = DOIS modelos de topo pra comparar (dono 17/11), ambos sem censura:
   //  • Heretic Titan = a melhor aberta do OpenRouter (Hermes 405B).
   //  • Heretic Max = cérebro de nuvem Claude (estilo Drael), com camada anti-recusa.
-  { id: 'nousresearch/hermes-4-405b', name: 'Heretic Titan', short: 'Heretic Titan', note: 'Melhor modelo aberto sem censura (Hermes 405B, OpenRouter)', tier: 'pro', quality: 4 },
+  {
+    id: 'nousresearch/hermes-4-405b', name: '451 Titan', short: '451 Titan', note: 'Melhor modelo aberto sem censura (Hermes 405B, OpenRouter)', tier: 'pro', quality: 4,
+    guide: {
+      role: 'O melhor modelo aberto sem censura do catálogo (405B).',
+      bestFor: 'Problema difícil, análise longa e técnica de verdade.',
+      style: 'Testado hoje: resposta densa em seções numeradas com passos em negrito — 24 s (o mais lento dos testes), ~3 mil caracteres, sem recusa.',
+      limits: [
+        'O mais lento dos testes de 18/11.',
+        'Lê imagem e PDF por um leitor auxiliar, que transcreve o arquivo antes da resposta. PDF só com imagem escaneada pode não ser lido.',
+        'Não roda comandos. Conversa longa mantém as últimas 8 mensagens.',
+      ],
+      fallback: 'Se o provedor falhar, o servidor troca para o 451 Free. Também é a reserva do FORÇA TUDO: se outro modelo recusar tudo, ele assume.',
+      tested: 'Testado em 18/11/2026 (com plano Pro no ambiente de teste).',
+    },
+  },
   // Heretic Max — cérebro de nuvem (Claude). Só aparece quando a chave CLAUDE_KEY está no ambiente.
-  { id: 'claude-sonnet-5-5', name: 'Heretic Max', short: 'Heretic Max', note: 'Nível Claude — lê contexto e ferramentas sem alucinar (nuvem)', tier: 'pro', quality: 4 },
+  {
+    id: 'claude-sonnet-5-5', name: '451 Max', short: '451 Max', note: 'Nível Claude — lê contexto e ferramentas sem alucinar (nuvem)', tier: 'pro', quality: 4,
+    guide: {
+      role: 'O cérebro de nuvem: nível Claude Opus, lê contexto e busca sem alucinar.',
+      bestFor: 'Pesquisa de pessoa com ficha, fontes e fotos; análise que não pode errar.',
+      style: 'Verificado em produção: dossiê com fontes reais, galeria de fotos e passos; teto de saída ≥ 8k tokens (respostas longas sem cortar).',
+      limits: [
+        'É o modelo com os limites de uso mais curtos, porque cada resposta custa bem mais que nos outros.',
+        'Lê imagem e PDF de até 30 páginas direto, sem leitor auxiliar.',
+        'Resposta não é streaming de verdade: o primeiro pedaço pode demorar; o app mostra etapas reais ("buscando", "lendo fontes") enquanto espera.',
+        'Se o cérebro de nuvem recusar tudo, o servidor cai para o 451 Titan.',
+      ],
+      fallback: 'Cai para o 451 Titan quando o cérebro de nuvem falha ou recusa.',
+      tested: 'Verificado em produção (busca web, ficha e fotos). Teste local não se aplica: a chave fica só no ambiente de produção.',
+    },
+  },
 ];
 
 // Heretic Max (cérebro de nuvem) só entra no catálogo público se a chave existir.
@@ -78,30 +123,72 @@ export function issueCode() {
 const fixedCodes = () => (process.env.ACCESS_CODES || '')
   .split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
 
+// ── chaves Pro pagas (Pix ou cripto, dono 18/11) ──
+// Formato: 451-PRO-<validade em base36>-<pedido>-<assinatura>. A assinatura é HMAC-SHA256 com
+// ACCESS_SECRET sobre "pro|validade|pedido", então a chave vale sem banco em qualquer instância Edge
+// e ninguém fabrica uma sem o segredo. Sem ACCESS_SECRET no ambiente não existe chave paga
+// (o segredo padrão só vale no modo de pagamento simulado, para teste local).
+const PAID_RE = /^451-PRO-([0-9A-Z]{6,10})-([0-9A-Z]{6,40})-([0-9A-F]{24})$/;
+const paidSecret = () => process.env.ACCESS_SECRET || (process.env.PAY_MODE === 'mock' ? 'heretic-dev-secret-2026' : '');
+
+async function hmacHex(secret, text) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(text));
+  return [...new Uint8Array(sig)].map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+/** Chave Pro paga, válida até expiresAt (ms). orderId: só letras e números. */
+export async function issuePaidKey(orderId, expiresAt) {
+  const secret = paidSecret();
+  if (!secret) throw new Error('ACCESS_SECRET ausente: chave paga desativada');
+  const exp = Math.floor(expiresAt / 1000).toString(36).toUpperCase();
+  const id = String(orderId).toUpperCase().replace(/[^0-9A-Z]/g, '');
+  const sig = (await hmacHex(secret, `pro|${exp}|${id}`)).slice(0, 24);
+  return `451-PRO-${exp}-${id}-${sig}`;
+}
+
+/** Validade de uma chave paga (ms) se a assinatura confere, ou null. Não olha se já venceu. */
+export async function paidKeyExpiry(key) {
+  const secret = paidSecret();
+  const m = PAID_RE.exec(String(key || '').trim().toUpperCase());
+  if (!secret || !m) return null;
+  const sig = (await hmacHex(secret, `pro|${m[1]}|${m[2]}`)).slice(0, 24);
+  if (sig !== m[3]) return null;
+  return parseInt(m[1], 36) * 1000;
+}
+
 /** Plan granted by a code, or null if the code is invalid. */
 export function planForKey(key) {
   if (!key) return null;
   const k = String(key).trim().toUpperCase();
-  // Pro é EXCLUSIVO do dono: só os códigos da allowlist (env ACCESS_CODES) dão Pro. Os códigos
-  // auto-assinados (HRTC-...-sig) foram desativados — não há mais geração pública de chave.
+  // Códigos fixos da allowlist (env ACCESS_CODES), como o do dono. Chave paga: planForKeyAsync.
   if (fixedCodes().includes(k)) return 'pro';
   return null;
 }
 
-/** Access key sent by the app: x-heretic-key header, else the heretic_key cookie. */
+/** Igual ao planForKey, aceitando também a chave paga dentro da validade. */
+export async function planForKeyAsync(key) {
+  if (planForKey(key)) return 'pro';
+  const exp = await paidKeyExpiry(key);
+  return exp && exp > Date.now() ? 'pro' : null;
+}
+
+/** Access key sent by the app: x-451-key header (rebrand 451) or the old x-heretic-key, else the cookie.
+ *  19/11: o app passou a mandar x-451-key e o servidor só lia x-heretic-key — a chave Pro paga era ignorada. */
 export function keyFrom(c) {
-  const h = c.req.header('x-heretic-key');
+  const h = c.req.header('x-451-key') || c.req.header('x-heretic-key');
   if (h) return h;
   const cookie = c.req.header('cookie') || '';
-  const m = cookie.match(/(?:^|;\s*)heretic_key=([^;]+)/);
+  const m = cookie.match(/(?:^|;\s*)(?:451_key|heretic_key)=([^;]+)/);
   return m ? decodeURIComponent(m[1]) : '';
 }
 
-export function planOf(c) {
+export async function planOf(c) {
   // HERETIC_PLAN=pro (env) forces Pro for everyone — local testing / global switch.
   if (process.env.HERETIC_PLAN === 'pro') return 'pro';
-  // Otherwise: free by default, Pro when a valid access code is present.
-  return c && planForKey(keyFrom(c)) === 'pro' ? 'pro' : 'free';
+  // Otherwise: free by default, Pro when a valid access code (fixo ou pago e dentro da validade) is present.
+  return c && (await planForKeyAsync(keyFrom(c))) === 'pro' ? 'pro' : 'free';
 }
 
 export function modelsFor(plan) {
@@ -114,6 +201,13 @@ export function canUse(plan, modelId) {
   return m.tier === 'free' || plan === 'pro';
 }
 
+/** Modelo que atende o pedido. Id antigo salvo no aparelho (ou de reserva) vira o modelo grátis; Pro sem plano devolve null. */
+export function resolveModel(plan, requested) {
+  const m = PUBLIC_MODELS.find(x => x.id === requested);
+  if (m && m.tier === 'pro') return plan === 'pro' ? m.id : null;
+  return FREE_MODEL;
+}
+
 /** Rough token estimate (≈ 4 characters per token), used for the free budget. */
 export function estimateTokens(text) {
   return Math.ceil(String(text || '').length / 4);
@@ -122,7 +216,7 @@ export function estimateTokens(text) {
 export function visitorId(c) {
   const fwd = c.req.header('x-forwarded-for') || '';
   const ip = fwd.split(',')[0].trim() || c.req.header('x-real-ip') || '';
-  const cid = (c.req.header('x-heretic-client') || '').slice(0, 64);
+  const cid = (c.req.header('x-451-client') || c.req.header('x-heretic-client') || '').slice(0, 64);
   return ip ? `ip:${ip}` : cid ? `cid:${cid}` : 'anon';
 }
 
@@ -132,7 +226,7 @@ export function visitorId(c) {
 export function visitorIds(c) {
   const fwd = c.req.header('x-forwarded-for') || '';
   const ip = (fwd.split(',')[0].trim() || c.req.header('x-real-ip') || '').trim();
-  const fp = (c.req.header('x-heretic-client') || '').slice(0, 48).replace(/[^a-zA-Z0-9]/g, '');
+  const fp = (c.req.header('x-451-client') || c.req.header('x-heretic-client') || '').slice(0, 48).replace(/[^a-zA-Z0-9]/g, '');
   const ids = [];
   if (ip) ids.push('ip:' + ip);
   if (fp) ids.push('fp:' + fp);

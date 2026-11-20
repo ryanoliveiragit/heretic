@@ -4,11 +4,11 @@ export type Lang = "en" | "pt";
 const KEY = "heretic-lang";
 
 function detect(): Lang {
+  // App v2: o seletor de idioma saiu e o produto é só pt-BR. Uma escolha antiga de "en"
+  // deixaria a pessoa presa em inglês sem como voltar, então ela é descartada.
   try {
-    const saved = localStorage.getItem(KEY);
-    if (saved === "pt" || saved === "en") return saved;
+    if (localStorage.getItem(KEY) === "en") localStorage.setItem(KEY, "pt");
   } catch { /* private mode */ }
-  // Produto é pt-BR (landing só em português): abre em PT por padrão; inglês só se o visitante trocar.
   return "pt";
 }
 
@@ -61,13 +61,16 @@ const PT: Record<string, string> = {
   "Sign out of Pro": "Sair do Pro",
   "Close": "Fechar",
   "Quality": "Qualidade",
+  "Agent": "Agente",
+  "Agent: rewrites your prompt for a better answer": "Agente: reescreve o seu pedido para uma resposta melhor",
+  "Refined by the agent": "Afinado pelo agente",
   "Quality mode: race 2 models, keep the best": "Modo Qualidade: compara 2 modelos e fica com a melhor resposta",
   "Show conversations": "Mostrar conversas",
   "Ask anything.": "Pergunte qualquer coisa.",
   "Ask anything": "Pergunte qualquer coisa",
   "Messages": "Mensagens",
   "You: ": "Você: ",
-  "Heretic is replying": "O Heretic está respondendo",
+  "Heretic is replying": "O 451.sh está respondendo",
   "Uncensored. Enter sends, Shift+Enter adds a line.": "Sem censura. Enter envia, Shift+Enter pula linha.",
   "You've hit today's message limit.": "Você atingiu o limite de mensagens de hoje.",
   "Something went wrong: ": "Algo deu errado: ",
@@ -89,7 +92,7 @@ const PT: Record<string, string> = {
   "Translate into the language you name": "Traduz para o idioma que você disser",
   "Walk through code or an idea step by step": "Explica código ou uma ideia passo a passo",
   "Find and fix the bug in the code": "Acha e corrige o bug no código",
-  "Pro models unlock with credits. ": "Modelos Pro liberam com créditos. ",
+  "Pro models unlock with credits. ": "Toque num modelo Pro para assinar. ",
   "Cost shown is ≈ per 100 messages.": "Custo mostrado ≈ a cada 100 mensagens.",
   "Text files only": "Só arquivos de texto",
   "Over 200 KB": "Mais de 200 KB",
@@ -106,7 +109,7 @@ const PT: Record<string, string> = {
   "Listening": "Ouvindo",
   "Transcribing": "Transcrevendo",
   "Dictation canceled": "Ditado cancelado",
-  "Message Heretic": "Mensagem para o Heretic",
+  "Message Heretic": "Mensagem para o 451.sh",
   "Cancel dictation": "Cancelar ditado",
   "Insert the transcript": "Inserir a transcrição",
   "Attach a text file": "Anexar arquivo de texto",

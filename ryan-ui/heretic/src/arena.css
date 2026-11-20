@@ -1,0 +1,9 @@
+/* Modo Qualidade: o cartão ModelArena da ryan-ui ocupa a largura da coluna da conversa. */
+.hx-arena { margin: var(--space-2, 8px) 0; min-width: 0; }
+/* A ryan-ui usa o acento "lime" por padrão nos controles; aqui vale o acento do tema (branco osso). */
+.hx-arena {
+  --control-on: var(--accent);
+  --control-fill: var(--accent);
+  --control-thumb-on: #151515;
+  --control-glyph: #151515;
+}

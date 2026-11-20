@@ -1,4 +1,4 @@
-export const MODELS = {
+const VENICE = {
   work: "venice:z-ai-glm-5-3-flash",
   prose: "cognitivecomputations/dolphin-mistral-24b-venice-edition",
   creative: "venice:venice-uncensored-role-play",
@@ -7,6 +7,19 @@ export const MODELS = {
   top: "claude-opus-5-5",
 } as const;
 
+// Eval sem saldo na Venice: os mesmos modelos (ou o equivalente mais próximo)
+// pelo OpenRouter. Liga só com HERETIC_EVAL_OR=1; a produção segue na Venice.
+const OPENROUTER = {
+  work: "z-ai/glm-5.3-flash",
+  prose: "cognitivecomputations/dolphin-mistral-24b-venice-edition",
+  creative: "nousresearch/hermes-4-405b",
+  study: "google/gemma-4-31b-it",
+  heavy: "z-ai/glm-5.2",
+  top: "claude-opus-5-5",
+} as const;
+
+export const MODELS = process.env.HERETIC_EVAL_OR === "1" ? OPENROUTER : VENICE;
+
 export const CTX_REAL: Record<string, number> = {
   "venice:z-ai-glm-5-3-flash": 1_000_000,
   "cognitivecomputations/dolphin-mistral-24b-venice-edition": 128_000,
@@ -14,6 +27,10 @@ export const CTX_REAL: Record<string, number> = {
   "venice:gemma-4-uncensored": 256_000,
   "venice:zai-org-glm-5-2": 1_000_000,
   "claude-opus-5-5": 200_000,
+  "z-ai/glm-5.3-flash": 1_048_576,
+  "z-ai/glm-5.2": 1_048_576,
+  "google/gemma-4-31b-it": 262_144,
+  "nousresearch/hermes-4-405b": 131_072,
 };
 
 export const SMALL_MODEL_HINTS = [
@@ -28,6 +45,10 @@ export const PRICE: Record<string, { in: number; out: number }> = {
   "venice:gemma-4-uncensored": { in: 0.16, out: 0.5 },
   "venice:zai-org-glm-5-2": { in: 1.4, out: 4.4 },
   "claude-opus-5-5": { in: 5, out: 25 },
+  "z-ai/glm-5.3-flash": { in: 0.15, out: 0.5 },
+  "z-ai/glm-5.2": { in: 0.01, out: 6.8 },
+  "google/gemma-4-31b-it": { in: 0.2, out: 0.4 },
+  "nousresearch/hermes-4-405b": { in: 1, out: 3 },
 };
 
 export const REASONING = [
@@ -43,4 +64,4 @@ export const ctxPublicado = (model: string) => (CTX_REAL[model] ?? 128_000) - 81
  * "No endpoints found that support tool use" quando o catálogo vai para um
  * modelo sem tool calling (dolphin), e o turno inteiro morre vazio.
  */
-export const toolsOk = (id: string) => !id.startsWith("cognitivecomputations") && !id.startsWith("claude");
+export const toolsOk = (id: string) => !id.startsWith("cognitivecomputations") && !id.startsWith("claude") && !id.startsWith("nousresearch");

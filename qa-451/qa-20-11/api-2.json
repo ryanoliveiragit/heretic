@@ -1,0 +1,64 @@
+[
+ {
+  "area": "contrato",
+  "id": "C1",
+  "nome": "Chat transmite SSE: token… usage → done",
+  "pass": true,
+  "detalhe": "200 token→usage→done 1º token 911 ms, total 915 ms",
+  "ms": 915
+ },
+ {
+  "area": "contrato",
+  "id": "C2",
+  "nome": "Texto final = soma dos tokens",
+  "pass": true,
+  "detalhe": "done=\"ok\" tokens=\"ok\""
+ },
+ {
+  "area": "contrato",
+  "id": "C3",
+  "nome": "JSON quebrado no chat → erro 4xx, não 500",
+  "pass": false,
+  "detalhe": "500 Internal Server Error"
+ },
+ {
+  "area": "contrato",
+  "id": "C4",
+  "nome": "Chat sem mensagens → erro 4xx, não 500",
+  "pass": false,
+  "detalhe": "200 : connected\n\nevent: warning\ndata: {\"type\":\"step\",\"title\":\"Entendendo o pedido\",\""
+ },
+ {
+  "area": "contrato",
+  "id": "C5",
+  "nome": "API /v1 no formato OpenAI (sem stream)",
+  "pass": {
+   "prompt_tokens": 4471,
+   "completion_tokens": 2,
+   "total_tokens": 4473
+  },
+  "detalhe": "200 model=451-rapid-uncensored conteúdo=\"pong\" 1093 ms",
+  "ms": 1093
+ },
+ {
+  "area": "contrato",
+  "id": "C6",
+  "nome": "API /v1 com stream termina em [DONE]",
+  "pass": true,
+  "detalhe": "200 4 pedaços"
+ },
+ {
+  "area": "contrato",
+  "id": "C7",
+  "nome": "API /v1 recusa chave inválida",
+  "pass": true,
+  "detalhe": "401 {\"error\":{\"message\":\"Chave inválida ou sem plano Pro. A API do 451 é exclusiva de Pro e Pr"
+ },
+ {
+  "area": "contrato",
+  "id": "C8",
+  "nome": "/v1/models lista os modelos 451",
+  "pass": true,
+  "detalhe": "451-rapid-uncensored, 451-titan-uncensored, 451-max-uncensored, 451-hermes-uncensored, 451-kimi-uncensored"
+ }
+]

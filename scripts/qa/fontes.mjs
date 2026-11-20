@@ -1,0 +1,20 @@
+// Busca natural no app (Grátis, Titan): pergunta sem "pesquise", fontes como [n] e persistência após recarregar.
+import { createRequire } from 'node:module';
+const PW = createRequire('/home/ethical/orca/nevus-odonto/package.json')('playwright-core');
+const [BASE, O] = process.argv.slice(2);
+const b = await PW.chromium.launch({ executablePath: process.env.HOME + '/.cache/ms-playwright/chromium_headless_shell-1254/chrome-headless-shell-linux64/chrome-headless-shell' });
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+const p = await ctx.newPage(); const erros = []; p.on('pageerror', (e) => erros.push(e.message));
+const pg = '.h-pagina[data-on]';
+await p.goto(BASE + '/app/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1500);
+await p.locator(`${pg} textarea`).first().fill(process.env.PERGUNTA || 'Qual é a cotação do dólar hoje?'); await p.keyboard.press('Enter');
+await p.waitForFunction((s) => !!document.querySelector(s + ' .h-gasto') || !!document.querySelector(s + ' .h-erro'), pg, { timeout: 120000 }).catch(() => {});
+await p.waitForTimeout(1500);
+const ler = () => p.evaluate((s) => { const a = document.querySelector(s + ' .x-answer'); const t = a?.innerText || ''; return { texto: t.slice(0, 400), urlsNoTexto: (t.match(/https?:\/\/\S+/g) || []).length, links: [...(a?.querySelectorAll('a[href^="http"]') || [])].map((x) => x.hostname).slice(0, 6), marcadoresSoltos: (t.match(/\[\d\]/g) || []).length }; }, pg);
+const antes = await ler();
+await p.screenshot({ path: `${O}/fontes-1-resposta.png` });
+await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1500);
+const depois = await ler();
+await p.screenshot({ path: `${O}/fontes-2-recarregada.png` });
+console.log(JSON.stringify({ antes, depois, erros }, null, 1));
+await b.close();

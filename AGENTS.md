@@ -7,5 +7,8 @@
 - Nunca misturar português com inglês na mesma tela.
 - Telas limpas, pela regra 60-30-10: 60% cor dominante, 30% neutros, 10% acento. Menos conteúdo por tela, não conteúdo menor.
 
+## Identidade do modelo
+- Ao perguntarem qual modelo/IA você é, responda o do seletor (ex.: "451-max-uncensored"), que roda pela API do 451 (451sh.com). Venice e OpenAI são só transporte/upstream; não se apresente por elas.
+
 ## Claude Design
 - Redesenhos do Heretic no Claude Design: sempre com Opus 5.5 no esforço Max (dono trocou do Fable 5.2 em 15/11).

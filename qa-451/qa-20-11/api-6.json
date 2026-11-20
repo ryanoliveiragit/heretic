@@ -1,0 +1,121 @@
+[
+ {
+  "area": "segurança",
+  "id": "X1a",
+  "nome": "Cabeçalhos de segurança em /",
+  "pass": true,
+  "detalhe": "{\"hsts\":true,\"nosniff\":true,\"frame\":true,\"csp\":true,\"referrer\":true}"
+ },
+ {
+  "area": "segurança",
+  "id": "X1b",
+  "nome": "Cabeçalhos de segurança em /app/",
+  "pass": true,
+  "detalhe": "{\"hsts\":true,\"nosniff\":true,\"frame\":true,\"csp\":true,\"referrer\":true}"
+ },
+ {
+  "area": "segurança",
+  "id": "X2",
+  "nome": "CORS: outro site não usa a API com a chave da pessoa",
+  "pass": true,
+  "detalhe": "allow-origin=null allow-headers=null"
+ },
+ {
+  "area": "segurança",
+  "id": "X3",
+  "nome": "Prompt de sistema não é público",
+  "pass": true,
+  "detalhe": "404, 0 caracteres expostos"
+ },
+ {
+  "area": "segurança",
+  "id": "X4",
+  "nome": "Modelo de verdade por trás de cada 451 não é público",
+  "pass": true,
+  "detalhe": ""
+ },
+ {
+  "area": "segurança",
+  "id": "X5",
+  "nome": "Rotas internas e saúde dos provedores não são públicas",
+  "pass": false,
+  "detalhe": "/api/routes 404, /api/health 200"
+ },
+ {
+  "area": "segurança",
+  "id": "X6",
+  "nome": "Escritas de administrador pedem senha",
+  "pass": false,
+  "detalhe": "PUT /api/persona 404, /api/admin/credits 404"
+ },
+ {
+  "area": "segurança",
+  "id": "X7",
+  "nome": "Tentativas seguidas de código inválido são limitadas",
+  "pass": true,
+  "detalhe": "5 tentativas: 400,429,429,429,429"
+ },
+ {
+  "area": "segurança",
+  "id": "X8",
+  "nome": "Pedido de 3 MB é recusado sem erro 500",
+  "pass": true,
+  "detalhe": "403 {\"error\":\"pro_model\",\"message\":\"Este modelo faz parte do Pro.\"}"
+ },
+ {
+  "area": "segurança",
+  "id": "X9",
+  "nome": "Chave maliciosa vira Grátis, sem erro",
+  "pass": true,
+  "detalhe": "200 tier=free"
+ },
+ {
+  "area": "bloqueios",
+  "id": "B1",
+  "nome": "Pedido vazio",
+  "pass": true,
+  "detalhe": "400 empty_prompt"
+ },
+ {
+  "area": "bloqueios",
+  "id": "B2",
+  "nome": "Menor + conteúdo sexual é bloqueado",
+  "pass": true,
+  "detalhe": "400 blocked"
+ },
+ {
+  "area": "bloqueios",
+  "id": "B3",
+  "nome": "Menor + sexual em inglês é bloqueado",
+  "pass": true,
+  "detalhe": "400 blocked"
+ },
+ {
+  "area": "bloqueios",
+  "id": "B4",
+  "nome": "Adulto sem confirmar 18+ pede a confirmação",
+  "pass": false,
+  "detalhe": "403 pro_only"
+ },
+ {
+  "area": "bloqueios",
+  "id": "B5",
+  "nome": "Grátis não gera imagem adulta",
+  "pass": true,
+  "detalhe": "403 pro_only"
+ },
+ {
+  "area": "bloqueios",
+  "id": "B6",
+  "nome": "Foto enviada pela pessoa nunca vira nudez",
+  "pass": false,
+  "detalhe": "403 pro_only"
+ },
+ {
+  "area": "bloqueios",
+  "id": "B7",
+  "nome": "Marca do 451 falsificada é recusada",
+  "pass": false,
+  "detalhe": "403 pro_only"
+ }
+]

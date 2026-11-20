@@ -5,7 +5,7 @@
 // corpo, que vazava para o Markdown, o raciocínio e os cartões de fonte — igual ao ajuste do desenho.
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { Download, FileDown, FileText, Image as ImageIcon, RotateCcw } from "lucide-react";
+import { Download, FileDown, FileText, Image as ImageIcon, RotateCcw, PenLine } from "lucide-react";
 import { FeedbackActions } from "@pro/response-feedback/response-feedback";
 import type { FeedbackEvent, FeedbackRating } from "@pro/response-feedback/response-feedback";
 export type { FeedbackEvent };
@@ -21,6 +21,8 @@ import { CoverFlow } from "@pro/cover-flow/cover-flow";
 import { GenerationStats } from "@pro/generation-stats/generation-stats";
 import { ImageReveal } from "@pro/image-reveal/image-reveal";
 import { Markdown } from "./markdown";
+import { ArenaAnswers, arenaVotedNow } from "./arena";
+import type { ArenaData } from "./arena";
 import { t } from "./i18n";
 
 export interface WebSource { url: string; title: string; snippet?: string }
@@ -44,8 +46,10 @@ export interface ReplyMeta {
   steps?: { title: string; text: string }[];
   rating?: FeedbackRating | null;
   reasons?: string[];
+  /** Modo Qualidade: as duas respostas, a indicada pelo juiz e a escolhida pelo usuário. */
+  arena?: ArenaData;
 }
-export interface TurnMessage extends ReplyMeta { id: string; role: "user" | "assistant"; text: string; state: "thinking" | "streaming" | "done" | "stopped" }
+export interface TurnMessage extends ReplyMeta { id: string; role: "user" | "assistant"; text: string; state: "thinking" | "streaming" | "done" | "stopped"; enhanced?: boolean }
 
 export const estTokens = (s: string) => Math.ceil((s || "").length / 4);
 
@@ -81,7 +85,8 @@ function toCard(s: WebSource): SourceCardsSource {
 const POS = ["Resposta certa", "Fácil de entender", "Direto ao ponto", "Bom código"];
 const NEG = ["Informação errada", "Incompleta", "Recusou sem motivo", "Fora do assunto"];
 
-const Mask = ({ size = 16 }: { size?: number }) => <span className="mask" aria-hidden="true" style={{ width: size, height: Math.round(size * 1.2) }} />;
+// Avatar da IA = mini cigarra da marca (proporção 24×14), no lugar da máscara antiga.
+const Mask = ({ size = 16 }: { size?: number }) => <span className="mask" data-pro="" aria-hidden="true" style={{ width: Math.round(size * 1.25), height: Math.round(size * 0.75) }} />;
 
 /** Botão de baixar (PDF ou .md) que já existia no app, agora como ação extra da barra do turno. */
 function DownloadMenu({ onPdf, onMd, image }: { onPdf?: () => void; onMd?: () => void; image?: () => void }) {
@@ -115,6 +120,7 @@ function DownloadMenu({ onPdf, onMd, image }: { onPdf?: () => void; onMd?: () =>
 
 export interface TurnProps {
   prompt?: string;
+  enhanced?: boolean;
   reply?: TurnMessage;
   /** Texto visível da resposta (sem o raciocínio) e quanto já foi "digitado". */
   shown: string;
@@ -130,12 +136,20 @@ export interface TurnProps {
   onImage: (src: string, name: string) => void;
   /** Clique num botão de um bloco ```ask (pergunta com opções) → vira a próxima mensagem. */
   onOption?: (value: string) => void;
+  /** As fontes deste turno já aparecem na coluna/faixa "Fontes" (desenho App v2): não repete os cartões. */
+  hideSources?: boolean;
+  /** Modo Qualidade: nome do cartão de cada resposta e a troca pela outra. */
+  arenaName?: (modelId: string, index: number) => string;
+  onArenaPick?: (index: number) => void;
 }
 
-export function Turn({ prompt, reply, shown, caret, fresh, canRegenerate, busy, onRegenerate, onFeedback, onPdf, onMd, onImage, onOption }: TurnProps) {
+export function Turn({ prompt, enhanced, reply, shown, caret, fresh, canRegenerate, busy, onRegenerate, onFeedback, onPdf, onMd, onImage, onOption, hideSources, arenaName, onArenaPick }: TurnProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  // "Pensando" aberto sozinho enquanto o modelo trabalha (mostra as etapas reais ao vivo) e fechado
+  // quando a resposta começa. Se a pessoa abrir ou fechar na mão, vale a escolha dela.
+  const [thinkOpen, setThinkOpen] = useState<boolean | null>(null);
   const isImage = !!reply && (reply.model === t("Image") || !!reply.image);
-  const name = isImage ? "Heretic" : (reply?.model ? (/^Heretic\b/.test(reply.model) ? reply.model : `Heretic ${reply.model}`) : "Heretic");
+  const name = isImage ? "451.sh" : (reply?.model ? (/^(Heretic|451)\b/.test(reply.model) ? reply.model.replace(/^Heretic\b/, "451") : `451 ${reply.model}`) : "451.sh");
   const heretic = { name, mark: <Mask size={16} /> };
   const done = !!reply && (reply.state === "done" || reply.state === "stopped");
 
@@ -187,6 +201,8 @@ export function Turn({ prompt, reply, shown, caret, fresh, canRegenerate, busy, 
             seconds={seconds}
             model={heretic}
             variant="plain"
+            open={thinkOpen ?? (thinkStatus === "thinking" && hasSteps)}
+            onOpenChange={setThinkOpen}
           />
         ) : null}
         {call ? <ToolCallGroup calls={[call]} active={search?.status === "running"} /> : null}
@@ -198,8 +214,10 @@ export function Turn({ prompt, reply, shown, caret, fresh, canRegenerate, busy, 
             />
           </div>
         ) : null}
-        {shown ? <Markdown text={shown} caret={caret} onOption={onOption} /> : null}
-        {sources.length ? <SourceCards sources={sources} status="done" total={sources.length} query={search?.query} hideStatus label={t("Sources")} /> : null}
+        {reply.arena && reply.state === "done" && reply.arena.answers.length === 2 && (reply.arena.chosen === undefined || arenaVotedNow(reply.id))
+          ? <ArenaAnswers messageId={reply.id} question={prompt ?? ""} arena={reply.arena} name={arenaName ?? ((_, i) => `Resposta ${i + 1}`)} onPick={onArenaPick} />
+          : shown ? <Markdown text={shown} caret={caret} onOption={onOption} /> : null}
+        {sources.length && !hideSources ? <SourceCards sources={sources} status="done" total={sources.length} query={search?.query} hideStatus label={t("Sources")} /> : null}
         {stats ? (
           <div className="hx-genstats"><GenerationStats
             variant="inline"
@@ -233,7 +251,8 @@ export function Turn({ prompt, reply, shown, caret, fresh, canRegenerate, busy, 
     <div className="hx-turn">
       {prompt !== undefined ? (
         <div className={rf.prompt}>
-          <p className={rf.bubble}><span className="hx-sr">{t("You: ")}</span>{prompt}</p>
+          <p className={rf.bubble} data-enhanced={enhanced ? "1" : undefined} key={enhanced ? "e" : "o"}><span className="hx-sr">{t("You: ")}</span>{prompt}</p>
+          {enhanced ? <span className="hx-enhanced-tag"><PenLine size={11} aria-hidden="true" />{t("Refined by the agent")}</span> : null}
         </div>
       ) : null}
       {reply ? (
@@ -243,7 +262,7 @@ export function Turn({ prompt, reply, shown, caret, fresh, canRegenerate, busy, 
             <span className={rf.modelName}>{name}</span>
           </div>
           <div className="hx-turn-body" ref={bodyRef}>
-            <span className="hx-sr">Heretic: </span>
+            <span className="hx-sr">451.sh: </span>
             {blocks}
             {reply.state === "stopped" ? <p className="hx-stopped">{shown || reply.image ? t("Stopped.") : t("Stopped before the reply started.")}</p> : null}
           </div>

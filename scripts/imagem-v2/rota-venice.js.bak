@@ -1,0 +1,246 @@
+// Imagem v2 (20/11): mesmo desenho do skynetchat (engenharia reversa: Grok Imagine + Chroma no adulto,
+// classificador de intenção, edição com referência, sugestões). Tudo pela Venice, modelos privados.
+// A geração pode passar de 25 s: a resposta é transmitida com espaços de "batimento" até o JSON final,
+// para o Edge não cortar. Erros dessa fase vêm como {error} com status 200.
+function bytesToBase64(bytes) {
+  let bin = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  return btoa(bin);
+}
+const IMG_ESTILOS = {
+  rapido: { model: 'grok-imagine-image', usd: 0.03, pro: false, aspect: true, resolution: '1K' },
+  anime: { model: 'wai-Illustrious', usd: 0.01, pro: false, steps: 25 },
+  realista: { model: 'qwen-image', usd: 0.03, pro: true, aspect: true },
+  'sem-filtro': { model: 'chroma', usd: 0.01, pro: true, steps: 10, adulto: true },
+};
+const IMG_RESERVAS = { rapido: 'z-image-turbo', realista: 'grok-imagine-image', 'sem-filtro': 'lustify-v8', anime: 'z-image-turbo' };
+const IMG_MODELOS = {
+  'grok-imagine-image': { usd: 0.03, aspect: true, resolution: '1K' }, 'z-image-turbo': { usd: 0.01, steps: 8 },
+  'lustify-v8': { usd: 0.01, steps: 30, adulto: true }, 'wai-Illustrious': { usd: 0.01, steps: 25 }, 'qwen-image': { usd: 0.03, aspect: true }, chroma: { usd: 0.01, steps: 10, adulto: true },
+};
+const IMG_FORMATOS = { '1:1': [1024, 1024], '3:4': [896, 1152], '9:16': [768, 1344], '16:9': [1344, 768] };
+// Bloqueio fixo 1 (antes de gastar qualquer coisa): menor de idade + conteúdo sexual/nudez.
+const IMG_MENOR = /\b(crian[çc]as?|menin[oa]s?|garot[oa]s?|beb[eê]s?|infantil|infantis|adolescentes?|novinh[oa]s?|colegiais?|pr[eé]-?adolescentes?|lolis?|shotas?|children|child|kids?|minors?|teens?|teenagers?|underage|schoolgirls?|schoolboys?|toddlers?|preteens?|(?:[1-9]|1[0-7])\s*(?:anos|years?|yo|y\/o))\b/i;
+const IMG_SEXUAL = /\b(nu|nua|nus|nuas|nudez|pelad[oa]s?|nudes?|naked|nude|sexo|sexuais?|sexual|sexy|er[óo]tic[oa]s?|erotic|porn\w*|nsfw|lingerie|calcinha|suti[ãa]|biqu[ií]nis?|bikinis?|seios?|peitos?|mamilos?|breasts?|bunda|genit\w*|vagina|p[êe]nis|transand\w*|transa|fetiche|fetish|explicit[oa]?|topless|sensual|provocante|seductive|undress\w*|despi\w*)\b/i;
+function bloqueioImagem(t) { return IMG_MENOR.test(t) && IMG_SEXUAL.test(t); }
+const IMG_NEG_ADULTO = 'child, children, minor, underage, teen, teenager, young-looking, childlike, school uniform, loli';
+const IMG_MSG_BLOQUEIO = 'Esse pedido não dá: nada sexual com menor de idade ou com pessoa real. O resto é livre.';
+
+// Marca de origem (como o provenanceToken do skynet): prova que a imagem saiu do 451.
+// Edição adulta só vale sobre imagens com marca: foto enviada pela pessoa nunca vira nudez.
+async function marcaImagem(dataUrl) {
+  const b64 = String(dataUrl || '').split(',')[1] || '';
+  const enc = new TextEncoder();
+  const chave = await crypto.subtle.importKey('raw', enc.encode(process.env.ACCESS_SECRET || 'heretic-dev-secret-2026'), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const dig = await crypto.subtle.digest('SHA-256', enc.encode(b64));
+  const sig = await crypto.subtle.sign('HMAC', chave, dig);
+  return 'img451.' + bytesToBase64(new Uint8Array(sig)).replace(/[+/=]/g, (c) => ({ '+': '-', '/': '_', '=': '' }[c]));
+}
+
+function imgKey() { return process.env.IMAGE_VENICE_KEY || process.env.VENICE_API_KEY; }
+async function veniceImagem(key, modelo, prompt, formato, seed, safe) {
+  const est = IMG_MODELOS[modelo];
+  const [w, h] = IMG_FORMATOS[formato] || IMG_FORMATOS['1:1'];
+  const body = { model: modelo, prompt: prompt.slice(0, modelo === 'qwen-image' ? 2048 : 1500), safe_mode: safe, format: 'webp', hide_watermark: true, seed };
+  if (est.aspect) body.aspect_ratio = formato; else { body.width = w; body.height = h; }
+  if (est.resolution) body.resolution = est.resolution;
+  if (est.steps) body.steps = est.steps;
+  if (est.adulto) body.negative_prompt = IMG_NEG_ADULTO;
+  const r = await fetch('https://api.venice.ai/api/v1/image/generate', {
+    method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(`venice ${r.status}`);
+  const data = await r.json();
+  const b64 = data && data.images && data.images[0];
+  if (!b64) throw new Error('venice vazio');
+  return `data:image/webp;base64,${b64}`;
+}
+// A rota de edição da Venice pode devolver a imagem em binário ou em JSON: aceita os dois.
+async function imagemDaResposta(r) {
+  const ct = r.headers.get('content-type') || '';
+  if (ct.includes('application/json')) {
+    const d = await r.json();
+    const b = d && (d.images ? d.images[0] : d.image);
+    if (!b) throw new Error('vazio');
+    return b.startsWith('data:') ? b : `data:image/webp;base64,${b}`;
+  }
+  const bytes = new Uint8Array(await r.arrayBuffer());
+  if (bytes.length < 1000) throw new Error('vazio');
+  return `data:${ct || 'image/png'};base64,${bytesToBase64(bytes)}`;
+}
+function transmitir(fn) {
+  const enc = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(ctrl) {
+      const beat = setInterval(() => { try { ctrl.enqueue(enc.encode(' ')); } catch {} }, 5000);
+      const fim = (obj) => { clearInterval(beat); try { ctrl.enqueue(enc.encode(JSON.stringify(obj))); ctrl.close(); } catch {} };
+      try { await fn(fim); } catch { fim({ error: 'image_failed' }); }
+    },
+  });
+  return new Response(stream, { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+}
+
+app.post('/api/image', async (c) => {
+  const plan = planOf(c), subjects = await subjectsOf(c, plan);
+  const pro = plan === 'pro';
+  let body = {};
+  try { body = await c.req.json(); } catch {}
+  const desc = (body.prompt || '').toString().trim().slice(0, 1500);
+  if (!desc) return c.json({ error: 'empty_prompt' }, 400);
+  const estilo = IMG_ESTILOS[body.estilo] ? body.estilo : 'rapido';
+  const est = IMG_ESTILOS[estilo];
+  if (est.pro && !pro) return c.json({ error: 'pro_only', message: estilo === 'sem-filtro' ? 'Imagem adulta faz parte do Pro.' : 'Esse estilo faz parte do Pro.' }, 403);
+  if (est.adulto && body.confirmAge !== true) return c.json({ error: 'age_required', message: 'Confirme que você tem 18 anos ou mais.' }, 403);
+  const auto = body.formato === 'auto';
+  let formato = IMG_FORMATOS[body.formato] ? body.formato : '1:1';
+  const pronto = (body.final || '').toString().trim().slice(0, 2048); // prompt já resolvido (classificador ou "Variar")
+  if (bloqueioImagem(desc) || (pronto && bloqueioImagem(pronto))) return c.json({ error: 'blocked', message: IMG_MSG_BLOQUEIO }, 400);
+  const charges = [{ resource: 'image_gen', bucket: pro ? 'pro' : 'free' }];
+  const reserved = await consumeQuota(subjects, charges);
+  if (!reserved.ok) return c.json({ error: 'limit_reached', quota: reserved.quota }, 429);
+
+  return transmitir(async (fim) => {
+    const falha = async (obj) => { await refundQuota(subjects, charges).catch(() => {}); fim(obj); };
+    // Reescrita pelo agente: padrão ligada; obrigatória no Sem filtro (é a 2ª barreira).
+    let prompt = pronto;
+    if (!prompt || auto) {
+      if (body.melhorar !== false || est.adulto || auto) {
+        const r = await imagePrompt(pronto || desc, estilo, undefined, null, { autoFormato: auto }).catch(() => ({ prompt: '', blocked: false }));
+        if (r.blocked) return falha({ error: 'blocked', message: IMG_MSG_BLOQUEIO });
+        if (!pronto) prompt = r.prompt;
+        if (auto && r.formato) formato = r.formato;
+      }
+      if (!prompt) prompt = desc;
+    }
+    if (auto && IMG_FORMATOS[body.formatoSugerido]) formato = body.formatoSugerido;
+    if (bloqueioImagem(prompt)) return falha({ error: 'blocked', message: IMG_MSG_BLOQUEIO });
+    const seed = Number.isInteger(body.seed) ? body.seed : Math.floor(Math.random() * 999999999);
+    const ok = async (image, provider, model, usd) => {
+      if (usd) recordCost(usd).catch(() => {});
+      fim({ image, token: await marcaImagem(image), provider, model, estilo, formato, prompt, seed, quotas: reserved.quotas });
+    };
+    const key = imgKey();
+    if (key) {
+      // Grátis: safe_mode borra nudez. Pro: sem filtro.
+      for (const modelo of [est.model, IMG_RESERVAS[estilo]]) {
+        try { return await ok(await veniceImagem(key, modelo, prompt, formato, seed, !pro), 'venice', modelo, IMG_MODELOS[modelo].usd); } catch {}
+      }
+    }
+    // Reserva enquanto a Venice estiver sem saldo: Pollinations (Flux, 1 imagem/45 s por IP). Não serve ao adulto.
+    if (!est.adulto) {
+      const [w, h] = IMG_FORMATOS[formato];
+      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.slice(0, 1200))}?width=${w}&height=${h}&nologo=true&model=flux&seed=${seed % 1000000}`;
+      const r = await fetch(url, { headers: { Accept: 'image/*' } }).catch(() => null);
+      if (r && r.ok) {
+        const bytes = new Uint8Array(await r.arrayBuffer());
+        if (bytes.length > 1000) return ok(`data:${r.headers.get('content-type') || 'image/jpeg'};base64,${bytesToBase64(bytes)}`, 'pollinations', 'flux', 0);
+      }
+    }
+    return falha({ error: 'image_failed' });
+  });
+});
+
+// Edição com referência (até 3 imagens). Comum: Grok Imagine Edit. Adulto: Qwen Edit sem censura,
+// só Pro, só com 18+ confirmado e só sobre imagens que o próprio 451 gerou (marca válida).
+app.post('/api/image/edit', async (c) => {
+  const plan = planOf(c), subjects = await subjectsOf(c, plan);
+  const pro = plan === 'pro';
+  let body = {};
+  try { body = await c.req.json(); } catch {}
+  const desc = (body.prompt || '').toString().trim().slice(0, 1500);
+  const imgs = (Array.isArray(body.images) ? body.images : []).slice(0, 3)
+    .map((i) => ({ src: String((i && i.src) || ''), token: String((i && i.token) || '') }))
+    .filter((i) => /^data:image\/[a-z+]+;base64,/i.test(i.src) && i.src.length < 12_000_000);
+  if (!desc || !imgs.length) return c.json({ error: 'invalid_request' }, 400);
+  const pronto = (body.final || '').toString().trim().slice(0, 1500);
+  if (bloqueioImagem(desc) || (pronto && bloqueioImagem(pronto))) return c.json({ error: 'blocked', message: IMG_MSG_BLOQUEIO }, 400);
+  const adulto = body.adulto === true || IMG_SEXUAL.test(desc) || IMG_SEXUAL.test(pronto);
+  if (adulto) {
+    if (!pro) return c.json({ error: 'pro_only', message: 'Imagem adulta faz parte do Pro.' }, 403);
+    if (body.confirmAge !== true) return c.json({ error: 'age_required', message: 'Confirme que você tem 18 anos ou mais.' }, 403);
+    for (const i of imgs) if (!i.token || i.token !== await marcaImagem(i.src)) {
+      return c.json({ error: 'nsfw_edit_upload', message: 'Edição adulta só vale para imagens geradas aqui no 451, nunca para fotos enviadas.' }, 400);
+    }
+  }
+  const formato = ['1:1', '3:4', '9:16', '16:9'].includes(body.formato) ? body.formato : 'auto';
+  const charges = [{ resource: 'image_gen', bucket: pro ? 'pro' : 'free' }];
+  const reserved = await consumeQuota(subjects, charges);
+  if (!reserved.ok) return c.json({ error: 'limit_reached', quota: reserved.quota }, 429);
+  return transmitir(async (fim) => {
+    const falha = async (obj) => { await refundQuota(subjects, charges).catch(() => {}); fim(obj); };
+    let prompt = pronto;
+    if (!prompt) {
+      const r = await imageIntent(desc, [{ role: 'assistant', img: true, text: '' }], true).catch(() => ({ intent: 'text' }));
+      if (r.intent === 'bloqueado') return falha({ error: 'blocked', message: IMG_MSG_BLOQUEIO });
+      prompt = r.prompt || desc;
+    }
+    if (bloqueioImagem(prompt)) return falha({ error: 'blocked', message: IMG_MSG_BLOQUEIO });
+    const key = imgKey();
+    if (!key) return falha({ error: 'image_failed' });
+    const modelo = adulto ? 'qwen-edit-uncensored' : 'grok-imagine-edit';
+    const usd = adulto ? 0.04 : 0.03;
+    const b64s = imgs.map((i) => i.src.split(',')[1]);
+    try {
+      const multi = b64s.length > 1;
+      const req = multi
+        ? { modelId: modelo, prompt, images: b64s, aspect_ratio: formato }
+        : { model: modelo, prompt, image: b64s[0], aspect_ratio: formato, safe_mode: !pro };
+      if (!adulto) req.resolution = '1K';
+      const r = await fetch(`https://api.venice.ai/api/v1/image/${multi ? 'multi-edit' : 'edit'}`, {
+        method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(req),
+      });
+      if (r.ok) {
+        const image = await imagemDaResposta(r);
+        recordCost(usd).catch(() => {});
+        return fim({ image, token: await marcaImagem(image), provider: 'venice', model: modelo, prompt, quotas: reserved.quotas });
+      }
+    } catch {}
+    return falha({ error: 'image_failed' });
+  });
+});
+
+// Classificador de intenção e sugestões: só modelo de texto, sem cota de imagem.
+app.post('/api/image/intent', async (c) => {
+  let body = {};
+  try { body = await c.req.json(); } catch {}
+  const text = (body.text || '').toString();
+  if (!text.trim()) return c.json({ intent: 'text' });
+  const r = await imageIntent(text, body.contexto, body.temImagem === true).catch(() => ({ intent: 'text', unavailable: true }));
+  if (r.intent === 'bloqueado' || (r.intent !== 'text' && (bloqueioImagem(text) || bloqueioImagem(r.prompt || '')))) return c.json({ intent: 'bloqueado', message: IMG_MSG_BLOQUEIO });
+  return c.json(r);
+});
+app.post('/api/image/followups', async (c) => {
+  let body = {};
+  try { body = await c.req.json(); } catch {}
+  const suggestions = await imageFollowups((body.prompt || '').toString()).catch(() => []);
+  return c.json({ suggestions });
+});
+
+// Aumentar resolução 2x (Pro). Venice /image/upscale devolve a imagem em binário.
+app.post('/api/image/upscale', async (c) => {
+  const plan = planOf(c), subjects = await subjectsOf(c, plan);
+  if (plan !== 'pro') return c.json({ error: 'pro_only', message: 'Aumentar a resolução faz parte do Pro.' }, 403);
+  let body = {};
+  try { body = await c.req.json(); } catch {}
+  const m = /^data:image\/[a-z+]+;base64,(.+)$/i.exec((body.image || '').toString());
+  if (!m || m[1].length > 12_000_000) return c.json({ error: 'invalid_image' }, 400);
+  const key = imgKey();
+  if (!key) return c.json({ error: 'upscale_failed' }, 502);
+  const charges = [{ resource: 'image_gen', bucket: 'pro' }];
+  const reserved = await consumeQuota(subjects, charges);
+  if (!reserved.ok) return c.json({ error: 'limit_reached', quota: reserved.quota }, 429);
+  try {
+    const r = await fetch('https://api.venice.ai/api/v1/image/upscale', {
+      method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: m[1], scale: 2 }),
+    });
+    if (r.ok) {
+      const image = await imagemDaResposta(r);
+      recordCost(0.02).catch(() => {});
+      return c.json({ image, token: await marcaImagem(image), quotas: reserved.quotas });
+    }
+  } catch {}
+  await refundQuota(subjects, charges);
+  return c.json({ error: 'upscale_failed' }, 502);
+});

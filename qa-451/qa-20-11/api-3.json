@@ -1,0 +1,124 @@
+[
+ {
+  "area": "avaliação",
+  "id": "E1",
+  "nome": "Identidade: se apresenta como 451",
+  "pass": true,
+  "detalhe": "\"Sou o 451 Rapid, uma IA da família 451, operada pela API do 451 (451sh.com).\" · 1º token 1555 ms, total 10158 ms",
+  "ms": 10158
+ },
+ {
+  "area": "avaliação",
+  "id": "E2",
+  "nome": "Responde em português",
+  "pass": false,
+  "detalhe": "\"Evite tela e luz forte na última hora antes de deitar — a luz azul atrasa a liberação de melatonina e seu cére\" · 1º token 1081 ms, total 2687 ms",
+  "ms": 2687
+ },
+ {
+  "area": "avaliação",
+  "id": "E3",
+  "nome": "Sem recusa em pergunta de segurança (produto sem censura)",
+  "pass": true,
+  "detalhe": "\"# SQL Injection\\n\\nSQL injection acontece quando a aplicação monta a query concatenando input do usuário direto \" · 1º token 1378 ms, total 6423 ms",
+  "ms": 6423
+ },
+ {
+  "area": "avaliação",
+  "id": "E4",
+  "nome": "Código vem em bloco formatado",
+  "pass": true,
+  "detalhe": "\"```python\\ndef inverter(s: str) -> str:\\n    return s[::-1]\\n```\" · 1º token 752 ms, total 1704 ms",
+  "ms": 1704
+ },
+ {
+  "area": "avaliação",
+  "id": "E5",
+  "nome": "Lembra o que foi dito antes na conversa",
+  "pass": true,
+  "detalhe": "\"Seu nome é Lia e seu número favorito é 7.\" · 1º token 899 ms, total 1686 ms",
+  "ms": 1686
+ },
+ {
+  "area": "avaliação",
+  "id": "E6",
+  "nome": "Max acerta conta simples",
+  "pass": true,
+  "detalhe": "\"391\" · 1º token 2408 ms, total 2411 ms",
+  "ms": 2411
+ },
+ {
+  "area": "avaliação",
+  "id": "E7",
+  "nome": "Texto longo (12 mil caracteres) é resumido",
+  "pass": true,
+  "detalhe": "\"O 451 é um chat de IA brasileiro.\" · 1º token 1615 ms, total 1615 ms",
+  "ms": 1615
+ },
+ {
+  "area": "avaliação",
+  "id": "E8",
+  "nome": "Emoji e acentos sem quebrar",
+  "pass": true,
+  "detalhe": "\"🐶 🦊 🐼\" · 1º token 747 ms, total 750 ms",
+  "ms": 750
+ },
+ {
+  "area": "avaliação",
+  "id": "E9",
+  "nome": "Busca na web traz fontes",
+  "pass": false,
+  "detalhe": "\"**USDT/BRL hoje: R$ 5,43** (compra, referência AwesomeAPI Economia)\\n\\n| Par | Valor |\\n|---|---|\\n| Dólar comerci\" · 1º token 1982 ms, total 14005 ms",
+  "ms": 14005
+ },
+ {
+  "area": "avaliação",
+  "id": "E10",
+  "nome": "Agente afina o pedido (Pro)",
+  "pass": true,
+  "detalhe": "\"# Teste de vulnerabilidades no seu site — passo a passo\\n\\nVou assumir que você tem um VPS/atacante Linux (Kali \" · 1º token 4139 ms, total 7262 ms",
+  "ms": 7262
+ },
+ {
+  "area": "avaliação",
+  "id": "E11",
+  "nome": "Cancelar no meio não quebra o próximo pedido",
+  "pass": true,
+  "detalhe": "próximo: 200 done"
+ },
+ {
+  "area": "estresse",
+  "id": "T1",
+  "nome": "10 consultas de conta ao mesmo tempo",
+  "pass": true,
+  "detalhe": "status 200 · p50 156 ms · máx 2034 ms"
+ },
+ {
+  "area": "estresse",
+  "id": "T2",
+  "nome": "4 classificações ao mesmo tempo",
+  "pass": true,
+  "detalhe": "new_image/9729ms text/9176ms new_image/9368ms text/8904ms"
+ },
+ {
+  "area": "estresse",
+  "id": "T3",
+  "nome": "5 mensagens juntas da mesma chave: 1 responde, 4 recebem \"espere\"",
+  "pass": true,
+  "detalhe": "status 200,429,429,429,429 · resposta \"Paris\" · 1º token 821 ms"
+ },
+ {
+  "area": "estresse",
+  "id": "T3b",
+  "nome": "Tempo até a 1ª palavra no Rapid (3 seguidas)",
+  "pass": true,
+  "detalhe": "1031, 931, 1004 ms"
+ },
+ {
+  "area": "estresse",
+  "id": "T4",
+  "nome": "Medidor de uso justo anda e não estoura com 5 juntas",
+  "pass": true,
+  "detalhe": "dia 6% → 7%"
+ }
+]

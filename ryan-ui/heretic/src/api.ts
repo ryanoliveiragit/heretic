@@ -2,14 +2,44 @@ const API = "/api";
 
 export interface Project { id: number; name: string; created_at: string }
 export interface Conversation { id: number; title: string; updated_at: string; project_id?: number | null }
-export interface Msg { role: "user" | "assistant" | "system"; content: string }
+export interface WireAttachment { kind: "image" | "pdf"; name: string; mime: string; data: string }
+export interface Msg { role: "user" | "assistant" | "system"; content: string; attachments?: WireAttachment[] }
 export interface ModelInfo { id: string; label: string; price_in: number; price_out: number; uncensored: boolean }
 export type Mode = "chat" | "agent" | "heavy";
 export type Routes = Record<Mode, { model: string }>;
 export interface RouteInfo { model: string; provider: string; maxCtx: number; tools: boolean; uncensored: boolean; label: string }
-export interface MeModel { id: string; name: string; short: string; note: string; tier: "free" | "pro"; locked: boolean; provider?: string; cost100?: number | null }
-export interface Usage { used: number; limit: number; remaining: number }
-export interface Me extends Usage { plan: string; models: MeModel[] }
+export interface ModelGuide { role: string; bestFor: string; style: string; limits: string[]; fallback: string; tested: string }
+export interface MeModel { id: string; name: string; short: string; note: string; tier: "free" | "pro"; locked: boolean; provider?: string; cost100?: number | null; ctx?: number | null; guide?: ModelGuide; bucket?: string }
+export type QuotaResource = "messages" | "image_gen" | "image_upload" | "files";
+export interface QuotaWindow { id: "5h" | "day" | "week" | "month"; label: string; limit: number; used: number; remaining: number; resetAt: number | null }
+export interface Quota { resource: QuotaResource; bucket: string; available: boolean; windows: QuotaWindow[]; remaining: number; blocked: boolean; blockedBy: string | null; resetAt: number | null }
+export type LimitTable = Record<QuotaResource, Record<string, Record<QuotaWindow["id"], number>>>;
+export interface Me { plan: string; store?: string; models: MeModel[]; quotas: Quota[]; limits?: LimitTable }
+
+export const RESOURCE_LABEL: Record<QuotaResource, string> = { messages: "Mensagens", image_gen: "Imagens geradas", image_upload: "Imagens enviadas", files: "Arquivos" };
+const RESOURCE_NOUN: Record<QuotaResource, string> = { messages: "mensagens", image_gen: "imagens geradas", image_upload: "imagens enviadas", files: "arquivos" };
+const WINDOW_NOUN: Record<string, string> = { "5h": "de 5 horas", day: "do dia", week: "da semana", month: "do mês" };
+
+/** Janela mais perto de esgotar. */
+export function tightestWindow(quota: Quota): QuotaWindow | null {
+  const open = quota.windows.filter(w => w.limit > 0);
+  return open.length ? open.reduce((a, b) => (b.used / b.limit > a.used / a.limit ? b : a)) : null;
+}
+/** "às 17h42" hoje; "em 20/11 às 17h42" nos outros dias. */
+export function formatReset(ts: number | null): string {
+  if (!ts) return "em breve";
+  const d = new Date(ts);
+  const hour = `${d.getHours()}h${String(d.getMinutes()).padStart(2, "0")}`;
+  return d.toDateString() === new Date().toDateString() ? `às ${hour}` : `em ${d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} às ${hour}`;
+}
+/** Aviso em português para quem chegou no limite de um recurso. */
+export function quotaMessage(quota: Quota, requested = 1): string {
+  const noun = RESOURCE_NOUN[quota.resource];
+  if (!quota.available) return quota.resource === "image_upload" ? "Envio de imagem faz parte dos modelos Pro." : `Este modelo não tem ${noun}.`;
+  if (!quota.blocked && requested > quota.remaining) return `Você pediu ${requested} ${noun}, mas restam ${quota.remaining} agora.`;
+  const when = formatReset(quota.resetAt);
+  return `Você atingiu o limite ${WINDOW_NOUN[quota.blockedBy || "5h"]} de ${noun}. Libera ${when}.`;
+}
 export interface Health {
   ok: boolean;
   providers?: Record<string, { ok: boolean }>;
@@ -24,12 +54,25 @@ async function j<T>(res: Response): Promise<T> {
 }
 
 // ── access key ── (free is public; a valid code unlocks Pro)
-const KEY_STORE = "heretic-key";
+// Rebrand 451: a chave passou a ser guardada em "451-key". Migramos quem tinha o nome antigo
+// ("heretic-key") na primeira leitura, para NINGUÉM ser deslogado ao atualizar o app.
+const KEY_STORE = "451-key";
+const LEGACY_KEY_STORE = "heretic-key";
 export function getKey(): string {
-  try { return localStorage.getItem(KEY_STORE) || ""; } catch { return ""; }
+  try {
+    let v = localStorage.getItem(KEY_STORE) || "";
+    if (!v) {
+      const old = localStorage.getItem(LEGACY_KEY_STORE) || "";
+      if (old) { try { localStorage.setItem(KEY_STORE, old); localStorage.removeItem(LEGACY_KEY_STORE); } catch { /* ignore */ } v = old; }
+    }
+    return v;
+  } catch { return ""; }
 }
 export function setKey(code: string) {
-  try { if (code) localStorage.setItem(KEY_STORE, code); else localStorage.removeItem(KEY_STORE); } catch { /* private mode */ }
+  try {
+    if (code) localStorage.setItem(KEY_STORE, code); else localStorage.removeItem(KEY_STORE);
+    localStorage.removeItem(LEGACY_KEY_STORE);
+  } catch { /* private mode */ }
 }
 // Impressão de dispositivo (anti-burla do limite grátis): derivada de sinais estáveis do navegador,
 // então sobrevive a limpar o cache/navegação anônima (mesmo navegador = mesma impressão). Trocar
@@ -51,24 +94,63 @@ export function deviceId(): string {
 export function authHeaders(extra?: Record<string, string>): Record<string, string> {
   const h: Record<string, string> = { ...(extra || {}) };
   const k = getKey();
-  if (k) h["x-heretic-key"] = k;
-  try { h["x-heretic-client"] = deviceId(); } catch { /* ignore */ }
+  if (k) h["x-451-key"] = k;
+  try { h["x-451-client"] = deviceId(); } catch { /* ignore */ }
   return h;
 }
 
-export interface ImageResult { image: string; used?: number; limit?: number | null; remaining?: number | null }
+export type ImageEstilo = "rapido" | "realista" | "sem-filtro" | "anime";
+export type ImageFormato = "auto" | "1:1" | "3:4" | "9:16" | "16:9";
+export interface ImageOpts { estilo?: ImageEstilo; formato?: ImageFormato; melhorar?: boolean; final?: string; seed?: number; confirmAge?: boolean }
+export interface ImageResult { image: string; token?: string; creditos?: number; quotas?: Quota[]; prompt?: string; seed?: number; estilo?: ImageEstilo; formato?: ImageFormato; model?: string; provider?: string }
+/** Imagem de referência para edição: `token` é a marca do 451 (só imagens geradas aqui aceitam edição adulta). */
+export interface ImageRef { src: string; token?: string }
+export interface ImageIntent { intent: "text" | "new_image" | "edit_image" | "bloqueado"; prompt?: string; adulto?: boolean; formato?: ImageFormato | ""; message?: string; unavailable?: boolean }
+export class LimitError extends Error { quota: Quota; constructor(quota: Quota) { super("limit_reached"); this.quota = quota; } }
+/** Erro com texto pronto para a tela (bloqueio, estilo do Pro). */
+export class ImageError extends Error { code: string; constructor(code: string, message?: string) { super(message || code); this.code = code; } }
+/* A rota de imagem transmite espaços até o JSON final (geração longa); erros dessa fase vêm com status 200. */
+async function imageJson(res: Response): Promise<ImageResult> {
+  const d = (await res.json().catch(() => ({}))) as ImageResult & { error?: string; message?: string; quota?: Quota };
+  if (d.quota && d.error === "limit_reached") throw new LimitError(d.quota);
+  if (!res.ok || d.error || !d.image) throw new ImageError(d.error || `${res.status}`, d.message);
+  return d;
+}
 
 export const api = {
   me: () => fetch(`${API}/me`, { headers: authHeaders() }).then(j<Me>),
-  image: (prompt: string) =>
+  image: (prompt: string, opts: ImageOpts = {}, signal?: AbortSignal) =>
     fetch(`${API}/image`, {
+      method: "POST", signal,
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ prompt, ...opts }),
+    }).then(imageJson),
+  editImage: (prompt: string, images: ImageRef[], opts: { final?: string; base?: string; adulto?: boolean; confirmAge?: boolean; formato?: ImageFormato } = {}, signal?: AbortSignal) =>
+    fetch(`${API}/image/edit`, {
+      method: "POST", signal,
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ prompt, images, ...opts }),
+    }).then(imageJson),
+  imageIntent: (text: string, contexto: { role: "user" | "assistant"; text: string; img?: boolean }[], temImagem: boolean, signal?: AbortSignal) =>
+    fetch(`${API}/image/intent`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ text, contexto, temImagem }),
+      signal,
+    }).then((r) => (r.ok ? (r.json() as Promise<ImageIntent>) : Promise.reject(new Error(`${r.status}`)))),
+  imageFollowups: (prompt: string) =>
+    fetch(`${API}/image/followups`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ prompt }),
-    }).then(async res => {
-      if (!res.ok) { const d = (await res.json().catch(() => ({}))) as { error?: string }; throw new Error(d.error || `${res.status}`); }
-      return res.json() as Promise<ImageResult>;
-    }),
+      signal: AbortSignal.timeout(8000),
+    }).then((r) => r.json() as Promise<{ suggestions?: string[] }>).then((d) => d.suggestions ?? []).catch(() => [] as string[]),
+  upscale: (image: string) =>
+    fetch(`${API}/image/upscale`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ image }),
+    }).then(imageJson),
   redeem: (code: string) =>
     fetch(`${API}/redeem`, {
       method: "POST",
@@ -138,22 +220,25 @@ export interface StreamHandlers {
   /** `status` is set when the server refused the request before streaming (e.g. 429, 403). */
   onError?: (message: string, info?: { status: number; code?: string }) => void;
   onDone?: (content: string) => void;
-  onUsage?: (usage: Usage) => void;
+  onUsage?: (quotas: Quota[]) => void;
+  /** Afinador: o servidor reescreveu o pedido antes de responder (Pro). Vem o original e o texto novo. */
+  onEnhanced?: (original: string, text: string) => void;
 }
 
 const REFUSALS: Record<string, string> = {
-  daily_token_limit: "You've used today's free tokens. They reset at midnight UTC.",
-  pro_model: "This model is part of Pro.",
+  pro_model: "Este modelo faz parte do Pro.",
 };
 
 /** Abre o SSE de /api/chat e repassa os eventos. Retorna o AbortController para parar. */
 export function streamChat(
-  body: { conversationId: number; mode: Mode; messages: Msg[]; params: ChatParams; agent?: string; model?: string; quality?: boolean },
+  body: { conversationId: number; mode: Mode; messages: Msg[]; params: ChatParams; agent?: string; model?: string; quality?: boolean; enhance?: boolean },
   h: StreamHandlers,
 ): AbortController {
   const ctrl = new AbortController();
   (async () => {
     let full = "";
+    let terminou = false; // QA 20/11: a transmissão que acaba sem "done" nem "error" não pode deixar a tela girando
+    const rede = (m: string) => (/failed to fetch|load failed|networkerror|network error|internet/i.test(m) ? "Sem conexão com o 451. Confira a internet e tente de novo." : m);
     try {
       const res = await fetch(`${API}/chat`, {
         method: "POST",
@@ -162,13 +247,11 @@ export function streamChat(
         signal: ctrl.signal,
       });
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string; used?: number; limit?: number };
+        const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string; quota?: Quota; requested?: number };
         const code = data.error;
-        if (res.status === 429 && typeof data.used === "number" && typeof data.limit === "number") {
-          h.onUsage?.({ used: data.used, limit: data.limit, remaining: Math.max(0, data.limit - data.used) });
-        }
-        const message = (code ? REFUSALS[code] : undefined)
-          ?? (res.status === 429 ? REFUSALS.daily_token_limit! : res.status === 403 ? REFUSALS.pro_model! : data.message ?? code ?? `${res.status} ${res.statusText}`);
+        if (data.quota) h.onUsage?.([data.quota]);
+        const message = data.quota ? quotaMessage(data.quota, data.requested)
+          : (code ? REFUSALS[code] : undefined) ?? data.message ?? code ?? `${res.status} ${res.statusText}`;
         h.onError?.(message, { status: res.status, code });
         return;
       }
@@ -193,15 +276,17 @@ export function streamChat(
               if ((data as { type?: string }).type === "refusal_forced") { full = ""; h.onRefusalForced?.(); }
               else h.onWarning?.(data);
             }
-            else if (event === "usage" && typeof data.used === "number" && typeof data.limit === "number") h.onUsage?.({ used: data.used, limit: data.limit, remaining: typeof data.remaining === "number" ? data.remaining : Math.max(0, data.limit - data.used) });
-            else if (event === "error") h.onError?.(data.message ?? "Something went wrong");
-            else if (event === "done") h.onDone?.(data.content || full);
+            else if (event === "enhanced" && typeof data.text === "string") h.onEnhanced?.(String(data.original ?? ""), data.text);
+            else if (event === "usage" && Array.isArray(data.quotas)) h.onUsage?.(data.quotas as Quota[]);
+            else if (event === "error") { terminou = true; h.onError?.(data.message ?? "Algo deu errado. Tente de novo."); }
+            else if (event === "done") { terminou = true; h.onDone?.(data.content || full); }
           } catch { /* linha parcial */ }
         }
       }
+      if (!terminou && !ctrl.signal.aborted) h.onError?.("A conexão caiu antes do fim da resposta. Tente de novo.");
     } catch (e) {
       const err = e as Error;
-      if (err.name !== "AbortError") h.onError?.(err.message);
+      if (err.name !== "AbortError") h.onError?.(rede(err.message));
       else h.onDone?.(full);
     }
   })();

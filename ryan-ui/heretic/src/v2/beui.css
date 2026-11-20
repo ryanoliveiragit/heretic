@@ -1,0 +1,10 @@
+/* Só as utilidades do Tailwind que os componentes do beui usam (sem o reset global), com as cores do 451. */
+@layer theme, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "./beui";
+@theme {
+  --color-border: #26262B; --color-card: #121216; --color-card-foreground: #F5F5F7; --color-foreground: #F5F5F7;
+  --color-muted-foreground: #8A8A93; --color-ring: #E8E2D0; --color-background: #040405; --color-popover: #121216; --color-popover-foreground: #F5F5F7;
+  --font-sans: "Switzer", ui-sans-serif, system-ui, sans-serif;
+}

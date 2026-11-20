@@ -1,0 +1,157 @@
+[
+ {
+  "part": "C-api2",
+  "test": "V7: ferramenta: resultado -> resposta",
+  "status": 200,
+  "ms": 1625,
+  "finish": "stop",
+  "content": "São **23h50** em São Paulo (BRT), de 19/11/2026.",
+  "reasoning": "",
+  "toolCalls": [],
+  "model": "451-rapid-uncensored",
+  "err": null,
+  "dsml": false,
+  "promptWords": 15
+ },
+ {
+  "part": "C-api2",
+  "test": "V8: identidade",
+  "status": 200,
+  "ms": 2404,
+  "finish": "stop",
+  "content": "Sou o Herege, um modelo sem censura de ponta.\n\nRespondo pela API do 451 (451sh.com), que roda modelos abertos sem censura sobre a infraestrutura da OpenUncensored.",
+  "reasoning": "",
+  "toolCalls": [],
+  "model": "451-rapid-uncensored",
+  "err": null,
+  "dsml": false,
+  "promptWords": 14
+ },
+ {
+  "part": "C-api2",
+  "test": "V9: alias 451-titan (Paris)",
+  "status": 200,
+  "ms": 1143,
+  "finish": "stop",
+  "content": "Paris",
+  "reasoning": "",
+  "toolCalls": [],
+  "model": "451-rapid-uncensored",
+  "err": null,
+  "dsml": false,
+  "promptWords": 10
+ },
+ {
+  "part": "C-api2",
+  "test": "V3-r1: RETRY 504: curto haiku (tentativa 1)",
+  "status": 200,
+  "ms": 1136,
+  "finish": "stop",
+  "content": "Fios de silício —\npacotes dançam na rede,\no mundo conectado.",
+  "reasoning": "",
+  "toolCalls": [],
+  "model": "451-rapid-uncensored",
+  "err": null,
+  "dsml": false,
+  "promptWords": 5
+ },
+ {
+  "part": "C-api2",
+  "test": "V3-r2: RETRY 504: curto haiku (tentativa 2)",
+  "status": 200,
+  "ms": 17678,
+  "finish": "stop",
+  "content": "Cabos dormindo,\npacotes cruzam o sono—\num eco responde.",
+  "reasoning": "",
+  "toolCalls": [],
+  "model": "451-rapid-uncensored",
+  "err": null,
+  "dsml": false,
+  "promptWords": 5
+ },
+ {
+  "part": "C-api2",
+  "test": "V5-r1: RETRY 504: longo 146 palavras (tentativa 1)",
+  "status": 504,
+  "ms": 25065,
+  "finish": null,
+  "content": "",
+  "reasoning": "",
+  "toolCalls": [],
+  "err": null,
+  "dsml": false,
+  "promptWords": 146
+ },
+ {
+  "part": "C-api2",
+  "test": "V5-r2: RETRY 504: longo 146 palavras (tentativa 2)",
+  "status": 504,
+  "ms": 25067,
+  "finish": null,
+  "content": "",
+  "reasoning": "",
+  "toolCalls": [],
+  "err": null,
+  "dsml": false,
+  "promptWords": 146
+ },
+ {
+  "part": "C-api2",
+  "test": "V10: streaming SSE",
+  "status": 200,
+  "ms": 34535,
+  "chunks": 3,
+  "hasDone": true,
+  "dsml": false
+ },
+ {
+  "part": "C-api2",
+  "test": "V11: afinador",
+  "status": 200,
+  "changed": true,
+  "refinedLen": 269,
+  "sample": "Quero testar meu site contra vulnerabilidades web no meu ambiente autorizado; me dê um passo a passo prático com os comandos e ferramentas (ex.: Nikto, OWASP ZAP, sqlmap), explicando o que cada etapa "
+ },
+ {
+  "part": "X-ultra",
+  "test": "X1: UI Max 400 palavras",
+  "ms": 22302,
+  "modelBtn": "Model: 451 Max",
+  "status": 200,
+  "contentLen": 3218,
+  "dsmlInContent": false,
+  "sample": "# EspecificaÃ§Ã£o â€” MÃ³dulo de CobranÃ§a (SaaS de Assinaturas)\n\n## 1. Objetivo do mÃ³dulo\n\nPara o assinante, o mÃ³dulo entrega um ciclo de vida prev"
+ },
+ {
+  "part": "C-api2",
+  "test": "X2: MUITO LONGO 400 palavras (non-stream)",
+  "status": 504,
+  "ms": 25066,
+  "finish": null,
+  "content": "",
+  "reasoning": "",
+  "toolCalls": [],
+  "err": null,
+  "dsml": false,
+  "promptWords": 400
+ },
+ {
+  "part": "D-mobile",
+  "test": "smoke 390px estouro",
+  "ok": false,
+  "overflow": {
+   "doc": 0,
+   "worst": 4
+  },
+  "pageErrors": []
+ },
+ {
+  "part": "D-mobile",
+  "test": "mensagem no mobile",
+  "ms": null,
+  "status": 200,
+  "contentLen": 50,
+  "dsmlInContent": false,
+  "sample": "OlÃ¡. Pronto pra comeÃ§ar â€” o que vocÃª precisa?"
+ }
+]

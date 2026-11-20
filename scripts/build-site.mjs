@@ -24,11 +24,16 @@ const PUB = join(ROOT, "public");
 const SITE = join(ROOT, "site");
 const LAND = join(SITE, "landing");
 
-rmSync(PUB, { recursive: true, force: true });
+// Modo "só landing" (node scripts/build-site.mjs --landing ou LANDING_ONLY=1):
+// NÃO apaga public/ inteiro e NÃO roda o build do chat (Vite), então public/app/** fica intocado.
+// Regenera apenas os arquivos da landing. Use quando outra conversa está editando o app (ryan-ui/heretic).
+const LANDING_ONLY = process.argv.includes("--landing") || process.env.LANDING_ONLY === "1";
+
+if (!LANDING_ONLY) rmSync(PUB, { recursive: true, force: true });
 mkdirSync(PUB, { recursive: true });
 
 // 1) chat
-execSync("npx vite build --config vite.heretic.config.ts", { cwd: join(ROOT, "ryan-ui"), stdio: "inherit" });
+if (!LANDING_ONLY) execSync("npx vite build --config vite.heretic.config.ts", { cwd: join(ROOT, "ryan-ui"), stdio: "inherit" });
 
 // 2) landing: design system, vendor, scripts
 cpSync(join(LAND, "_ds"), join(PUB, "_ds"), { recursive: true });
@@ -62,7 +67,7 @@ writeFileSync(join(PUB, "sw.js"), readFileSync(join(SITE, "sw.js"), "utf8").repl
 cpSync(join(SITE, "cursor.js"), join(PUB, "cursor.js"));
 
 // 4) páginas da landing com injeções
-const HEAD = `<title>Heretic — Uncensored AI</title>
+const HEAD = `<title>451.sh · Uncensored AI</title>
 <meta name="description" content="Uncensored AI that answers anything. Free to start, no account, no email.">
 <meta name="theme-color" content="#040405">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -71,7 +76,7 @@ const HEAD = `<title>Heretic — Uncensored AI</title>
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Heretic">
+<meta name="apple-mobile-web-app-title" content="451.sh">
 <script src="/cursor.js" defer></script>
 <script src="/heretic-i18n.js" defer></script>
 <script src="/heretic-fx.js" defer></script>
@@ -202,9 +207,10 @@ function page(src, out, toMobile) {
 const VIVA = join(SITE, "landing-viva");
 const DS_DIR = "_ds/aurabot-ryan-ui-a0e66545-26c9-4d1e-aa03-b485f579632f";
 cpSync(join(VIVA, "anim"), join(PUB, "anim"), { recursive: true });
-for (const f of ["ryan-ui-extra.js", "ryan-ui-extra.css", "ryan-ui-extra2.js", "ryan-ui-extra2.css"]) cpSync(join(VIVA, "extra", f), join(PUB, "uploads", f));
-const HEAD_VIVA = `<title>Heretic — IA sem censura</title>
-<meta name="description" content="IA sem censura para hacking: DDoS, engenharia reversa, clonagem. Grátis, sem conta, sem e-mail.">
+// heretic-lp: só ModelTraining e AgentLoop; a página carrega quando a seção chega perto da tela (heretic-design/extra-build/build-lp.mjs)
+for (const f of ["ryan-ui-extra.js", "ryan-ui-extra.css", "ryan-ui-extra2.js", "ryan-ui-extra2.css", "heretic-lp.js", "heretic-lp.css"]) cpSync(join(VIVA, "extra", f), join(PUB, "uploads", f));
+const HEAD_VIVA = `<title>451.sh · IA sem censura</title>
+<meta name="description" content="IA sem censura para segurança: pentest, engenharia reversa, OSINT e CTF, de especialistas. Grátis, sem conta, sem e-mail.">
 <meta name="theme-color" content="#040405">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="/icons/icon.svg?v=${STAMP}">
@@ -212,7 +218,7 @@ const HEAD_VIVA = `<title>Heretic — IA sem censura</title>
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Heretic">
+<meta name="apple-mobile-web-app-title" content="451.sh">
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};</script>
 <script defer src="/_vercel/insights/script.js"></script>`;
 // Registro do SW com auto-update: checa versão nova ao carregar, ao voltar o foco e de hora em hora,
@@ -236,13 +242,20 @@ function pageViva() {
   const RESPONSIVE_VIVA = `<style>
 @media (max-width:860px){
   html,body{overflow-x:hidden!important}
-  header{padding-left:18px!important;padding-right:18px!important;flex-wrap:wrap!important;gap:10px!important}
+  header{padding:14px 18px!important;flex-wrap:nowrap!important;gap:10px!important}
+  /* cabeçalho em uma linha só: marca à esquerda, botão principal à direita (Entrar some no celular) */
+  header > a[aria-label]{margin-right:0!important;gap:8px!important}
+  header > a[aria-label] > span:first-child{width:46px!important;height:18px!important}
+  header > div[data-nebula-text]{margin-left:auto!important}
+  header > div[data-nebula-text] > :not(:last-child){display:none!important}
   header nav{display:none!important}
   #topo{min-height:0!important}
-  #topo > section{padding:88px 18px 36px!important}
+  #topo > section{padding:28px 18px 40px!important}
+  #topo p[style*="--text-xl"]{font-size:17px!important;line-height:1.55!important}
   #topo h1{font-size:clamp(36px,12vw,58px)!important;max-width:none!important}
   canvas[data-nebula]{opacity:.3!important}
-  #como-funciona,#especialistas,#assinar,#duvidas{padding-left:18px!important;padding-right:18px!important}
+  #contraste,#como-funciona,#especialistas,#afinador,#assinar,#duvidas{padding-left:18px!important;padding-right:18px!important}
+  #contraste{padding-top:56px!important}
   /* Colapsa QUALQUER grade inline em 1 coluna no mobile (robusto: casa o nome da propriedade, não o valor, que pode ter espaços). */
   #topo [style*="grid-template-columns"],
   #como-funciona [style*="grid-template-columns"],
@@ -260,6 +273,23 @@ function pageViva() {
   h2,h2[style]{font-size:clamp(30px,8vw,44px)!important}
   [data-bar] [style*="nowrap"]{white-space:normal!important}
   [data-bar-progress]{display:none!important}
+  /* barra do topo: abaixo do relógio do iPhone e sem grudar na rolagem (ocupava 2 linhas fixas) */
+  [data-bar]{position:relative!important;padding-top:env(safe-area-inset-top)!important;background:#121215}
+  /* preços: texto de apoio e contador no tamanho de celular */
+  #assinar p[style*="--text-3xl"]{font-size:21px!important;line-height:1.35!important}
+  #assinar [style*="* 1.9"]{--text-3xl:60px!important}
+  #assinar [style*="--text-3xl:var(--text-4xl)"]{--text-3xl:28px!important;font-size:28px!important}
+  /* cards de plano: altura do conteúdo, sem o vazio da altura fixa; 'por mês' numa linha */
+  #assinar [style*="min-height:560px"]{min-height:0!important}
+  #assinar [style*="min-height:72px"]{flex-wrap:wrap!important;row-gap:0!important}
+  #assinar [style*="min-height:72px"] > span{white-space:nowrap!important}
+  #assinar [style*="margin-top:auto"]{margin-top:8px!important}
+  /* chamada final: sem altura fixa */
+  section[data-screen-label="Chamada final"]{height:auto!important;margin-top:64px!important;padding-bottom:72px!important}
+  section[data-screen-label="Chamada final"] > div{padding:56px 18px 0!important}
+  /* rodapé: quebra em linhas inteiras, não no meio do © 2026 */
+  footer{flex-wrap:wrap!important;gap:12px 20px!important;padding:24px 18px 32px!important}
+  footer > *{white-space:nowrap}
 }
 </style>`;
   // Barra de aviso do topo: discreta e alinhada à plataforma (dono 17/11).
@@ -277,11 +307,12 @@ function pageViva() {
   if (!html.includes("uploads/aurabot-ds-bundle.js")) throw new Error("landing nova: não achei o pacote do design system");
   html = html.replaceAll("uploads/aurabot-ds-bundle.css", `${DS_DIR}/_ds_bundle.css`).replaceAll("uploads/aurabot-ds-bundle.js", `${DS_DIR}/_ds_bundle.js`);
   // seletor PT/EN: ainda não existe versão em inglês desta página; sai até existir (um controle que não faz nada é pior)
+  // Regra do dono: telas só em português, sem seletor EN. A fonte já vem sem o seletor;
+  // se por acaso estiver presente, remove aqui também (tolerante — não quebra quando ausente).
   const LANG = /\s*<div style="--control-height-sm:28px;display:flex;margin-right:var\(--space-2\)">\s*<x-import component-from-global-scope="AuraBotDS\.SegmentedControl" label="Idioma"[^>]*><\/x-import>\s*<\/div>/;
-  if (!LANG.test(html)) throw new Error("landing nova: não achei o seletor de idioma");
   html = html.replace(LANG, "");
   html = must(html, 'src="./support.js"', `src="/support.js?v=${STAMP}"`, "support.js");
-  html = html.replace(/((?:anim\/anim-heretic-[\w-]+|uploads\/ryan-ui-extra2?)\.(?:js|css))/g, `$1?v=${STAMP}`);
+  html = html.replace(/((?:anim\/anim-heretic-[\w-]+|uploads\/ryan-ui-extra2?|uploads\/heretic-lp)\.(?:js|css))/g, `$1?v=${STAMP}`);
   html = must(html, "</body>", SW_REG + "\n" + VIVA_EVENTS + "\n</body>", "</body>");
   writeFileSync(join(PUB, "index.html"), html);
 }
@@ -292,7 +323,7 @@ writeFileSync(join(PUB, "heretic-sculptures.js"), themed(readFileSync(join(LAND,
 // módulo opcional "user" que as páginas do Claude Design tentam importar
 writeFileSync(join(PUB, "user"), "/* vazio */\n");
 
-for (const f of ["index.html", "m.html", "app/index.html", "sw.js", "manifest.webmanifest", "support.js", "anim/anim-heretic-nebula.js", "uploads/ryan-ui-extra.js", "uploads/ryan-ui-extra2.js", "uploads/logo-cicada.png", "uploads/mascara-especialista.png", DS_DIR + "/_ds_bundle.js"]) {
+for (const f of ["index.html", "m.html", "app/index.html", "sw.js", "manifest.webmanifest", "support.js", "anim/anim-heretic-nebula.js", "uploads/ryan-ui-extra.js", "uploads/ryan-ui-extra2.js", "uploads/heretic-lp.js", "uploads/heretic-lp.css", "uploads/logo-cicada.png", "uploads/mascara-especialista.png", DS_DIR + "/_ds_bundle.js"]) {
   if (!existsSync(join(PUB, f))) throw new Error(`faltou ${f}`);
 }
 console.log("site pronto em public/");
