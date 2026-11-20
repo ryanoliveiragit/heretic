@@ -2,6 +2,7 @@
 // Proxy to OpenRouter / Venice with streaming SSE. Reads keys from process.env.
 import { sanitizePii, cleanSources } from './pii.js';
 import { anthropicBlocks, digestAttachments, prepareForMax } from './attachments.js';
+import { routeFor } from './router451.js';
 
 export const MODEL_CATALOG = [
   // Heretic Max — cérebro de nuvem Claude (Anthropic) com server-side-fallback (técnica do drael). Gated em CLAUDE_KEY.
@@ -787,8 +788,17 @@ function pickNuclearModel(currentId) {
 }
 
 export async function* streamChat(mode, payload, { onToken, onWarning, signal } = {}) {
+  // Roteador pré-chamada (branch homo-451): se o usuário pediu o Max (Claude) e a mensagem
+  // parece recusável a ele, desvia ANTES de gastar token caro — vai pro modelo sem censura
+  // que o usuário já tem no seletor. Sem censura: é roteamento de custo/latência.
+  const preRoute = routeFor(
+    (payload.messages || []).filter(m => m?.role === 'user').pop()?.content || '',
+    payload.modelId && MODEL_CATALOG.some(m => m.id === payload.modelId) ? payload.modelId : (ROUTES[mode] || ROUTES.chat).model,
+    !!getApiKey('anthropic'),
+  );
+  if (preRoute.rerouted && onWarning) onWarning({ type: 'rerouted_pre', reason: preRoute.reason, to: preRoute.modelId });
   // A model picked in the chat (already checked against the plan) wins over the mode's route.
-  const pickedId = payload.modelId && MODEL_CATALOG.some(m => m.id === payload.modelId) ? payload.modelId : (ROUTES[mode] || ROUTES.chat).model;
+  const pickedId = preRoute.modelId;
   const catalog = MODEL_CATALOG.find(m => m.id === pickedId);
   const route = catalog
     ? { provider: catalog.provider, model: catalog.api_model || catalog.venice_model || catalog.id, maxCtx: catalog.ctx, tools: catalog.tools }
