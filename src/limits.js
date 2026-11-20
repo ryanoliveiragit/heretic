@@ -16,32 +16,44 @@ export const WINDOWS = [
 
 // Ajustáveis sem mexer no código pela env HERETIC_LIMITS, ex.: {"messages":{"free":{"5h":20}}}.
 // Limite 0 significa recurso indisponível naquele modelo.
+// Grade estilo Venice (dono 19/11):
+//   free      → plano grátis, qualquer modelo liberado (o Titan): 15 mensagens por dia.
+//   pro       → Pro e Pro Plus nos modelos 451 (Rapid, Titan, Max): "ilimitado" com uso justo.
+//               Ao bater o teto do dia, a conversa NÃO para: segue no Rapid (bucket pro_rapid).
+//   pro_rapid → o Rapid depois do uso justo; teto alto só contra robô/abuso.
+//   credits   → Hermes e Kimi; o limite real é o saldo de créditos, este é só anti-abuso.
+// O app não mostra o medidor dos buckets pagos (ver HIDDEN_BUCKETS): para o assinante é ilimitado.
 const DEFAULT_LIMITS = {
   messages: {
-    free: { '5h': 15, day: 30, week: 120, month: 300 },
-    titan: { '5h': 40, day: 100, week: 400, month: 1200 },
-    max: { '5h': 15, day: 40, week: 150, month: 400 },
+    free: { '5h': 15, day: 15, week: 90, month: 360 },
+    pro: { '5h': 100, day: 200, week: 1200, month: 4000 },
+    pro_rapid: { '5h': 300, day: 800, week: 4000, month: 12000 },
+    credits: { '5h': 200, day: 400, week: 2000, month: 6000 },
   },
   image_gen: {
     free: { '5h': 2, day: 3, week: 10, month: 20 },
-    titan: { '5h': 10, day: 20, week: 80, month: 200 },
-    max: { '5h': 10, day: 20, week: 80, month: 200 },
+    pro: { '5h': 10, day: 20, week: 80, month: 200 },
+    pro_rapid: { '5h': 10, day: 20, week: 80, month: 200 },
+    credits: { '5h': 10, day: 20, week: 80, month: 200 },
   },
   image_upload: {
     free: { '5h': 0, day: 0, week: 0, month: 0 },
-    titan: { '5h': 15, day: 30, week: 100, month: 300 },
-    max: { '5h': 5, day: 15, week: 50, month: 120 },
+    pro: { '5h': 15, day: 30, week: 100, month: 300 },
+    pro_rapid: { '5h': 15, day: 30, week: 100, month: 300 },
+    credits: { '5h': 5, day: 15, week: 50, month: 120 },
   },
   files: {
     free: { '5h': 3, day: 5, week: 20, month: 40 },
-    titan: { '5h': 5, day: 10, week: 40, month: 100 },
-    max: { '5h': 3, day: 6, week: 15, month: 30 },
+    pro: { '5h': 5, day: 10, week: 40, month: 100 },
+    pro_rapid: { '5h': 5, day: 10, week: 40, month: 100 },
+    credits: { '5h': 3, day: 6, week: 15, month: 30 },
   },
 };
+export const HIDDEN_BUCKETS = ['pro', 'pro_rapid', 'credits'];
 
 function loadLimits() {
   let custom = {};
-  try { custom = JSON.parse(process.env.HERETIC_LIMITS || '{}') || {}; } catch { custom = {}; }
+  try { custom = JSON.parse(process.env.APP_LIMITS || process.env.HERETIC_LIMITS || '{}') || {}; } catch { custom = {}; }
   const out = {};
   for (const [resource, buckets] of Object.entries(DEFAULT_LIMITS)) {
     out[resource] = {};
@@ -59,11 +71,11 @@ function loadLimits() {
 export const LIMITS = loadLimits();
 export const RESOURCES = Object.keys(LIMITS);
 
-/** Qual contador um modelo usa. Os modelos de reserva do grátis contam como o próprio grátis. */
-export function bucketOf(modelId) {
-  if (modelId === 'claude-sonnet-5-5') return 'max';
-  if (modelId === 'nousresearch/hermes-4-405b') return 'titan';
-  return 'free';
+/** Qual contador um pedido usa: depende do plano e do modelo. */
+export function bucketOf(modelId, tier = 'free') {
+  if (tier === 'free') return 'free';
+  if (modelId === 'hermes-4-405b' || modelId === 'kimi-k3.1-pro-uncensored') return 'credits';
+  return 'pro';
 }
 
 // ── quem está sendo contado ──
@@ -202,4 +214,66 @@ export async function refundQuota(subjects, charges) {
   const entries = entriesFor(subjects, active);
   const rows = await bump(entries, -1);
   return active.map(c => summarize(c, entries, rows));
+}
+
+// ── Teto por CUSTO REAL (dono 20/11) ──
+// Antes o Pro só contava mensagens: um "oi" e um pentest detalhado pesavam igual, e um Pro pesado
+// podia custar US$ 50–70/mês contra ~US$ 9 de receita. Agora cada resposta soma o custo real que o
+// provedor devolve (US$), em unidades de US$ 0,0001, por chave e por janela.
+//   pro       → Max/Titan/Rapid escolhidos. Passou → a conversa segue no Rapid (pro_rapid).
+//   pro_rapid → o Rapid do uso justo. Passou → para até a janela zerar.
+// Teto único (dono 20/11, "sair do prejuízo"): chat E imagens do Pro gastam deste medidor. Pior caso por
+// assinante: US$ 2,60 + US$ 1,00 = US$ 3,60/mês (+ créditos, que já têm margem). Com US$ 1 = R$ 5,77 isso
+// dá margem mínima de 30% no anual (R$ 33,26/mês líquido), 46% no trimestral e 53% no mensal.
+// Antes: US$ 4 + US$ 2 = US$ 6 → prejuízo no anual. Ajuste sem deploy de código: APP_SPEND_LIMITS (JSON).
+const SPEND_UNIT = 1e-4;
+const DEFAULT_SPEND = {
+  pro: { '5h': 1500, day: 2500, week: 9000, month: 26000 },         // US$ 0,15 / 0,25 / 0,90 / 2,60
+  pro_rapid: { '5h': 600, day: 1000, week: 3500, month: 10000 },    // US$ 0,06 / 0,10 / 0,35 / 1,00
+};
+function loadSpend() {
+  let custom = {};
+  try { custom = JSON.parse(process.env.APP_SPEND_LIMITS || '{}') || {}; } catch { custom = {}; }
+  const out = {};
+  for (const [bucket, base] of Object.entries(DEFAULT_SPEND)) {
+    out[bucket] = { ...base };
+    for (const w of WINDOWS) {
+      const n = Number(custom?.[bucket]?.[w.id]);
+      if (Number.isFinite(n) && n >= 0) out[bucket][w.id] = Math.floor(n);
+    }
+  }
+  return out;
+}
+export const SPEND_LIMITS = loadSpend();
+
+function spendEntries(subjects, bucket, amount = 1) {
+  return WINDOWS.flatMap(w => subjects.map(subject => ({
+    resource: 'spend', bucket, amount, window: w, subject, seconds: w.seconds,
+    key: `heretic:spend:${bucket}:${w.id}:${subject.id}`,
+  })));
+}
+
+/** Situação do teto de gasto: { tracked, blocked, resetAt, windows:[{id, pct}] }. Sem teto para o bucket → tracked=false. */
+export async function spendStatus(subjects, bucket) {
+  const lim = SPEND_LIMITS[bucket];
+  if (!lim) return { tracked: false, blocked: false, resetAt: null, windows: [] };
+  const entries = spendEntries(subjects, bucket);
+  const rows = await read(entries);
+  const now = Date.now();
+  const windows = WINDOWS.map((w) => {
+    let used = 0, ttl = 0;
+    entries.forEach((e, i) => { if (e.window.id === w.id && rows[i].count > used) { used = rows[i].count; ttl = rows[i].ttl; } });
+    const limit = lim[w.id];
+    return { id: w.id, label: w.label, pct: limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 100, full: used >= limit, resetAt: ttl > 0 ? now + ttl * 1000 : null };
+  });
+  const full = windows.filter(w => w.full).sort((a, b) => (b.resetAt || 0) - (a.resetAt || 0));
+  return { tracked: true, blocked: full.length > 0, resetAt: full[0]?.resetAt || null, blockedBy: full[0]?.id || null, windows: windows.map(({ full: _f, ...w }) => w) };
+}
+
+/** Soma o custo real (US$) de uma resposta no teto do bucket. Arredonda para cima: nenhuma resposta sai de graça. */
+export async function addSpend(subjects, bucket, usd) {
+  if (!SPEND_LIMITS[bucket]) return;
+  const amount = Math.max(1, Math.ceil((Number(usd) || 0) / SPEND_UNIT));
+  if (!(Number(usd) > 0)) return;
+  await bump(spendEntries(subjects, bucket, amount), 1);
 }
