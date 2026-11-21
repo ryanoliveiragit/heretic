@@ -1,4 +1,31 @@
 
+## 2026-11-21 (01h33) — PUBLICADO: todos os níveis começam pelo Claude
+
+Pedido do dono: "todos começam com o Claude; use o Sonnet e, no melhor modelo, o Opus". Decisões dele
+no chat: Sonnet no Rapid, no Titan e no grátis; Kimi e Hermes como estão; teto do Pro mantido.
+- Cadeias: Rapid = Sonnet 5.5 > GLM 5.3 > DeepSeek 1017 > Dolphin · Titan/grátis = Sonnet 5.5 >
+  DeepSeek 1017 > GLM 5.3 > Dolphin · Max = Opus 5.5 > GLM 5.3 > DeepSeek 1017 > Dolphin.
+  OpenUncensored sem saldo → o sem censura cai na reserva Dolphin (OpenRouter). Claude sem saldo ou
+  fora do ar → segue direto no sem censura do nível.
+- Como: `CLAUDE_NA_FRENTE` (upstream.js) + `payload.claudeFirst` (app.js: bucket pro, ou grátis abaixo
+  do freio; v1.js: bucket pro). Recusa/falha do Claude passa para o laço protegido (`entregaFora`),
+  que confere recusa a cada passo — fechou a brecha do Max (antes a recusa do GLM ia crua para a tela).
+- Sem Claude: uso justo (pro_rapid), Kimi/Hermes, modo qualidade, ajudantes internos.
+- Freio do grátis: `FREE_CLAUDE_DAY_USD` (padrão US$ 3/dia, chave Redis `gratis:cost:AAAA-MM-DD`);
+  passou, o grátis segue sem Claude até o dia virar (UTC).
+- Cache do prompt de sistema no Claude (`blocosDoSistema`): medido no ar com o Sonnet, a entrada de
+  ~7 mil tokens cai de US$ 0,018 (grava) para US$ 0,0007 (lê). Medidor cobra cache pelo preço oficial.
+- Preço do Opus corrigido para o oficial (US$ 4/20; era 5/25 e o medidor cobrava 25% a mais).
+  Sonnet 5.5: US$ 2/10, cache 2,50/0,10 (platform.claude.com/docs/en/about-claude/pricing).
+- Reserva do Titan: Cydonia → Dolphin (3/3 no teste; Cydonia 2/3).
+- Deploy `dpl_6WyBuEpbLvFSTGKcBvmzvkAGdfhS` → https://451sh-cgr6ijgvx-dwadwdwas-projects.vercel.app,
+  alias `451sh.com`, 215 arquivos conferidos por sha1. No ar: API Rapid/Titan/Max com ~7.140 tokens de
+  entrada (caminho do Claude), Kimi com 4.513 (sem Claude), grátis 200, `/.env` 404, logs sem erro.
+- Testes sem rede: `scripts/teste-medidor.mjs` (16 cenários, medidor 100%) e
+  `scripts/teste-claude-frente.mjs` (Pro, API, Kimi, modo qualidade, grátis, freio e uso justo).
+- **Undo:** `npx vercel rollback https://451sh-ogwssxcjh-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`
+  (deploy anterior `dpl_DeDyonyiUZbM47G9ZYkR6bbuJj6c`).
+
 ## 2026-11-21 (00h52) — PUBLICADO: medidor de custo completo + recusa nunca sobe para o Opus
 
 Aprovado pelo dono no chat ("Publica o medidor" + "Nunca subir pro Opus"). Os modelos do ar NÃO mudaram.

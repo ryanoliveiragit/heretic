@@ -275,7 +275,8 @@ v1.post('/chat/completions', async (c) => {
     }
   }
 
-  const payload = { messages: chat, systemPrompt, modelId, ...params, creditsOk: bucket === 'credits' };
+  // Claude na frente (dono 21/11): a API é só do Pro; o uso justo (pro_rapid) e Kimi/Hermes ficam sem Claude.
+  const payload = { messages: chat, systemPrompt, modelId, ...params, creditsOk: bucket === 'credits', claudeFirst: bucket === 'pro' };
 
   // ── streaming (formato chat.completion.chunk) ──
   if (stream) {

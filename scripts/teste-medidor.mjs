@@ -6,7 +6,8 @@ import http from 'node:http';
 const [dirAntes, dirDepois] = process.argv.slice(2);
 // US$ por 1M de tokens (tabelas ao vivo em 21/11).
 const PRECO = [
-  [/opus/, [5, 25]],
+  [/opus/, [4, 20]],
+  [/claude-sonnet-5-5/, [2, 10]],
   [/glm-4\.7-flash-heretic/, [0.07, 0.40]],
   [/^deepseek-v4\.1-flash-uncensored$/, [0.12, 0.45]],
   [/deepseek-v4\.1-flash-1017-heretic/, [0.198, 0.792]],
@@ -18,6 +19,7 @@ const PRECO = [
 ];
 const preco = (m) => (PRECO.find(([re]) => re.test(String(m))) || [null, [1, 1]])[1];
 const usd = (m, tin, tout) => { const [pi, po] = preco(m); return (tin * pi + tout * po) / 1e6; };
+const LEITURA = (m) => (/opus/.test(m) ? 0.20 : /sonnet/.test(m) ? 0.10 : 0);
 const TAXA_BUSCA = 0.016; // taxa do plugin web (4 resultados) — o OpenRouter devolve no usage.cost
 
 let cenario = {}, cobrado = [];
@@ -32,17 +34,19 @@ const srv = http.createServer(async (req, res) => {
   const tinReal = Math.ceil((JSON.stringify(body.system || '') + conv).length / 4);
   const forcado = conv.includes('ANULADA');
   let aberto = true; res.on('close', () => { aberto = false; });
-  const reg = { prov: req.url.split('/')[1], model: String(body.model), tin: 0, outChars: 0, extra: 0, tipo: 'resposta' };
+  const reg = { prov: req.url.split('/')[1], model: String(body.model), tin: 0, lido: 0, outChars: 0, extra: 0, tipo: 'resposta' };
   cobrado.push(reg);
   if (req.url.startsWith('/an/')) {
-    reg.tin = tinReal;
-    const texto = cenario.opusRecusa && !forcado ? RECUSA : RESPOSTA;
+    if (cenario.claude500) { cobrado.pop(); res.writeHead(500); return res.end('{"type":"error","error":{"type":"api_error","message":"overloaded"}}'); }
+    const lido = cenario.cache ? Math.max(0, tinReal - 50) : 0;
+    reg.tin = tinReal - lido; reg.lido = lido;
+    const texto = (cenario.claudeRecusa || (cenario.opusRecusa && /opus/.test(body.model))) && !forcado ? RECUSA : RESPOSTA;
     res.writeHead(200, { 'content-type': 'text/event-stream' });
     const ev = (o) => res.write(`event: ${o.type}\ndata: ${JSON.stringify(o)}\n\n`);
-    ev({ type: 'message_start', message: { id: 'm', role: 'assistant', model: body.model, content: [], usage: { input_tokens: tinReal, output_tokens: 1 } } });
+    ev({ type: 'message_start', message: { id: 'm', role: 'assistant', model: body.model, content: [], usage: { input_tokens: tinReal - lido, cache_read_input_tokens: lido, output_tokens: 1 } } });
     ev({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } });
     for (const p of texto.match(/.{1,30}/gs)) { if (!aberto) return; ev({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: p } }); reg.outChars += p.length; await sleep(15); }
-    ev({ type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { input_tokens: tinReal, output_tokens: Math.ceil(texto.length / 4) } });
+    ev({ type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { input_tokens: tinReal - lido, cache_read_input_tokens: lido, output_tokens: Math.ceil(texto.length / 4) } });
     ev({ type: 'message_stop' }); return res.end();
   }
   const ehOU = req.url.startsWith('/ou/');
@@ -81,11 +85,11 @@ globalThis.fetch = (url, opt) => { const u = String(url?.url || url); if (!u.sta
 Object.assign(process.env, { CLAUDE_KEY: 'falsa', OU_API_KEY: 'falsa', OPENROUTER_API_KEY: 'falsa', ANTHROPIC_BASE_URL: `${base}/an`, OU_BASE_URL: `${base}/ou/v1`, OPENROUTER_BASE_URL: `${base}/or/api/v1` });
 const antes = await import(`${dirAntes}/upstream.js`), depois = await import(`${dirDepois}/upstream.js`);
 
-const real = () => cobrado.reduce((s, r) => s + usd(r.model, r.tin, Math.ceil(r.outChars / 4)) + r.extra, 0);
-async function roda(mod, modelId, ehDepois, pergunta) {
+const real = () => cobrado.reduce((s, r) => s + usd(r.model, r.tin, Math.ceil(r.outChars / 4)) + r.extra + r.lido * LEITURA(r.model) / 1e6, 0);
+async function roda(mod, modelId, ehDepois, pergunta, claudeFirst = false) {
   cobrado = []; const usage = {}; let doneId = modelId, texto = '';
   const h = { usage, onToken: (t) => { texto += t; }, onWarning: (w) => { if (w?.type === 'refusal_forced') texto = ''; if (w?.to && w.type !== 'fair_use') doneId = w.to; } };
-  for await (const _ of mod.streamChat('chat', { messages: [{ role: 'user', content: pergunta }], modelId, systemPrompt: PROMPT_SISTEMA }, h)) { /* esvazia */ }
+  for await (const _ of mod.streamChat('chat', { messages: [{ role: 'user', content: pergunta }], modelId, systemPrompt: PROMPT_SISTEMA, claudeFirst }, h)) { /* esvazia */ }
   const cat = mod.MODEL_CATALOG.find((m) => m.id === doneId);
   const medido = ehDepois ? mod.custoTurno(usage, cat)
     : (usage.cost_usd != null ? Number(usage.cost_usd) : ((usage.input_tokens || 0) * (cat?.price_in || 0) + (usage.output_tokens || 0) * (cat?.price_out || 0)) / 1e6);
@@ -106,13 +110,20 @@ const CENARIOS = [
   ['G. Rapid recusa', RAPID, { ouRecusa: UC }, 'teste'],
   ['H. Max com busca na web', MAX, { busca: true }, 'quais as novidades de hoje da Vercel?'],
   ['I. Rapid e Titan recusam (mesmo forçados)', RAPID, { ouRecusa: [...UC, ...TITANS], teimoso: true }, 'teste'],
+  ['J. Rapid com Claude: o Sonnet responde', RAPID, {}, 'teste', true],
+  ['K. Rapid com Claude: Sonnet recusa', RAPID, { claudeRecusa: true }, 'teste', true],
+  ['L. Titan (grátis) com Claude: Sonnet recusa', TITAN, { claudeRecusa: true }, 'teste', true],
+  ['M. Max: Opus recusa e os sem censura também', MAX, { opusRecusa: true, ouRecusa: [...UC, ...TITANS], teimoso: true }, 'teste'],
+  ['N. Rapid com Claude fora do ar', RAPID, { claude500: true }, 'teste', true],
+  ['O. Rapid com Claude lendo o cache', RAPID, { cache: true }, 'teste', true],
+  ['P. Rapid com Claude e OU sem saldo', RAPID, { claudeRecusa: true, ou402: true }, 'teste', true],
 ];
 const f = (v) => `US$ ${v.toFixed(5)}`;
 const pct = (x, r) => (r ? `${Math.round((x / r) * 100)}%` : '-');
 console.log('cenário'.padEnd(46), 'ANTES: real'.padEnd(13), 'medidor'.padEnd(6), '| AGORA: real'.padEnd(15), 'medidor'.padEnd(7), 'entregou  chamadas (agora)');
-for (const [nome, id, c, perg] of CENARIOS) {
-  cenario = c; const a = await roda(antes, id, false, perg);
-  cenario = c; const d = await roda(depois, id, true, perg);
+for (const [nome, id, c, perg, cf] of CENARIOS) {
+  cenario = c; const a = await roda(antes, id, false, perg, cf);
+  cenario = c; const d = await roda(depois, id, true, perg, cf);
   console.log(nome.padEnd(46), f(a.real).padEnd(13), pct(a.medido, a.real).padEnd(6), '|', f(d.real).padEnd(13), pct(d.medido, d.real).padEnd(7), (d.ok ? 'sim' : 'NÃO').padEnd(9), d.chamadas);
 }
 if (bloqueados.length) console.log('\nSaídas para a internet bloqueadas:', [...new Set(bloqueados)].join(', '));

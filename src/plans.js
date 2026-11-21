@@ -61,16 +61,16 @@ export const PUBLIC_MODELS_RAW = [
   {
     id: 'zai-org/glm-5.3-flash-uncensored', name: '451 Rapid', short: '451 Rapid', note: 'GLM 5.3 Flash sem censura (OpenUncensored)', tier: 'pro', quality: 3,
     guide: {
-      role: 'O Pro mais barato: rápido, sem censura e bom em português.',
+      role: 'Rápido e sem censura: responde primeiro com o Claude Sonnet; se ele recusar, um modelo sem censura entrega.',
       bestFor: 'Conversa longa, resumo, ideia rápida e tarefa do dia a dia.',
-      style: 'Testado em 19/11: resposta organizada, ~9 s, ~2,8 mil caracteres, sem recusa.',
+      style: 'Medido em 21/11 com o Claude Sonnet na frente: ~2 s numa pergunta curta e ~11 s numa explicação de 3 parágrafos.',
       limits: [
-        'Não é o mais forte em raciocínio profundo; para isso use o Titan ou o Max.',
+        'Para raciocínio profundo, use o Max.',
         'Lê imagem e PDF por um leitor auxiliar.',
         'Não roda comandos. Conversa longa mantém as últimas 8 mensagens.',
       ],
-      fallback: 'Se o provedor falhar, o servidor troca de modelo sozinho e a conversa continua.',
-      tested: 'Testado em 19/11/2026.',
+      fallback: 'Se o Claude recusar ou falhar, um modelo sem censura assume e a conversa continua.',
+      tested: 'Medido em 21/11/2026.',
     },
   },
   // Pro = DOIS modelos de topo pra comparar (dono 17/11), ambos sem censura:
@@ -79,16 +79,16 @@ export const PUBLIC_MODELS_RAW = [
   {
     id: 'nousresearch/hermes-4-405b', name: '451 Titan', short: '451 Titan', note: 'DeepSeek V4.1 Flash sem censura (OpenUncensored)', tier: 'free', quality: 4,
     guide: {
-      role: 'O modelo do grátis e o cavalo de batalha do Pro: sem censura, forte e direto.',
+      role: 'O modelo do grátis e o cavalo de batalha do Pro: responde primeiro com o Claude Sonnet; se ele recusar, um modelo sem censura forte entrega.',
       bestFor: 'Conversa do dia a dia, análise, técnica e decisões sem enrolação.',
-      style: 'Testado em 19/11: resposta direta e organizada, sem recusa.',
+      style: 'Medido em 21/11 com o Claude Sonnet na frente: ~2 s numa pergunta curta e ~11 s numa explicação de 3 parágrafos.',
       limits: [
         'No grátis: 15 mensagens por dia. No Pro: ilimitado, com uso justo.',
         'Imagem e PDF só no Pro (leitor auxiliar transcreve o arquivo antes da resposta).',
         'Não roda comandos. Conversa longa mantém as últimas mensagens.',
       ],
-      fallback: 'Se o provedor falhar, o servidor troca de modelo sozinho e a conversa continua. Também é a reserva do FORÇA TUDO.',
-      tested: 'Testado em 19/11/2026.',
+      fallback: 'Se o Claude recusar ou falhar, um modelo sem censura assume e a conversa continua.',
+      tested: 'Medido em 21/11/2026.',
     },
   },
   // Heretic Max — cérebro de nuvem (Claude). Só aparece quando a chave CLAUDE_KEY está no ambiente.

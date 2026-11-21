@@ -8,7 +8,7 @@ import { health, listProjects, createProject, deleteProject,
 import { getPersona, setPersona } from './persona.js';
 import { streamChat, qualityAnswer, enhancePrompt, imagePrompt, imageIntent, imageFollowups, agentTip, getRoutes, setRoute, MODEL_CATALOG, custoTurno } from './upstream.js';
 import { checkBudget, incrementUsage } from './budget.js';
-import { checkGlobalBudget, recordCost } from './cost.js';
+import { checkGlobalBudget, recordCost, recordFreeCost, freeClaudeOk } from './cost.js';
 import { AGENTS, agentPrompt } from './agents.js';
 import { planOf, tierOf, modelsFor, resolveModel, visitorIds, keyFrom, planForKey, isAdmin, FAIR_USE_MODEL, PUBLIC_MODELS } from './plans.js';
 import { creditBalance, spendCredits, addExtraCredits, priceCredits, throttle, MIN_TO_START, THROTTLE_SECONDS, THROTTLE_PRO_SECONDS } from './credits.js';
@@ -627,7 +627,10 @@ app.post('/api/chat', async (c) => {
             send('enhanced', { original: userMsg.content, text: better });
           }
         }
-        const chatPayload = { messages: sendMessages, systemPrompt, modelId, ...params, creditsOk: bucket === 'credits' };
+        // Claude na frente (dono 21/11): Pro e grátis começam pelo Claude. Uso justo (pro_rapid) e
+        // Kimi/Hermes (créditos) não. O grátis para de usar o Claude quando o gasto do dia passa do freio.
+        const claudeFirst = bucket === 'pro' || (bucket === 'free' && (await freeClaudeOk().catch(() => false)));
+        const chatPayload = { messages: sendMessages, systemPrompt, modelId, ...params, creditsOk: bucket === 'credits', claudeFirst };
         // Modelo que de fato respondeu pode mudar no meio (roteador e escalada por recusa): o
         // custo/cota têm de seguir quem respondeu, não o que foi pedido.
         let doneId = modelId;
@@ -657,6 +660,7 @@ app.post('/api/chat', async (c) => {
         // 21/11: soma TODAS as chamadas do turno (Opus que recusou + o sem censura que entregou).
         const cost = custoTurno(usage, cat);
         if (cost > 0) await recordCost(cost).catch(() => {});
+        if (cost > 0 && tier === 'free') await recordFreeCost(cost).catch(() => {}); // freio diário do grátis
         // O balde também pode ter mudado (escalada para modelo de créditos, por exemplo).
         const doneBucket = bucketOf(doneId, tier);
         if (!admin && fullText && (doneBucket === 'pro' || doneBucket === 'pro_rapid')) await addSpend(subjects, doneBucket, cost).catch(() => {});

@@ -45,6 +45,32 @@ export async function monthlySpent() {
   return mem.get(monthKey()) || 0;
 }
 
+// Freio do grátis (dono 21/11: o grátis passou a começar pelo Claude Sonnet). Soma o gasto do plano
+// grátis no dia (UTC); passou de FREE_CLAUDE_DAY_USD, o grátis segue só nos sem censura (sem Claude)
+// até o dia virar. Ajuste pela variável FREE_CLAUDE_DAY_USD na Vercel (vale a partir do próximo deploy).
+const freeDayKey = () => `gratis:cost:${new Date().toISOString().slice(0, 10)}`;
+export const freeClaudeDayUsd = () => Number(process.env.FREE_CLAUDE_DAY_USD || 3);
+export async function recordFreeCost(usd) {
+  const v = Number(usd) || 0;
+  if (!v) return;
+  if (hasRedis()) {
+    try {
+      await pipeline([['INCRBYFLOAT', freeDayKey(), String(v)], ['EXPIRE', freeDayKey(), '172800']]);
+      return;
+    } catch (e) { console.error('[custo] redis falhou, usando memória:', e.message); }
+  }
+  mem.set(freeDayKey(), (mem.get(freeDayKey()) || 0) + v);
+}
+/** O grátis ainda pode começar pelo Claude hoje? */
+export async function freeClaudeOk() {
+  let gasto = mem.get(freeDayKey()) || 0;
+  if (hasRedis()) {
+    try { gasto = Number((await pipeline([['GET', freeDayKey()]]))[0]) || 0; }
+    catch (e) { console.error('[custo] redis falhou, usando memória:', e.message); }
+  }
+  return gasto < freeClaudeDayUsd();
+}
+
 // Saldo da chave OpenUncensored: uma checagem por hora (custa zero e evita bater na API a cada chat).
 let _balance = { at: 0, usd: null };
 async function remainingBalance() {
