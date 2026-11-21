@@ -215,6 +215,46 @@ const MAX_CALLS_PER_MSG = Math.max(4, Number(process.env.UPSTREAM_MAX_CALLS) || 
 // Titan) começam pelo Sonnet 5.5; o Max já é o Opus. Kimi e Hermes ficam como estão (créditos).
 const CLAUDE_NA_FRENTE = { [RAPID_ID]: 'claude:sonnet-5-5', [TITAN_ID]: 'claude:sonnet-5-5' };
 
+/** Painel (21/11): as ajudas do servidor e quem as atende, em ordem (mesmas constantes do código). */
+export function apoioDoServidor() {
+  const passo = (modelo, fornecedor) => ({ modelo, fornecedor });
+  const enh = MODEL_CATALOG.find((m) => m.id === ENHANCE_MODEL);
+  const juiz = MODEL_CATALOG.find((m) => m.id === JUDGE_MODEL);
+  const rapido = passo(enh?.api_model || 'glm-5.3-flash-uncensored', 'openuncensored');
+  return [
+    { papel: 'busca', ordem: [passo('claude-haiku-5-5', 'anthropic'), passo(process.env.SEARCH_MODEL || 'deepseek/deepseek-v4.1-flash', 'openrouter')], nota: 'US$ 0,01 por busca + tokens no Claude; o OpenRouter só quando o Claude recusa ou falha' },
+    { papel: 'classificador', ordem: [passo(process.env.ROUTER_MODEL_OU || FAST_MODEL_OU, 'openuncensored')], nota: 'decide se a pergunta precisa de busca' },
+    { papel: 'pessoa', ordem: [passo(process.env.ROUTER_MODEL_OU || 'deepseek-v4.1-flash-1017-heretic', 'openuncensored')], nota: 'pesquisa de pessoa: separa o nome' },
+    { papel: 'juiz', ordem: [passo(juiz?.api_model || 'deepseek-v4.1-flash-1017-heretic', 'openuncensored')], nota: 'confere se uma resposta é recusa' },
+    { papel: 'anexo', ordem: [passo('claude-haiku-5-5', 'anthropic'), passo('inkling-2-mini-uncensored', 'openuncensored'), passo('qwen/qwen3.7-flash', 'openrouter'), passo('z-ai/glm-5.3-flash', 'openrouter')], nota: 'lê imagem e PDF para os modelos só de texto; o Inkling só lê imagem' },
+    { papel: 'foto_gratis', ordem: [passo('claude-haiku-5-5', 'anthropic'), passo('inkling-2-mini-uncensored', 'openuncensored')], nota: 'foto no 451 Free: o Claude responde; o Inkling na recusa' },
+    { papel: 'afinador', ordem: [rapido], nota: 'reescreve o pedido (Pro, quando ligado); custo entra na mensagem' },
+    { papel: 'dica_agente', ordem: [rapido], nota: 'dica de próximo passo no modo agente (fora do chat)' },
+    { papel: 'intencao_imagem', ordem: [rapido], nota: 'decide se o pedido é de imagem (fora do chat)' },
+    { papel: 'prompt_imagem', ordem: [rapido], nota: 'reescreve o pedido de imagem (fora do chat)' },
+    { papel: 'sugestoes_imagem', ordem: [rapido], nota: 'sugere ajustes depois da imagem (fora do chat)' },
+  ];
+}
+
+/** Painel (21/11): a ordem real de quem responde em cada nível, das mesmas regras do servidor. */
+export function rotaDoNivel(id) {
+  const cat = MODEL_CATALOG.find((m) => m.id === id);
+  if (!cat) return [];
+  const passo = (m, papel) => ({ modelo: m.api_model || m.venice_model || m.id, fornecedor: FORNECEDOR[m.provider] || m.provider, papel });
+  if (cat.provider === 'local') return [passo(cat, 'responde (no computador do 451, sem custo)')];
+  const passos = [];
+  const frente = CLAUDE_NA_FRENTE[id] ? MODEL_CATALOG.find((m) => m.id === CLAUDE_NA_FRENTE[id]) : null;
+  if (frente) passos.push(passo(frente, 'responde primeiro'));
+  passos.push(passo(cat, frente ? 'assume quando o Claude recusa ou falha' : 'responde primeiro'));
+  const tentados = [id];
+  for (let prox = alternateFor(id, { tried: tentados }); prox && passos.length < 6; prox = alternateFor(id, { tried: tentados })) {
+    tentados.push(prox);
+    const m = MODEL_CATALOG.find((x) => x.id === prox);
+    if (m) passos.push(passo(m, prox === RESERVA_ID ? 'reserva quando a OpenUncensored cai' : (passos.length === 1 && cat.provider === 'anthropic' ? 'assume quando o Claude recusa' : 'se o anterior recusar ou falhar')));
+  }
+  return passos;
+}
+
 // Cache do prompt (21/11): o começo fixo do prompt de sistema (plano, persona, identidade) se repete em
 // toda mensagem. Gravar custa 1,25× uma vez; ler custa 0,05× (Sonnet/Opus 5.5). Medido no Sonnet: a
 // entrada de 7,1 mil tokens caiu de US$ 0,018 (gravando) para US$ 0,0008 (lendo). Mínimo: 512 tokens.
@@ -243,7 +283,7 @@ const catDe = (provider, model) =>
   || MODEL_CATALOG.find((m) => (m.api_model || m.venice_model || m.id) === model) || PRECO_APOIO[model] || null;
 function abreConta(usage) {
   if (!usage) return null;
-  return { tin: usage.input_tokens || 0, tout: usage.output_tokens || 0, cin: usage.costed_in || 0, cout: usage.costed_out || 0, pc: usage.provider_cost || 0, pcc: usage.pc_closed || 0 };
+  return { tin: usage.input_tokens || 0, tout: usage.output_tokens || 0, cin: usage.costed_in || 0, cout: usage.costed_out || 0, pc: usage.provider_cost || 0, pcc: usage.pc_closed || 0, t: Date.now() };
 }
 // O que é DESTA chamada e ninguém contou ainda: as chamadas feitas por dentro dela (reserva, juiz)
 // fecham a própria conta antes, e o que elas fecharam sai daqui.
@@ -256,12 +296,22 @@ function proprio(usage, conta) {
 }
 // Painel do dono (21/11, "gastei R$ 0,10 num prompt? em qual modelo?"): cada chamada paga guarda a
 // própria parte da conta (modelo, papel, tokens, cache e custo). Só números: nada do texto.
-function anotaParte(usage, modelo, papel, { tin = 0, tout = 0, cg = 0, cl = 0, usd = 0 } = {}) {
+// Quem cobra cada chamada (painel novo, 21/11): pelo provedor do catálogo; sem catálogo, pelo nome do modelo.
+const FORNECEDOR = { anthropic: 'anthropic', openuncensored: 'openuncensored', 'openuncensored-anthropic': 'openuncensored', openrouter: 'openrouter', local: 'local', venice: 'venice', pollinations: 'pollinations' };
+export function fornecedorDe(modelo) {
+  const cat = catDe('', modelo);
+  if (cat?.provider) return FORNECEDOR[cat.provider] || cat.provider;
+  const s = String(modelo || '');
+  if (/^claude/i.test(s)) return 'anthropic';
+  if (/^local[/:]/.test(s)) return 'local';
+  return s.includes('/') ? 'openrouter' : 'openuncensored';
+}
+function anotaParte(usage, modelo, papel, { tin = 0, tout = 0, cg = 0, cl = 0, usd = 0, ms = null } = {}) {
   if (!usage) return;
   const l = usage.partes || (usage.partes = []);
-  if (l.length < 16) l.push({ m: String(modelo || ''), p: papel, tin, tout, cg, cl, usd });
+  if (l.length < 16) l.push({ m: String(modelo || ''), p: papel, tin, tout, cg, cl, usd, f: fornecedorDe(modelo), ...(ms != null && ms >= 0 ? { ms: Math.round(ms) } : {}) });
 }
-function fechaConta(usage, conta, cat, modelo = '', papel = 'resposta') {
+function fechaConta(usage, conta, cat, modelo = '', papel = 'resposta', ms = null) {
   if (!usage || !conta) return;
   const { dIn, dOut, dPc } = proprio(usage, conta);
   if (!dIn && !dOut && !dPc) return;
@@ -270,13 +320,13 @@ function fechaConta(usage, conta, cat, modelo = '', papel = 'resposta') {
   usage.costed_out = (usage.costed_out || 0) + dOut;
   usage.pc_closed = (usage.pc_closed || 0) + dPc;
   const usd = dPc || (dIn * (cat.price_in || 0) + dOut * (cat.price_out || 0)) / 1e6;
-  anotaParte(usage, modelo || cat?.api_model || cat?.id, papel, { tin: dIn, tout: dOut, usd });
+  anotaParte(usage, modelo || cat?.api_model || cat?.id, papel, { tin: dIn, tout: dOut, usd, ms: ms ?? (conta.t ? Date.now() - conta.t : null) });
   if (dPc) return; // o provedor mandou o custo desta chamada (já está em cost_usd)
   usage.cost_usd = (usage.cost_usd || 0) + usd;
 }
 // Chamada avulsa sem stream (classificador de busca, detector de pessoa, busca web, juiz): soma os
 // tokens e o custo dela na mensagem. Sem `usage` na resposta, estima pelo tamanho do pedido.
-function contaAvulsa(usage, data, cat, inChars = 0, modelo = '', papel = 'apoio') {
+function contaAvulsa(usage, data, cat, inChars = 0, modelo = '', papel = 'apoio', ms = null) {
   if (!usage || !data) return;
   const conta = abreConta(usage);
   const u = data.usage || {};
@@ -289,7 +339,7 @@ function contaAvulsa(usage, data, cat, inChars = 0, modelo = '', papel = 'apoio'
     usage.output_tokens = (usage.output_tokens || 0) + Math.ceil((String(m.content || '').length + String(m.reasoning_content || '').length) / 4);
   }
   somaCustoDoProvedor(usage, data);
-  fechaConta(usage, conta, cat, modelo, papel);
+  fechaConta(usage, conta, cat, modelo, papel, ms);
 }
 /** Custo do turno em US$: o que cada chamada já somou + tokens sem dono pelo preço de quem respondeu. */
 export function custoTurno(usage, cat) {
@@ -455,6 +505,7 @@ const EFFORT_LEVEL = { baixo: 'low', medio: 'medium', alto: 'high' };
 const FOLGA_TEXTO = 1800;
 
 async function* anthropicTurnStream({ model, system, systemFixo = '', messages: apiMsgs, maxTokens, onToken, onToolCall, onReasoning, ac, outcome, active = false, provider = 'anthropic', usage = null, tools = null, toolChoice = null, effort = null }) {
+  const t0 = Date.now(); // painel: tempo da chamada
   const key = getApiKey(provider);
   // Ferramentas no formato da Anthropic (o cliente manda no formato OpenAI).
   const anTools = (Array.isArray(tools) ? tools : []).filter(t => t?.function?.name)
@@ -580,9 +631,9 @@ async function* anthropicTurnStream({ model, system, systemFixo = '', messages: 
           + tok.le * (cat.price_cache_read ?? cat.price_in * 0.1)
           + out * cat.price_out) / 1e6;
         usage.cost_usd = (usage.cost_usd || 0) + usd;
-        anotaParte(usage, model, 'resposta', { tin: entrada, tout: out, cg: tok.grava, cl: tok.le, usd });
+        anotaParte(usage, model, 'resposta', { tin: entrada, tout: out, cg: tok.grava, cl: tok.le, usd, ms: Date.now() - t0 });
       } else {
-        fechaConta(usage, conta, cat, model);
+        fechaConta(usage, conta, cat, model, 'resposta', Date.now() - t0);
       }
     }
   }
@@ -734,7 +785,8 @@ const STRONG_SEARCH = /(quem [ée]|pesquis\w*|investig\w*|dossi[êe]|antecedente
 // sistema de ~4,5 mil tokens, decisão de busca e reexecução anti-recusa a cada chamada (4–16 s). Agora vão
 // direto ao modelo rápido, sem nada disso; se falhar, o chamador cai no caminho antigo.
 const FAST_MODEL_OU = process.env.FAST_MODEL_OU || 'glm-5.3-flash-uncensored';
-async function quickOU(content, { max_tokens = 300, temperature = 0.2, timeoutMs = 9000, signal = null, model = FAST_MODEL_OU } = {}) {
+async function quickOU(content, { max_tokens = 300, temperature = 0.2, timeoutMs = 9000, signal = null, model = FAST_MODEL_OU, usage = null, papel = 'apoio' } = {}) {
+  const t0 = Date.now(); // painel: tempo e custo da chamada (antes ficava fora do medidor)
   const key = process.env.OU_API_KEY;
   if (!key) return null;
   const ac = new AbortController();
@@ -747,6 +799,7 @@ async function quickOU(content, { max_tokens = 300, temperature = 0.2, timeoutMs
     });
     if (!res.ok) return null;
     const data = await res.json();
+    contaAvulsa(usage, data, catDe('openuncensored', model), String(content).length, model, papel, Date.now() - t0);
     const out = String(data?.choices?.[0]?.message?.content || '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
     return out || null;
   } catch { return null; } finally { clearTimeout(to); }
@@ -755,6 +808,7 @@ async function quickOU(content, { max_tokens = 300, temperature = 0.2, timeoutMs
 // Upgrade (dono 17/11): o PRÓPRIO modelo decide se precisa buscar (classificador rápido SIM/NAO).
 // Modelo pequeno e barato, não-streaming, timeout curto. Em erro/timeout → null (cai na heurística).
 async function decideSearchLLM(question, usage = null) {
+  const t0 = Date.now(); // painel: tempo da chamada
   let corpo = ''; // o pedido, para o medidor estimar se o provedor não devolver o consumo
   const key = process.env.OU_API_KEY;
   if (!key) return null;
@@ -780,7 +834,7 @@ async function decideSearchLLM(question, usage = null) {
     });
     if (!res.ok) return null;
     const data = await res.json();
-    contaAvulsa(usage, data, catDe('openuncensored', model), corpo.length, model, 'classificador');
+    contaAvulsa(usage, data, catDe('openuncensored', model), corpo.length, model, 'classificador', Date.now() - t0);
     const out = (data?.choices?.[0]?.message?.content || '').trim().toUpperCase();
     if (out.startsWith('SIM')) return true;
     if (out.startsWith('NAO') || out.startsWith('NÃO') || out.startsWith('NO')) return false;
@@ -848,6 +902,7 @@ async function personTarget(q, usage = null) {
       // Tarefa de EXTRAÇÃO com exemplos e formato fixo — um modelo pequeno, se a mensagem vier crua,
       // tenta responder a ela ("Não tenho informações sobre…") em vez de classificar.
       const shot = (msg) => ({ role: 'user', content: `<msg>${msg}</msg>` });
+      const t0 = Date.now();
       const res = await fetch((process.env.OU_BASE_URL || 'https://api.openuncensored.com/v1') + '/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
@@ -867,7 +922,7 @@ async function personTarget(q, usage = null) {
       });
       if (res.ok) {
         const data = await res.json();
-        contaAvulsa(usage, data, catDe('openuncensored', modeloAlvo), corpo.length, modeloAlvo, 'pessoa');
+        contaAvulsa(usage, data, catDe('openuncensored', modeloAlvo), corpo.length, modeloAlvo, 'pessoa', Date.now() - t0);
         const out = String(data?.choices?.[0]?.message?.content || '').trim();
         const m = /PESSOA\s*:\s*([^\n]+)/i.exec(out);
         if (m) {
@@ -891,7 +946,7 @@ function opcoesDoLeitor(signal, usage) {
     apiKey: getApiKey('openrouter'), orUrl: getBaseUrl('openrouter'),
     claudeKey: process.env.READER_CLAUDE === '0' ? '' : getApiKey('anthropic'), claudeUrl: getBaseUrl('anthropic'),
     ouKey: getApiKey('openuncensored'), ouUrl: getBaseUrl('openuncensored'),
-    conta: (modelo, data) => contaAvulsa(usage, data, catDe('', modelo), 0, modelo, 'anexo'),
+    conta: (modelo, data, ms) => contaAvulsa(usage, data, catDe('', modelo), 0, modelo, 'anexo', ms),
   };
 }
 
@@ -930,6 +985,7 @@ async function webContextClaude(prompt, consulta, signal, usage) {
   if (signal) signal.addEventListener('abort', parar);
   try {
     // Sem marcaRota: a rota do painel é só de quem responde; a busca aparece nas partes ('busca').
+    const t0 = Date.now();
     const res = await fetch(getBaseUrl('anthropic'), {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
@@ -950,7 +1006,7 @@ async function webContextClaude(prompt, consulta, signal, usage) {
     const saida = Number(u.output_tokens) || 0;
     const usd = (base * cat.price_in + grava * cat.price_cache_write + le * cat.price_cache_read + saida * cat.price_out) / 1e6 + feitas * BUSCA_CLAUDE_USD;
     // Medidor: entra no custo da mensagem mesmo quando a resposta é descartada (recusa paga também).
-    contaAvulsa(usage, { usage: { prompt_tokens: base + grava + le, completion_tokens: saida, cost: usd } }, cat, 0, model, 'busca');
+    contaAvulsa(usage, { usage: { prompt_tokens: base + grava + le, completion_tokens: saida, cost: usd } }, cat, 0, model, 'busca', Date.now() - t0);
     if (usage && feitas) usage.buscas = (usage.buscas || 0) + feitas;
     const blocos = Array.isArray(data.content) ? data.content : [];
     // Resultado: cada busca devolve a lista de páginas ou um erro (limite, fora do ar, consulta longa demais).
@@ -1003,6 +1059,7 @@ async function webContextOR(query, signal, { person = false, name = '', detail =
   if (signal) signal.addEventListener('abort', () => ac.abort());
   const prompt = promptDaBusca(person);
   try {
+    const t0 = Date.now();
     const res = await fetch(getBaseUrl('openrouter'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`, 'HTTP-Referer': process.env.OPENROUTER_REFERER || 'https://heretic.vercel.app' },
@@ -1023,7 +1080,7 @@ async function webContextOR(query, signal, { person = false, name = '', detail =
     if (!res.ok) return null;
     const data = await res.json();
     // Medidor (21/11): a busca entra no custo da mensagem — mesmo descartada pelo teto, ela foi cobrada.
-    contaAvulsa(usage, data, catDe('openrouter', model), prompt.length + String(query).length, model, 'busca');
+    contaAvulsa(usage, data, catDe('openrouter', model), prompt.length + String(query).length, model, 'busca', Date.now() - t0);
     if (usage) usage.buscas = (usage.buscas || 0) + 1;
     // Teto de custo por busca (20/11): o provedor devolve o custo real em `usage.cost`; acima do
     // limite a busca é descartada (o app segue sem ela) em vez de faturar um valor absurdo.
@@ -1440,6 +1497,7 @@ export function avisoDeFila(f) {
     : `Você está na fila (posição ${f.posicao}). Tem muita gente usando o modelo grátis agora.`;
 }
 async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, signal, usage = null } = {}) {
+  const t0 = Date.now(); // painel: tempo da chamada ao modelo local
   const base = await urlLocal();
   const token = getApiKey('local');
   if (!base || !token) throw new Error(LOCAL_FORA);
@@ -1585,7 +1643,7 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
       usage.output_tokens = (usage.output_tokens || 0) + sai;
       usage.costed_in = (usage.costed_in || 0) + ent;
       usage.costed_out = (usage.costed_out || 0) + sai;
-      anotaParte(usage, cat.api_model, 'resposta', { tin: ent, tout: sai, usd: 0 });
+      anotaParte(usage, cat.api_model, 'resposta', { tin: ent, tout: sai, usd: 0, ms: Date.now() - t0 });
     }
   }
 }
@@ -1636,7 +1694,9 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
   const claudeCat = payload.claudeFirst && CLAUDE_NA_FRENTE[pickedId] && getApiKey('anthropic')
     ? (MODEL_CATALOG.find(m => m.id === CLAUDE_NA_FRENTE[pickedId]) || null) : null;
   let entregaId = null;   // o Claude recusou ou falhou: o sem censura que assume no laço protegido
-  let buscaFeita = false; // a busca já foi decidida no caminho do Claude (o laço não repete)
+  // semBusca (21/11): ajudantes internos (juiz, refino, afinador, dica do agente, imagem) nunca buscam na web; antes
+  // uma dica com "busca" ou "pesquisa" no texto pagava uma busca inteira.
+  let buscaFeita = !!payload.semBusca; // a busca já foi decidida no caminho do Claude (o laço não repete)
 
   // Mão: pergunta sobre um site → mede de verdade e injeta os números (vale pro Max e pros open).
   const lastUserMsg = (payload.messages || []).filter(m => m.role === 'user').pop()?.content;
@@ -1672,7 +1732,7 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
     step('Entendendo o pedido', 'Vendo se preciso buscar informação de fora.');
     // A decisão usa a busca efetiva (continuação somada), não só a mensagem curta:
     // "São Paulo" sozinho o classificador julgava conversa, e a IA respondia sobre a cidade.
-    if (searchQ.length >= 8) {
+    if (searchQ.length >= 8 && !payload.semBusca) {
       if (/https?:\/\/|github\.com|gitlab\.com/i.test(searchQ) || STRONG_SEARCH.test(searchQ)) doSearch = true;
       else { const llm = await decideSearchLLM(searchQ, usage); doSearch = (llm === null) ? shouldSearch(searchQ) : llm; }
     }
@@ -2086,6 +2146,7 @@ async function classifyRefusal(question, visibleText, usage = null) {
     const ac = new AbortController();
     const to = setTimeout(() => ac.abort(), 15000);
     try {
+      const t0 = Date.now();
       const res = await fetch(getBaseUrl(prov), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
@@ -2096,7 +2157,7 @@ async function classifyRefusal(question, visibleText, usage = null) {
       });
       if (!res.ok) { console.error('[juiz] HTTP', res.status); return false; }
       const j = await res.json();
-      contaAvulsa(usage, j, jcat, prompt.length, model, 'juiz'); // o juiz é chamada paga: entra no custo da mensagem
+      contaAvulsa(usage, j, jcat, prompt.length, model, 'juiz', Date.now() - t0); // o juiz é chamada paga: entra no custo da mensagem
       const msg = j.choices?.[0]?.message || {};
       let out = String(msg.content || '').trim().toUpperCase();
       if (!out) {
@@ -2138,7 +2199,7 @@ async function collectFull(mode, payload, signal, usage = null) {
 
 async function judgeBest(mode, question, a, b, signal, usage = null) {
   const prompt = `Pergunta do usuário:\n${question}\n\n--- RESPOSTA A ---\n${a.slice(0, 4000)}\n\n--- RESPOSTA B ---\n${b.slice(0, 4000)}\n\nQual resposta é mais útil, correta, completa e direta para a pergunta? Responda na PRIMEIRA linha só com a letra (A ou B). Na segunda linha, em uma ou duas frases no idioma da pergunta, diga por que ela é melhor e o que faltou na outra.`;
-  const out = await collectFull(mode, { modelId: JUDGE_MODEL, messages: [{ role: 'user', content: prompt }], systemPrompt: '', temperature: 0, top_p: 1, max_tokens: 480 }, signal, usage);
+  const out = await collectFull(mode, { semBusca: true, modelId: JUDGE_MODEL, messages: [{ role: 'user', content: prompt }], systemPrompt: '', temperature: 0, top_p: 1, max_tokens: 480 }, signal, usage);
   const txt = String(out || '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
   const pick = txt.toUpperCase().startsWith('B') ? 'B' : 'A';
   const reason = txt.split('\n').slice(1).join(' ').replace(/\s+/g, ' ').trim().slice(0, 400);
@@ -2158,7 +2219,7 @@ ${question}
 
 RASCUNHO:
 ${draft}`;
-  const out = await collectFull(mode, { ...payload, claudeFirst: false, modelId, messages: [{ role: 'user', content: instruction }], temperature: 0.4, top_p: 0.9, max_tokens: payload.max_tokens || 4096 }, signal, usage);
+  const out = await collectFull(mode, { semBusca: true, ...payload, claudeFirst: false, modelId, messages: [{ role: 'user', content: instruction }], temperature: 0.4, top_p: 0.9, max_tokens: payload.max_tokens || 4096 }, signal, usage);
   const clean = (out || '').trim();
   // guarda: só aceita a revisão se veio substancial e não é recusa.
   if (clean.length >= Math.max(40, draft.length * 0.5) && !detectRefusal(clean.slice(0, 800))) return clean;
@@ -2194,7 +2255,7 @@ ${q}
 
 RESPOSTA:
 ${a}`;
-  const out = await collectFull('chat', { modelId: ENHANCE_MODEL, messages: [{ role: 'user', content: instruction }], systemPrompt: '', temperature: 0.4, top_p: 0.9, max_tokens: 300 }, signal, usage);
+  const out = await collectFull('chat', { semBusca: true, modelId: ENHANCE_MODEL, messages: [{ role: 'user', content: instruction }], systemPrompt: '', temperature: 0.4, top_p: 0.9, max_tokens: 300 }, signal, usage);
   const m = String(out || '').match(/\{[\s\S]*\}/);
   if (!m) return null;
   try {
@@ -2213,7 +2274,7 @@ Regras: mantenha a intenção e o MESMO idioma; escreva em primeira pessoa, como
 
 PEDIDO:
 ${q}`;
-  const out = await collectFull(mode, { modelId: ENHANCE_MODEL, messages: [{ role: 'user', content: instruction }], systemPrompt: '', temperature: 0.3, top_p: 0.9, max_tokens: 300 }, signal, usage);
+  const out = await collectFull(mode, { semBusca: true, modelId: ENHANCE_MODEL, messages: [{ role: 'user', content: instruction }], systemPrompt: '', temperature: 0.3, top_p: 0.9, max_tokens: 300 }, signal, usage);
   let clean = (out || '').trim()
     .replace(/^["'“”']+|["'“”']+$/g, '')
     .replace(/^(pedido reescrito|reescrito|prompt|pedido)\s*[:\-–]\s*/i, '')
@@ -2242,7 +2303,7 @@ Transforme o PEDIDO num prompt em INGLÊS, detalhado e visual: assunto, ação, 
 
 PEDIDO:
 ${q.slice(0, 1500)}`;
-  const out = await collectFull('chat', { modelId: ENHANCE_MODEL, messages: [{ role: 'user', content: instruction }], systemPrompt: '', temperature: 0.4, top_p: 0.9, max_tokens: 380 }, signal, usage);
+  const out = await collectFull('chat', { semBusca: true, modelId: ENHANCE_MODEL, messages: [{ role: 'user', content: instruction }], systemPrompt: '', temperature: 0.4, top_p: 0.9, max_tokens: 380 }, signal, usage);
   let txt = (out || '').trim();
   let formato = '';
   const fm = /^\s*FORMATO:\s*(\d+:\d+)\s*\n?/i.exec(txt);
@@ -2276,8 +2337,8 @@ ${ctx || '(vazio)'}
 
 ÚLTIMA MENSAGEM:
 ${t}`;
-  const out = (await quickOU(instruction, { max_tokens: 400, temperature: 0.1, signal }))
-    ?? await collectFull('chat', { modelId: ENHANCE_MODEL, messages: [{ role: 'user', content: instruction }], systemPrompt: '', temperature: 0.1, top_p: 0.9, max_tokens: 400 }, signal, usage);
+  const out = (await quickOU(instruction, { max_tokens: 400, temperature: 0.1, signal, usage, papel: 'intencao_imagem' }))
+    ?? await collectFull('chat', { semBusca: true, modelId: ENHANCE_MODEL, messages: [{ role: 'user', content: instruction }], systemPrompt: '', temperature: 0.1, top_p: 0.9, max_tokens: 400 }, signal, usage);
   const m = /\{[\s\S]*\}/.exec(out || '');
   if (!m) return { intent: 'text', unavailable: true };
   try {
@@ -2294,8 +2355,8 @@ export async function imageFollowups(prompt, signal, usage = null) {
   if (!p) return [];
   const instruction = `Uma imagem acabou de ser gerada a partir deste pedido: "${p}".
 Sugira 3 ajustes curtos que o usuário pode querer fazer nela (mudar cor, cenário, luz, estilo, ângulo, adicionar algo). Português do Brasil, imperativo, no máximo 6 palavras cada, sem numeração. Responda SÓ com um JSON: ["...","...","..."]`;
-  const out = (await quickOU(instruction, { max_tokens: 120, temperature: 0.7, signal }))
-    ?? await collectFull('chat', { modelId: ENHANCE_MODEL, messages: [{ role: 'user', content: instruction }], systemPrompt: '', temperature: 0.7, top_p: 0.9, max_tokens: 120 }, signal, usage);
+  const out = (await quickOU(instruction, { max_tokens: 120, temperature: 0.7, signal, usage, papel: 'sugestoes_imagem' }))
+    ?? await collectFull('chat', { semBusca: true, modelId: ENHANCE_MODEL, messages: [{ role: 'user', content: instruction }], systemPrompt: '', temperature: 0.7, top_p: 0.9, max_tokens: 120 }, signal, usage);
   const m = /\[[\s\S]*\]/.exec(out || '');
   try { return (JSON.parse(m ? m[0] : '[]') || []).filter((s) => typeof s === 'string' && s.trim()).map((s) => s.trim().slice(0, 60)).slice(0, 3); } catch { return []; }
 }

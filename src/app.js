@@ -6,13 +6,13 @@ import { health, listProjects, createProject, deleteProject,
   listConversations, createConversation, deleteConversation,
   listMessages, addMessage } from './store.js';
 import { getPersona, setPersona } from './persona.js';
-import { streamChat, streamFoto, qualityAnswer, enhancePrompt, imagePrompt, imageIntent, imageFollowups, agentTip, getRoutes, setRoute, MODEL_CATALOG, custoTurno } from './upstream.js';
+import { streamChat, streamFoto, qualityAnswer, enhancePrompt, imagePrompt, imageIntent, imageFollowups, agentTip, getRoutes, setRoute, MODEL_CATALOG, custoTurno, rotaDoNivel, apoioDoServidor } from './upstream.js';
 import { checkBudget, incrementUsage } from './budget.js';
-import { checkGlobalBudget, recordCost, recordFreeCost, freeClaudeOk, freeDiaOk, buscaGratisOk, registraBuscaGratis, fotoGratisOk, registraFotoGratis } from './cost.js';
+import { checkGlobalBudget, recordCost, recordFreeCost, freeClaudeOk, freeDiaOk, buscaGratisOk, registraBuscaGratis, fotoGratisOk, registraFotoGratis, freeClaudeDayUsd } from './cost.js';
 import { cortaHistorico, caracteresDe, FREE_MAX_INPUT_CHARS, PRO_MAX_INPUT_CHARS } from './entrada.js';
-import { registraUso, registraImagem, lePainel, nomeNivel, tabelaPrecos, saldosChaves } from './uso.js';
+import { registraUso, registraImagem, registraApoio, catalogoNiveis, nomeModelo, lePainel, nomeNivel, tabelaPrecos, saldosChaves } from './uso.js';
 import { AGENTS, agentPrompt } from './agents.js';
-import { planOf, tierOf, modelsFor, resolveModel, visitorIds, keyFrom, planForKey, isAdmin, FAIR_USE_MODEL, PUBLIC_MODELS, LOCAL_MODELS } from './plans.js';
+import { planOf, tierOf, modelsFor, resolveModel, visitorIds, keyFrom, planForKey, isAdmin, FAIR_USE_MODEL, PUBLIC_MODELS, LOCAL_MODELS, PUBLIC_MODELS_RAW, LEGACY_FREE_MODEL, CREDIT_MODELS } from './plans.js';
 import { gravaUrlLocal, tokenConfere, URL_TUNEL } from './local.js';
 import { creditBalance, spendCredits, addExtraCredits, priceCredits, tetoDeCreditos, throttle, MIN_TO_START, THROTTLE_SECONDS, THROTTLE_PRO_SECONDS } from './credits.js';
 import { LIMITS, RESOURCES, HIDDEN_BUCKETS, bucketOf, subjectsFor, peekQuota, consumeQuota, refundQuota, limitsStore, spendStatus, addSpend, idDaChave } from './limits.js';
@@ -355,7 +355,9 @@ app.post('/api/image', async (c) => {
     let prompt = pronto;
     if (!prompt || auto) {
       if (body.melhorar !== false || est.adulto || auto) {
-        const r = await imagePrompt(pronto || desc, estilo, undefined, null, { autoFormato: auto }).catch(() => ({ prompt: '', blocked: false }));
+        const usoPrompt = {};
+        const r = await imagePrompt(pronto || desc, estilo, undefined, usoPrompt, { autoFormato: auto }).catch(() => ({ prompt: '', blocked: false }));
+        await contaApoio(c, 'prompt_imagem', usoPrompt, tier);
         if (r.blocked) return falha({ error: 'blocked', message: IMG_MSG_BLOQUEIO });
         if (!pronto) prompt = r.prompt;
         if (auto && r.formato) formato = r.formato;
@@ -416,7 +418,9 @@ app.post('/api/image/edit', async (c) => {
     const falha = async (obj) => { await refundQuota(subjects, charges).catch(() => {}); fim(obj); };
     let instrucao = pronto;
     if (!instrucao) {
-      const r = await imageIntent(desc, [{ role: 'assistant', img: true, text: base }], true).catch(() => ({ intent: 'text' }));
+      const usoIntencao = {};
+      const r = await imageIntent(desc, [{ role: 'assistant', img: true, text: base }], true, undefined, usoIntencao).catch(() => ({ intent: 'text' }));
+      await contaApoio(c, 'intencao_imagem', usoIntencao, tier);
       if (r.intent === 'bloqueado') return falha({ error: 'blocked', message: IMG_MSG_BLOQUEIO });
       instrucao = r.prompt || desc;
     }
@@ -440,20 +444,35 @@ app.post('/api/image/edit', async (c) => {
   }, c.req.raw);
 });
 
+// Ajudas do servidor fora do chat (dica do agente, intenção, prompt e sugestões de imagem): também custam (GLM 5.3
+// na OpenUncensored) e antes não entravam em lugar nenhum. 21/11 (painel novo): entram nos freios de gasto e no
+// painel ("apoio"). Só números; o registro nunca derruba a resposta.
+async function contaApoio(c, papel, usage, tier = tierOf(c)) {
+  try {
+    const custo = custoTurno(usage, null), admin = isAdmin(c);
+    if (custo > 0) { await recordCost(custo).catch(() => {}); if (tier === 'free') await recordFreeCost(custo).catch(() => {}); }
+    await registraApoio({ tier, admin, papel, usage, custo }).catch(() => {});
+  } catch { /* nada */ }
+}
+
 // Classificador de intenção e sugestões: só modelo de texto, sem cota de imagem.
 app.post('/api/image/intent', async (c) => {
   let body = {};
   try { body = await c.req.json(); } catch {}
   const text = (body.text || '').toString();
   if (!text.trim()) return c.json({ intent: 'text' });
-  const r = await imageIntent(text, body.contexto, body.temImagem === true).catch(() => ({ intent: 'text', unavailable: true }));
+  const usoIntencao = {};
+  const r = await imageIntent(text, body.contexto, body.temImagem === true, undefined, usoIntencao).catch(() => ({ intent: 'text', unavailable: true }));
+  await contaApoio(c, 'intencao_imagem', usoIntencao);
   if (r.intent === 'bloqueado' || (r.intent !== 'text' && (bloqueioImagem(text) || bloqueioImagem(r.prompt || '')))) return c.json({ intent: 'bloqueado', message: IMG_MSG_BLOQUEIO });
   return c.json(r);
 });
 app.post('/api/image/followups', async (c) => {
   let body = {};
   try { body = await c.req.json(); } catch {}
-  const suggestions = await imageFollowups((body.prompt || '').toString()).catch(() => []);
+  const usoSugestoes = {};
+  const suggestions = await imageFollowups((body.prompt || '').toString(), undefined, usoSugestoes).catch(() => []);
+  await contaApoio(c, 'sugestoes_imagem', usoSugestoes);
   return c.json({ suggestions });
 });
 
@@ -467,7 +486,9 @@ app.post('/api/agent/tip', async (c) => {
   try { body = await c.req.json(); } catch { return c.json({ error: 'invalid_body' }, 400); }
   const plan = planOf(c), subjects = await subjectsOf(c, plan);
   if (!isAdmin(c) && !(await throttle(`${subjects[0].id}:tip`))) return c.json({ error: 'rate_limit' }, 429);
-  const tip = await agentTip(body.question, body.answer).catch(() => null);
+  const usoDica = {};
+  const tip = await agentTip(body.question, body.answer, undefined, usoDica).catch(() => null);
+  await contaApoio(c, 'dica_agente', usoDica, tier);
   return c.json({ tip });
 });
 
@@ -503,7 +524,18 @@ app.get('/api/admin/painel', async (c) => {
   if (!isAdmin(c)) return c.json({ error: 'admin', message: 'Só com a chave de administrador.' }, 401);
   const fx = Number(process.env.PAINEL_FX_BRL) || 5.95; // mesmo câmbio dos créditos (21/11)
   const [dados, saldos] = await Promise.all([lePainel({ fx, idDaChave }), saldosChaves()]);
-  return c.json({ ...dados, saldos, precos: tabelaPrecos(MODEL_CATALOG, PERIODS, fx) });
+  // Catálogo oficial (painel novo, 21/11): níveis com a rota real de cada um e as ajudas do servidor.
+  const niveis = catalogoNiveis({
+    modelos: [
+      ...PUBLIC_MODELS_RAW.filter((m) => m.id !== LEGACY_FREE_MODEL).map((m) => ({ ...m, creditos: CREDIT_MODELS.includes(m.id) })),
+      ...LOCAL_MODELS,
+      { id: 'local:qwen35b', name: 'Qwen 35B (teste)', teste: true }, { id: 'local:gemma26b', name: 'Gemma 26B (teste)', teste: true },
+    ],
+    rotaDoNivel,
+    limites: { gratisDia: LIMITS.messages?.free?.day ?? null, proDia: LIMITS.messages?.pro?.day ?? null, claudeGratisUsdDia: freeClaudeDayUsd() },
+  });
+  const apoio = apoioDoServidor().map((a) => ({ ...a, ordem: a.ordem.map((x) => ({ ...x, modelo: nomeModelo(x.modelo) || x.modelo })) }));
+  return c.json({ ...dados, saldos, precos: tabelaPrecos(MODEL_CATALOG, PERIODS, fx, { niveis, apoio }) });
 });
 
 app.post('/api/admin/credits', async (c) => {
@@ -691,8 +723,9 @@ app.post('/api/chat', async (c) => {
       const batimento = setInterval(() => {
         try { controller.enqueue(encoder.encode(`: ping\n\n`)); } catch { clearInterval(batimento); }
       }, 15000);
+      const usage = {}; // fora do try: a falha também registra o que já foi gasto (painel, 21/11)
+      let custoGravado = false, usoGravado = false;
       try {
-        const usage = {};
         // Afinador: antes de responder, um modelo rápido reescreve o pedido do usuário (só Pro/Plus,
         // quando ligado). Emite 'enhanced' para o app animar o texto trocando. Falhou → segue igual.
         let sendMessages = chatMessages;
@@ -747,6 +780,7 @@ app.post('/api/chat', async (c) => {
           await registraBuscaGratis(throttleId, usdBusca || 0.0118).catch(() => {}); // 21/11: busca pelo Claude Haiku
         }
         if (cost > 0 && tier === 'free') await recordFreeCost(cost).catch(() => {}); // freio diário do grátis
+        custoGravado = true;
         // O balde também pode ter mudado (escalada para modelo de créditos, por exemplo).
         const doneBucket = bucketOf(doneId, tier);
         if (!admin && fullText && (doneBucket === 'pro' || doneBucket === 'pro_rapid')) await addSpend(subjects, doneBucket, cost).catch(() => {});
@@ -756,13 +790,24 @@ app.post('/api/chat', async (c) => {
           if (bal) send('credits', { spent: priceCredits(cost), balance: bal });
         }
         // Painel do dono (21/11): só os números desta mensagem (nível, modelos, custo), nunca o texto.
-        if (fullText) await registraUso({ sid: subjects[0]?.id, tier, admin, nivel: nomeNivel(modelId), usoJusto: !!fairUse, usage, custo: cost, creditos: doneBucket === 'credits' ? priceCredits(cost) : 0 }).catch(() => {});
+        // 21/11 (painel novo): também a resposta vazia (erro 'vazia', não conta como mensagem) e o tempo do pedido.
+        await registraUso({ sid: subjects[0]?.id, tier, admin, nivel: nomeNivel(modelId), usoJusto: !!fairUse, usage, custo: cost, creditos: fullText && doneBucket === 'credits' ? priceCredits(cost) : 0, ms: Date.now() - inicio, erro: fullText ? null : 'vazia' }).catch(() => {});
+        usoGravado = true;
         // Resposta vazia não gasta o limite de quem perguntou.
         const quotas = fullText || admin ? reserved.quotas : await refundQuota(subjects, charges);
         send('usage', { quotas });
         send('done', { content: fullText });
       } catch (e) {
         if (!fullText && !admin) await refundQuota(subjects, charges).catch(() => {});
+        // Painel (21/11): a falha também gastou; entra nos freios e no painel com o motivo e o tempo, sem repetir o
+        // que o caminho normal já gravou.
+        if (!usoGravado) {
+          try {
+            const custoFalha = custoTurno(usage, MODEL_CATALOG.find((m) => m.id === modelId));
+            if (!custoGravado && custoFalha > 0) { await recordCost(custoFalha).catch(() => {}); if (tier === 'free') await recordFreeCost(custoFalha).catch(() => {}); }
+            await registraUso({ sid: subjects[0]?.id, tier, admin, nivel: nomeNivel(modelId), usoJusto: !!fairUse, usage, custo: custoFalha, ms: Date.now() - inicio, erro: e.name === 'AbortError' || ac.signal.aborted ? 'cancelada' : 'falha' }).catch(() => {});
+          } catch { /* o registro nunca derruba a resposta */ }
+        }
         const msg = e.name === 'AbortError' ? 'Aborted by user' : e.message;
         try { send('error', { message: msg }); } catch { /* cliente já saiu */ }
       } finally {

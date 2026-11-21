@@ -178,6 +178,7 @@ v1.post('/agent/refine', async (c) => {
 
 // ── POST /v1/chat/completions ──
 v1.post('/chat/completions', async (c) => {
+  const inicioV1 = Date.now(); // painel (21/11): tempo do pedido
   const a = auth(c);
   if (a.error) return a.error;
   const { key, tier, admin } = a;
@@ -267,7 +268,7 @@ v1.post('/chat/completions', async (c) => {
     if (!admin && text && (doneBucket === 'pro' || doneBucket === 'pro_rapid')) await addSpend(subjects, doneBucket, cost).catch(() => {});
     if (doneBucket === 'credits' && text) await spendCredits(subjects[0].id, tier, priceCredits(cost)).catch(() => {});
     // Painel do dono (21/11): só os números desta resposta, nunca o texto.
-    if (text) await registraUso({ sid: subjects[0]?.id, tier, admin, nivel: nomeNivel(modelId), usoJusto: bucket === 'pro_rapid', usage, custo: cost, creditos: doneBucket === 'credits' ? priceCredits(cost) : 0, fonte: 'api' }).catch(() => {});
+    if (text) await registraUso({ sid: subjects[0]?.id, tier, admin, nivel: nomeNivel(modelId), usoJusto: bucket === 'pro_rapid', usage, custo: cost, ms: Date.now() - inicioV1, creditos: doneBucket === 'credits' ? priceCredits(cost) : 0, fonte: 'api' }).catch(() => {});
     if (!text && !admin) await refundQuota(subjects, chargesFor(bucket)).catch(() => {});
     return {
       prompt_tokens: Number(usage.input_tokens) || 0,

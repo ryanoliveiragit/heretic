@@ -1,3 +1,32 @@
+## 2026-11-21 (20h20 UTC) — PUBLICADO: painel com nível × plano, tempo, fornecedor, ajudas e catálogo oficial
+
+Pedido do dono via Redesig geral ("dados corretos" no painel novo). Deploys `dpl_EBheFhSSZ2WNKGdeEU5iqcc2VhLe` e
+`dpl_4wqNHaQ4TA98rN6Fa6XWeLjY2o98` (https://451sh-m7noka7qm-dwadwdwas-projects.vercel.app), READY, 451sh.com; 7 arquivos
+de src conferidos por sha1 (plans.js e router451.js sem a troca de modelos).
+- GET /api/admin/painel, campos novos: `geral.dias[].niveis[nível][free|pro|admin|todos]` e `geral.total.niveis`
+  (msgs, custo_micro, fornecedores, claude, repasse, tokens {tin,tout,cg,cl}, buscas, soma_ms, erros, canceladas);
+  `geral.*.apoio[papel][plano]` (dica_agente, intencao_imagem, prompt_imagem, sugestoes_imagem); `geral.*.fornecedores`
+  (micro-US$, dos modelos de cada dia, vale para dados antigos); `geral.*.imagens_por_motor`; `mensagens[].ms`,
+  `.erro` (falha|vazia|cancelada), `.partes[].f` e `.partes[].ms`; `tempos_recentes` (p50/p95 por nível das últimas
+  mensagens); `precos.niveis` (catálogo com nivel, apelidos, nome, motor, reserva, rota, planos, creditos, limites,
+  fornecedores) e `precos.apoio` (ajudas e quem atende). `niveis` conta a partir deste deploy.
+- Gravação: `v|nível|plano|…` substitui `g|`/`p|` (a leitura soma os dois formatos). +2 a +4 comandos do Upstash por
+  mensagem (grátis Rapid 117→121, gpt-oss 89→92, Pro Rapid 79→83, admin Max 38→42); ajuda fora do chat ~5 a 9; leitura
+  do painel igual (163).
+- Medidor: fornecedor e tempo em cada parte; `quickOU` (intenção/sugestões de imagem) e as ajudas fora do chat agora
+  entram no medidor, nos freios (recordCost/recordFreeCost) e no painel; mensagem que falha ou volta vazia é registrada
+  como erro com o custo já gasto (antes sumia).
+- Vazamento corrigido: ajudas internas (juiz e refino do modo qualidade, afinador, dica do agente, imagem) passavam
+  pelo fluxo completo e pagavam busca na web quando o texto tinha "busca/pesquisa". Agora `semBusca`.
+- OpenRouter: `saldos.openrouter_chave.gasto_da_chave_usd` lia a chave de gestão (0); agora lê a do site (US$ 0,0244 =
+  a busca registrada no painel). Saldo da conta segue pela de gestão (US$ 3,92).
+- Conferência: Claude Sonnet 12 chamadas US$ 0,1733 e Haiku 2 chamadas US$ 0,0130 recalculados pela tabela oficial:
+  0 diferença. Gasto real da Anthropic só com chave Admin (Cost API). OpenUncensored: saldo caiu US$ 0,0361 desde a
+  recarga e o painel tinha US$ 0,0118: a diferença são ajudas fora do medidor, mensagens antes de 03h17 e as que
+  falharam, e testes locais com a mesma chave (a OU só tem /v1/credits, sem histórico; a Vercel guarda 1 h de log).
+- Teste novo: `scripts/teste-painel-niveis.mjs` (17 conferências). Todas as baterias sem rede ok.
+- **Undo:** `npx vercel rollback https://451sh-a4i9qwyv2-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`.
+
 ## 2026-11-21 (19h45 UTC) — PUBLICADO: OpenRouter vira estepe; Claude Haiku 5.5 na busca, nos anexos e nas fotos do grátis (+ pacote do grátis)
 
 Decisão do dono (pergunta no chat): "Publicar tudo já", sem rodar de novo a bateria do grátis com a busca nova.

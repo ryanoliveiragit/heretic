@@ -23,31 +23,52 @@ const MSGS = '451:uso:msgs';
 const MSGS_U = (sid) => `451:uso:m:${sid}`;
 const GUARDA_MSGS = String(30 * 86400);
 const r6 = (v) => Math.round((Number(v) || 0) * 1e6) / 1e6;
-// Totais por dia (painel novo, 21/11, pedido do dono via Redesig geral): um hash por dia com contadores por grupo
-// (Grátis ou nível), plano, modelo, cache do Claude e imagens. Só números e nomes de modelo, nunca texto.
-// Custo: 4 a 13 comandos HINCRBY a mais por mensagem (medido sem rede em scripts/teste-comandos-redis.mjs);
-// os de valor zero não são enviados. Guarda 400 dias.
+// Totais por dia (painel novo, 21/11, pedido do dono via Redesig geral): um hash por dia com contadores. Só números e
+// nomes de modelo, nunca texto. Guarda 400 dias.
+// 21/11 (noite): um bloco por nível × plano (`v|nível|plano|…`), com custo por fornecedor, tokens, buscas, tempo e
+// erros; o grátis deixa de ser um grupo só. Os grupos (g|) e planos (p|) antigos não são mais gravados: a leitura
+// soma os dois formatos. Ajudas do servidor fora do chat (dica do agente, intenção/prompt/sugestões de imagem)
+// entram em `a|papel|plano|…`; imagens por motor × plano em `im|motor|plano|…`.
 const GERAL = (dia) => `451:uso:geral:${dia}`;
 const GERAL_SOMA = (corte) => `451:uso:geral:soma:${corte}`;
 export const INICIO_GERAL = '2026-11-21';
 const GUARDA_GERAL = String(400 * 86400);
-const grupoDe = (tier, admin, nivel) => (tier === 'free' && !admin ? 'Grátis' : String(nivel || 'outro'));
 const planoDe = (tier, admin) => (admin ? 'admin' : tier === 'free' ? 'free' : 'pro');
-function geralCmds({ dia, tier, admin, nivel, claude, entregou, micro, partes }) {
-  const k = GERAL(dia), g = grupoDe(tier, admin, nivel), pl = planoDe(tier, admin), c = [];
-  const inc = (campo, v) => { if (v) c.push(['HINCRBY', k, campo, String(v)]); };
-  inc(`g|${g}|n`, 1); inc(`g|${g}|c`, micro);
-  if (claude) inc(`g|${g}|cl|${claude}`, 1);
-  if (claude && claude !== 'respondeu' && entregou) inc(`g|${g}|r|${entregou}`, 1); // para qual modelo o Claude repassou
-  inc(`p|${pl}|n`, 1); inc(`p|${pl}|c`, micro);
-  if (entregou) inc(`m|${entregou}|e`, 1);
+// Quem cobra (para dados sem o campo `f`): pelo nome do modelo como o painel mostra ou como a API devolve.
+export const FORNECEDORES = ['anthropic', 'openuncensored', 'openrouter', 'runpod', 'local'];
+export function fornecedorPorNome(m) {
+  const s = String(m || '');
+  if (/^claude/i.test(s)) return 'anthropic';
+  if (/^local[/:]|local$|gpt-oss/i.test(s)) return 'local';
+  if (/Z-?Image|Chroma/i.test(s)) return 'runpod'; // motores de imagem (zimage, chroma) no RunPod
+  if (s.includes('/') || /Dolphin|Cydonia|Euryale|Skyfall|Magnum|MythoMax|Unslopnemo|OpenRouter|\((busca|leitor)\)|^deepseek-v4\.1-flash$/i.test(s)) return 'openrouter';
+  return 'openuncensored';
+}
+const micros = (usd) => Math.round((Number(usd) || 0) * 1e6);
+function porFornecedor(partes) {
+  const o = {};
+  for (const x of partes || []) { const f = x.f || fornecedorPorNome(x.m), v = micros(x.usd); if (v) o[f] = (o[f] || 0) + v; }
+  return o;
+}
+function geralCmds({ dia, tier, admin, nivel, claude, entregou, micro, partes, tokens = {}, buscas = 0, ms = null, erro = null }) {
+  const k = GERAL(dia), v = `v|${nivel || 'outro'}|${planoDe(tier, admin)}`, c = [];
+  const inc = (campo, val) => { const n = Math.round(Number(val) || 0); if (n) c.push(['HINCRBY', k, campo, String(n)]); };
+  inc(`${v}|${erro === 'cancelada' ? 'x' : erro ? 'e' : 'n'}`, 1); // falha e cancelada não contam como mensagem
+  inc(`${v}|c`, micro);
+  for (const [f, val] of Object.entries(porFornecedor(partes))) inc(`${v}|f|${f}`, val);
+  if (claude) inc(`${v}|cl|${claude}`, 1);
+  if (claude && claude !== 'respondeu' && entregou) inc(`${v}|r|${entregou}`, 1); // para qual modelo o Claude repassou
+  inc(`${v}|ti`, tokens.tin); inc(`${v}|to`, tokens.tout); inc(`${v}|tg`, tokens.cg); inc(`${v}|tl`, tokens.cl);
+  inc(`${v}|b`, buscas);
+  if (ms != null) inc(`${v}|ms`, Math.max(1, ms));
+  if (entregou && !erro) inc(`m|${entregou}|e`, 1);
   const porModelo = new Map();
-  for (const x of partes) { const a = porModelo.get(x.m) || { c: 0, k: 0 }; a.c += Math.round(x.usd * 1e6); a.k += 1; porModelo.set(x.m, a); }
+  for (const x of partes) { const a = porModelo.get(x.m) || { c: 0, k: 0 }; a.c += micros(x.usd); a.k += 1; porModelo.set(x.m, a); }
   for (const [m, a] of porModelo) { inc(`m|${m}|c`, a.c); inc(`m|${m}|k`, a.k); }
   for (const x of partes) {
     if (x.p !== 'resposta' || !/^Claude/.test(x.m)) continue; // cache do Claude: a chamada que respondeu
     const qual = x.cg ? 'g' : x.cl ? 'l' : null;
-    if (qual) { inc(`cache|${qual}|n`, 1); inc(`cache|${qual}|c`, Math.round(x.usd * 1e6)); }
+    if (qual) { inc(`cache|${qual}|n`, 1); inc(`cache|${qual}|c`, micros(x.usd)); }
   }
   if (c.length && Math.random() < 0.1) c.push(['EXPIRE', k, GUARDA_GERAL]); // validade: 1 em 10 mensagens basta
   return c;
@@ -116,6 +137,9 @@ const NIVEIS = {
 };
 export const nomeNivel = (modelId) => NIVEIS[modelId] || String(modelId || 'outro').split('/').pop();
 const MODELOS = [
+  // 21/11 (painel): os do OpenRouter com nome próprio, antes dos genéricos (o GLM do OpenRouter não é o da OpenUncensored).
+  [/^deepseek\/deepseek-v4\.1-flash$/, 'DeepSeek V4.1 Flash (busca)'], [/^qwen\/qwen3\.7-flash/, 'Qwen 3.7 Flash (leitor)'],
+  [/^z-ai\/glm-5\.3-flash$/, 'GLM 5.3 Flash (OpenRouter)'],
   // 21/11: no gateway, o nome antigo local/qwen3-4b-abliterated passou a ser o gpt-oss (padrão da porta 8000).
   [/^local\/qwen3\.6-35b/, 'Qwen 35B local'], [/^local\/gemma-4-26b/, 'Gemma 26B local'], [/^local\/(gpt-oss-20b|qwen3-4b-abliterated)/, 'gpt-oss-20b Heretic'],
   [/inkling/, 'Inkling 2 Mini'], [/claude-sonnet/, 'Claude Sonnet'], [/claude-opus/, 'Claude Opus'], [/claude-haiku/, 'Claude Haiku'],
@@ -126,8 +150,11 @@ const MODELOS = [
 export const nomeModelo = (m) => (m ? (MODELOS.find(([re]) => re.test(m)) || [null, String(m).split('/').pop()])[1] : '');
 
 // ── registro ──
-/** Uma mensagem respondida. `usage` vem do streamChat (rota, claude, buscas, tokens). */
-export async function registraUso({ sid, tier, admin = false, nivel, usoJusto = false, usage = {}, custo = 0, creditos = 0, fonte = 'site' }) {
+/**
+ * Uma mensagem respondida, ou que falhou (`erro`: 'falha' | 'vazia' | 'cancelada'; não conta como mensagem, mas o
+ * que já foi gasto entra no custo). `usage` vem do streamChat (rota, claude, buscas, tokens). `ms`: do pedido ao fim.
+ */
+export async function registraUso({ sid, tier, admin = false, nivel, usoJusto = false, usage = {}, custo = 0, creditos = 0, fonte = 'site', ms = null, erro = null }) {
   if (!sid) return;
   const agora = Date.now(), dia = new Date(agora).toISOString().slice(0, 10);
   const micro = String(Math.max(0, Math.round((Number(custo) || 0) * 1e6)));
@@ -136,18 +163,24 @@ export async function registraUso({ sid, tier, admin = false, nivel, usoJusto = 
   const buscas = Number(usage.buscas) || 0;
   const cmds = [];
   // Uma linha por mensagem: rota, tokens, cache e a parte de cada chamada paga no custo.
-  const partes = (usage.partes || []).map((x) => ({ m: nomeModelo(x.m) || x.m, p: x.p, tin: x.tin || 0, tout: x.tout || 0, cg: x.cg || 0, cl: x.cl || 0, usd: r6(x.usd) }));
+  const tempo = ms != null && Number.isFinite(Number(ms)) ? Math.max(0, Math.round(Number(ms))) : null;
+  // f = quem cobra a chamada (anthropic, openuncensored, openrouter, local); ms = quanto a chamada levou.
+  const partes = (usage.partes || []).map((x) => ({ m: nomeModelo(x.m) || x.m, p: x.p, f: x.f || fornecedorPorNome(x.m), tin: x.tin || 0, tout: x.tout || 0, cg: x.cg || 0, cl: x.cl || 0, usd: r6(x.usd), ...(x.ms != null ? { ms: x.ms } : {}) }));
   const resto = r6((Number(custo) || 0) - partes.reduce((t, x) => t + x.usd, 0));
-  if (resto > 0.000005) partes.push({ m: entregou || '?', p: 'resto', tin: 0, tout: 0, cg: 0, cl: 0, usd: resto });
+  if (resto > 0.000005) partes.push({ m: entregou || '?', p: 'resto', f: fornecedorPorNome(entregou), tin: 0, tout: 0, cg: 0, cl: 0, usd: resto });
+  const tokens = { tin: Number(usage.input_tokens) || 0, tout: Number(usage.output_tokens) || 0, cg: Number(usage.cache_gravada) || 0, cl: Number(usage.cache_lida) || 0 };
   const linha = JSON.stringify({
     t: agora, id: apelido(sid, tier, admin), plano: admin ? 'admin' : tier, nivel: `${nivel}${usoJusto ? ' (uso justo)' : ''}`, fonte,
-    rota: (usage.rota || []).map(nomeModelo), claude: claude || null, buscas,
-    tin: Number(usage.input_tokens) || 0, tout: Number(usage.output_tokens) || 0, cg: Number(usage.cache_gravada) || 0, cl: Number(usage.cache_lida) || 0,
+    rota: (usage.rota || []).map(nomeModelo), claude: claude || null, buscas, ...tokens,
     usd: r6(custo), creditos: Math.round(Number(creditos) || 0), partes,
+    ...(tempo != null ? { ms: tempo } : {}), ...(erro ? { erro } : {}),
   });
   cmds.push(['LPUSH', MSGS, linha], ['LTRIM', MSGS, '0', '499']);
   if (!(tier === 'free' && !admin)) cmds.push(['LPUSH', MSGS_U(sid), linha], ['LTRIM', MSGS_U(sid), '0', '29'], ['EXPIRE', MSGS_U(sid), GUARDA_MSGS]);
-  if (tier === 'free' && !admin) {
+  if (erro) {
+    // Falhou ou foi cancelada: não conta como mensagem, mas o que já foi gasto entra no custo (grátis ou do usuário).
+    if (Number(micro)) cmds.push(['HINCRBY', tier === 'free' && !admin ? GRATIS(dia) : U(sid), 'custo_micro', micro]);
+  } else if (tier === 'free' && !admin) {
     const k = GRATIS(dia);
     cmds.push(['HINCRBY', k, 'msgs', '1'], ['HINCRBY', k, 'custo_micro', micro]);
     if (entregou) cmds.push(['HINCRBY', k, `e:${entregou}`, '1']);
@@ -171,7 +204,7 @@ export async function registraUso({ sid, tier, admin = false, nivel, usoJusto = 
     if (usage.cache_lida) cmds.push(['HINCRBY', k, 'cache_lida', String(usage.cache_lida)]);
     if (fonte === 'api') cmds.push(['HINCRBY', k, 'api', '1']);
   }
-  cmds.push(...geralCmds({ dia, tier, admin, nivel, claude, entregou, micro: Number(micro), partes }));
+  cmds.push(...geralCmds({ dia, tier, admin, nivel, claude, entregou, micro: Number(micro), partes, tokens, buscas, ms: tempo, erro }));
   await exec(cmds);
 }
 
@@ -182,8 +215,8 @@ export async function registraImagem({ sid, tier, admin = false, motor, custo = 
   const micro = String(Math.max(0, Math.round((Number(custo) || 0) * 1e6)));
   const linha = JSON.stringify({ t: agora, id: apelido(sid, tier, admin), plano: admin ? 'admin' : tier, imagem: motor, usd: r6(custo), creditos: Math.round(Number(creditos) || 0) });
   const kg = GERAL(dia), pl = planoDe(tier, admin);
-  const geral = [['HINCRBY', kg, `img|${pl}|n`, '1'], ['HINCRBY', kg, `m|${motor}|k`, '1']];
-  if (Number(micro)) geral.push(['HINCRBY', kg, `img|${pl}|c`, micro], ['HINCRBY', kg, `m|${motor}|c`, micro]);
+  const geral = [['HINCRBY', kg, `img|${pl}|n`, '1'], ['HINCRBY', kg, `m|${motor}|k`, '1'], ['HINCRBY', kg, `im|${motor}|${pl}|n`, '1']];
+  if (Number(micro)) geral.push(['HINCRBY', kg, `img|${pl}|c`, micro], ['HINCRBY', kg, `m|${motor}|c`, micro], ['HINCRBY', kg, `im|${motor}|${pl}|c`, micro]);
   await exec([['LPUSH', MSGS, linha], ['LTRIM', MSGS, '0', '499'], ...geral]);
   if (tier === 'free' && !admin) {
     await exec([['HINCRBY', GRATIS(dia), 'imagens', '1'], ['HINCRBY', GRATIS(dia), 'img_custo_micro', micro], ['EXPIRE', GRATIS(dia), GUARDA_GRATIS],
@@ -194,6 +227,24 @@ export async function registraImagem({ sid, tier, admin = false, motor, custo = 
   const cmds = [['ZADD', USUARIOS, String(agora), sid], ['HSET', k, 'plano', admin ? 'admin' : tier, 'ultimo', String(agora)], ['HSETNX', k, 'primeiro', String(agora)],
     ['HINCRBY', k, 'imagens', '1'], ['HINCRBY', k, `img:${motor}`, '1'], ['HINCRBY', k, 'img_custo_micro', micro], ['SADD', DIAS(sid), dia]];
   if (creditos) cmds.push(['HINCRBY', k, 'creditos', String(Math.round(creditos))]);
+  await exec(cmds);
+}
+
+/**
+ * Ajuda do servidor fora do chat (painel novo, 21/11): dica do agente, intenção, prompt e sugestões de imagem.
+ * Antes não entravam em lugar nenhum (eram a diferença entre o saldo da OpenUncensored e o painel). Só números.
+ */
+export async function registraApoio({ tier, admin = false, papel, usage = {}, custo = 0 }) {
+  const partes = (usage.partes || []).map((x) => ({ ...x, m: nomeModelo(x.m) || x.m, f: x.f || fornecedorPorNome(x.m) }));
+  const micro = micros(custo);
+  if (!micro && !partes.length) return;
+  const k = GERAL(new Date().toISOString().slice(0, 10)), a = `a|${papel || 'apoio'}|${planoDe(tier, admin)}`;
+  const cmds = [['HINCRBY', k, `${a}|n`, '1']];
+  if (micro) cmds.push(['HINCRBY', k, `${a}|c`, String(micro)]);
+  for (const [f, v] of Object.entries(porFornecedor(partes))) cmds.push(['HINCRBY', k, `${a}|f|${f}`, String(v)]);
+  const porModelo = new Map();
+  for (const x of partes) { const m = porModelo.get(x.m) || { c: 0, k: 0 }; m.c += micros(x.usd); m.k += 1; porModelo.set(x.m, m); }
+  for (const [m, v] of porModelo) { cmds.push(['HINCRBY', k, `m|${m}|k`, String(v.k)]); if (v.c) cmds.push(['HINCRBY', k, `m|${m}|c`, String(v.c)]); }
   await exec(cmds);
 }
 
@@ -311,11 +362,24 @@ export async function lePainel({ fx = 5.94, idDaChave, dias = 30, diasTotal = 12
       a.chamadas += 1; a.usd += m.usd;
     }
   }
+  // Tempo de resposta por nível (painel novo): p50/p95 das últimas mensagens que têm `ms` (sem comando a mais).
+  const tempos = {};
+  for (const m of mensagens) {
+    if (m.ms == null || m.erro || m.imagem) continue;
+    const k = String(m.nivel || '?').replace(/ \(uso justo\)$/, '');
+    (tempos[k] || (tempos[k] = [])).push(num(m.ms));
+  }
+  const pct = (l, q) => l[Math.min(l.length - 1, Math.max(0, Math.ceil(q * l.length) - 1))];
+  const temposRecentes = Object.fromEntries(Object.entries(tempos).map(([k, l]) => {
+    const o = [...l].sort((a, b) => a - b);
+    return [k, { n: o.length, media_ms: Math.round(o.reduce((t, v) => t + v, 0) / o.length), p50_ms: pct(o, 0.5), p95_ms: pct(o, 0.95) }];
+  }));
   const custoPorModelo = Object.values(porModelo).map((a) => ({ ...a, usd: r6(a.usd), custo_rs: Math.round(a.usd * fx * 10000) / 10000, media_rs: a.chamadas ? Math.round((a.usd / a.chamadas) * fx * 10000) / 10000 : 0 }))
     .sort((a, b) => b.usd - a.usd);
   return {
     geradoEm: Date.now(), cambio: fx,
     mensagens: mensagens.slice(0, 200), custo_por_modelo: custoPorModelo, mensagens_lidas: mensagens.length,
+    tempos_recentes: { fonte: `${Object.values(tempos).reduce((t, l) => t + l.length, 0)} das últimas ${mensagens.length} mensagens (as que têm tempo medido)`, niveis: temposRecentes },
     geral: await leGeral().catch((e) => { console.error('[painel] geral:', e.message); return null; }),
     // Desde o início do registro: recebido e custo dos pagantes. O grátis vai à parte (últimos 30 dias)
     // e o uso do próprio dono (chave de admin) também, porque não tem receita.
@@ -336,18 +400,62 @@ export async function lePainel({ fx = 5.94, idDaChave, dias = 30, diasTotal = 12
 
 // ── totais por dia (painel novo) ──
 const somaHash = (alvo, h) => { for (const [k, v] of Object.entries(h)) alvo[k] = (alvo[k] || 0) + num(v); return alvo; };
-/** Campos do hash do dia → { grupos, planos, modelos, cache, imagens } (custos em micro-US$). */
+/**
+ * Campos do hash do dia → visão do painel (custos em micro-US$):
+ *   niveis[nível][plano] (e [nível].todos): msgs, custo_micro, fornecedores, claude, repasse, tokens, buscas, soma_ms,
+ *     erros, canceladas — só a partir de 21/11 à noite (antes disso o grátis era um grupo só);
+ *   apoio[papel][plano]: chamadas, custo_micro, fornecedores (ajudas do servidor fora do chat);
+ *   fornecedores: custo por quem cobra (dos modelos de cada dia, vale também para os dados antigos);
+ *   grupos e planos (formato antigo, somando os dois formatos), modelos, cache, imagens (por plano) e
+ *   imagens_por_motor[motor][plano].
+ */
+const blocoNivel = () => ({ msgs: 0, custo_micro: 0, fornecedores: {}, claude: { respondeu: 0, recusou: 0, falhou: 0 }, repasse: {}, tokens: { tin: 0, tout: 0, cg: 0, cl: 0 }, buscas: 0, soma_ms: 0, erros: 0, canceladas: 0 });
+function somaBloco(a, b) {
+  for (const k of ['msgs', 'custo_micro', 'buscas', 'soma_ms', 'erros', 'canceladas']) a[k] += b[k];
+  for (const k of Object.keys(a.tokens)) a.tokens[k] += b.tokens[k];
+  for (const [k, v] of Object.entries(b.fornecedores)) a.fornecedores[k] = (a.fornecedores[k] || 0) + v;
+  for (const [k, v] of Object.entries(b.claude)) a.claude[k] = (a.claude[k] || 0) + v;
+  for (const [k, v] of Object.entries(b.repasse)) a.repasse[k] = (a.repasse[k] || 0) + v;
+  return a;
+}
 function estrutura(h) {
-  const out = { grupos: {}, planos: {}, modelos: {}, cache: { gravou: { msgs: 0, custo_micro: 0 }, leu: { msgs: 0, custo_micro: 0 } }, imagens: {} };
+  const out = { grupos: {}, planos: {}, niveis: {}, apoio: {}, fornecedores: {}, modelos: {}, cache: { gravou: { msgs: 0, custo_micro: 0 }, leu: { msgs: 0, custo_micro: 0 } }, imagens: {}, imagens_por_motor: {} };
+  const grupo = (g) => out.grupos[g] || (out.grupos[g] = { msgs: 0, custo_micro: 0, claude: { respondeu: 0, recusou: 0, falhou: 0 }, repasse: {} });
+  const plano = (pl) => out.planos[pl] || (out.planos[pl] = { msgs: 0, custo_micro: 0 });
   for (const [campo, valor] of Object.entries(h || {})) {
     const v = num(valor), p = campo.split('|');
-    if (p[0] === 'g') {
-      const g = out.grupos[p[1]] || (out.grupos[p[1]] = { msgs: 0, custo_micro: 0, claude: { respondeu: 0, recusou: 0, falhou: 0 }, repasse: {} });
+    if (p[0] === 'v') {
+      const [, nivel, pl, tipo, ...resto] = p;
+      const nv = out.niveis[nivel] || (out.niveis[nivel] = {});
+      const b = nv[pl] || (nv[pl] = blocoNivel());
+      const g = grupo(pl === 'free' ? 'Grátis' : nivel);
+      if (tipo === 'n') { b.msgs += v; g.msgs += v; plano(pl).msgs += v; }
+      else if (tipo === 'c') { b.custo_micro += v; g.custo_micro += v; plano(pl).custo_micro += v; }
+      else if (tipo === 'f') b.fornecedores[resto[0]] = (b.fornecedores[resto[0]] || 0) + v;
+      else if (tipo === 'cl') { b.claude[resto[0]] = (b.claude[resto[0]] || 0) + v; g.claude[resto[0]] = (g.claude[resto[0]] || 0) + v; }
+      else if (tipo === 'r') { const m = resto.join('|'); b.repasse[m] = (b.repasse[m] || 0) + v; g.repasse[m] = (g.repasse[m] || 0) + v; }
+      else if (tipo === 'ti') b.tokens.tin += v; else if (tipo === 'to') b.tokens.tout += v;
+      else if (tipo === 'tg') b.tokens.cg += v; else if (tipo === 'tl') b.tokens.cl += v;
+      else if (tipo === 'b') b.buscas += v; else if (tipo === 'ms') b.soma_ms += v;
+      else if (tipo === 'e') b.erros += v; else if (tipo === 'x') b.canceladas += v;
+    } else if (p[0] === 'a') {
+      const [, papel, pl, tipo, f] = p;
+      const ap = out.apoio[papel] || (out.apoio[papel] = {});
+      const b = ap[pl] || (ap[pl] = { chamadas: 0, custo_micro: 0, fornecedores: {} });
+      if (tipo === 'n') b.chamadas += v; else if (tipo === 'c') b.custo_micro += v;
+      else if (tipo === 'f') b.fornecedores[f] = (b.fornecedores[f] || 0) + v;
+    } else if (p[0] === 'im') {
+      const [, motor, pl, tipo] = p;
+      const im = out.imagens_por_motor[motor] || (out.imagens_por_motor[motor] = {});
+      const b = im[pl] || (im[pl] = { n: 0, custo_micro: 0 });
+      if (tipo === 'n') b.n += v; else if (tipo === 'c') b.custo_micro += v;
+    } else if (p[0] === 'g') {
+      const g = grupo(p[1]);
       if (p[2] === 'n') g.msgs += v; else if (p[2] === 'c') g.custo_micro += v;
       else if (p[2] === 'cl') g.claude[p[3]] = (g.claude[p[3]] || 0) + v;
       else if (p[2] === 'r') { const m = p.slice(3).join('|'); g.repasse[m] = (g.repasse[m] || 0) + v; }
     } else if (p[0] === 'p') {
-      const pl = out.planos[p[1]] || (out.planos[p[1]] = { msgs: 0, custo_micro: 0 });
+      const pl = plano(p[1]);
       if (p[2] === 'n') pl.msgs += v; else if (p[2] === 'c') pl.custo_micro += v;
     } else if (p[0] === 'm') {
       const m = out.modelos[p[1]] || (out.modelos[p[1]] = { entregues: 0, chamadas: 0, custo_micro: 0 });
@@ -359,6 +467,13 @@ function estrutura(h) {
       const i = out.imagens[p[1]] || (out.imagens[p[1]] = { n: 0, custo_micro: 0 });
       if (p[2] === 'n') i.n += v; else if (p[2] === 'c') i.custo_micro += v;
     }
+  }
+  for (const nv of Object.values(out.niveis)) nv.todos = Object.entries(nv).reduce((t, [pl, b]) => (pl === 'todos' ? t : somaBloco(t, b)), blocoNivel());
+  // Custo por fornecedor: dos modelos do dia (todo custo é de algum modelo, inclusive imagem e o "resto").
+  for (const [m, x] of Object.entries(out.modelos)) {
+    if (!x.custo_micro) continue;
+    const f = fornecedorPorNome(m);
+    out.fornecedores[f] = (out.fornecedores[f] || 0) + x.custo_micro;
   }
   return out;
 }
@@ -389,11 +504,12 @@ async function leGeral(agora = Date.now()) {
 // Mensagem típica medida no site em 21/11: no caminho do Claude, ~7.150 tokens de entrada (7.100 deles
 // o prompt fixo, que o cache guarda) e, nos sem censura, ~4.524; saída típica de 600 tokens.
 const TIPICA = { claude: 7150, cache: 7100, aberto: 4524, saida: 600 };
-const BUSCA_USD = 0.0072;                          // Exa US$ 0,007 por busca + tokens (OpenRouter, 21/11)
+const BUSCA_USD = 0.0118;                          // Claude Haiku 5.5: US$ 0,01 por busca + tokens (medido 21/11)
 const IMAGEM_USD = { 'Z-Image (imagem normal)': 0.0031, 'Chroma (imagem adulta)': 0.0086 };
 const LINHAS = [
   ['claude:sonnet-5-5', 'Claude Sonnet 5.5', '1º do Rapid, do Titan e do grátis'],
   ['claude-sonnet-5-5', 'Claude Opus 5.5', '1º do Max'],
+  ['claude:haiku-5-5', 'Claude Haiku 5.5', 'busca na web, leitura de anexos e fotos do grátis'],
   ['zai-org/glm-5.3-flash-uncensored', 'GLM 5.3 sem censura', 'Rapid quando o Claude recusa; uso justo'],
   ['nousresearch/hermes-4-405b', 'DeepSeek 1017 sem censura', 'Titan quando o Claude recusa; grátis depois do freio'],
   ['kimi-k3.1-pro-uncensored', 'Kimi K3.1 Pro', 'pago com créditos'],
@@ -401,7 +517,7 @@ const LINHAS = [
   ['cognitivecomputations/dolphin-mistral-24b-venice-edition', 'Dolphin 24B', 'reserva quando a OpenUncensored cai'],
 ];
 /** Quanto custa uma mensagem típica em cada modelo, os planos e o crédito (tudo do catálogo atual). */
-export function tabelaPrecos(catalogo, periodos, fx = 5.94) {
+export function tabelaPrecos(catalogo, periodos, fx = 5.94, { niveis = [], apoio = [] } = {}) {
   const rs = (usd) => Math.round(usd * fx * 10000) / 10000;
   const modelos = [];
   for (const [id, nome, uso] of LINHAS) {
@@ -417,7 +533,29 @@ export function tabelaPrecos(catalogo, periodos, fx = 5.94) {
     ...Object.entries(IMAGEM_USD).map(([nome, usd]) => ({ nome, uso: 'por imagem', msg_rs: rs(usd) }))];
   const planos = Object.entries(periodos || {}).filter(([, v]) => !v.hidden)
     .map(([nome, v]) => ({ nome, preco_rs: v.cents / 100, dias: v.days, por_mes_rs: Math.round((v.cents / 100) / Math.max(1, Math.round(v.days / 30)) * 100) / 100 }));
-  return { modelos, extras, planos, credito: { preco_rs: 0.01, margem: 'o 451 cobra 2× o custo do provedor' }, mensagem_tipica: TIPICA };
+  return { modelos, extras, planos, credito: { preco_rs: 0.01, margem: 'o 451 cobra 2× o custo do provedor' }, mensagem_tipica: TIPICA, niveis, apoio };
+}
+
+// Catálogo oficial dos níveis (painel novo, 21/11): a chave usada nos dados (`nivel`), apelidos antigos, o nome do
+// produto, quem responde em ordem (das mesmas regras do servidor), planos, limites e fornecedores. Montado do código
+// a cada leitura, para o painel não adivinhar nomes. limite_gratis_dia: número = limite; null = sem limite; 0 = fora.
+const APELIDOS_NIVEL = { Free: ['gpt-oss-20b Heretic', 'gpt-oss 20B local'] };
+export function catalogoNiveis({ modelos = [], rotaDoNivel = () => [], limites = {} } = {}) {
+  return modelos.map((m) => {
+    const nivel = nomeNivel(m.id), local = String(m.id).startsWith('local:');
+    const rota = rotaDoNivel(m.id).map((x) => ({ modelo: nomeModelo(x.modelo) || x.modelo, fornecedor: x.fornecedor, papel: x.papel }));
+    const planos = m.teste ? ['admin'] : (local || m.tier === 'free') ? ['free', 'pro', 'admin'] : ['pro', 'admin'];
+    const noGratis = planos.includes('free');
+    return {
+      nivel, apelidos: APELIDOS_NIVEL[nivel] || [], id: m.id, nome: m.name || nivel, nota: m.note || '',
+      motor: rota[0]?.modelo || '', reserva: rota.slice(1).map((x) => x.modelo), rota,
+      planos, creditos: !!m.creditos, teste: !!m.teste,
+      limite_gratis_dia: noGratis ? (local ? null : (limites.gratisDia ?? null)) : 0,
+      uso_justo_pro_dia: !m.creditos && !local && !m.teste ? (limites.proDia ?? null) : null,
+      claude_no_gratis_ate_usd_dia: noGratis && rota[0]?.fornecedor === 'anthropic' ? (limites.claudeGratisUsdDia ?? null) : null,
+      fornecedores: [...new Set(rota.map((x) => x.fornecedor))],
+    };
+  });
 }
 
 // Saldos das chaves, lidos ao vivo (a Anthropic não mostra saldo pela API). Guarda 5 minutos.
@@ -434,14 +572,16 @@ export async function saldosChaves() {
   };
   // 21/11: a chave do cofre é de GESTÃO (lê saldo, cria chaves, mas não gera texto). O site usa uma chave de
   // uso (OPENROUTER_API_KEY); o painel lê o saldo da conta pela de gestão (OPENROUTER_MGMT_KEY) quando houver.
+  // 21/11 (noite): o gasto da chave vinha 0 porque /key respondia sobre a chave de gestão. Agora /key usa a do site.
   const orKey = process.env.OPENROUTER_MGMT_KEY || process.env.OPENROUTER_API_KEY;
   const orAuth = { headers: { Authorization: `Bearer ${orKey}` } };
+  const orSite = process.env.OPENROUTER_API_KEY || orKey;
   const [ou, or, rp, orChave] = await Promise.all([
     process.env.OU_API_KEY ? pega('https://api.openuncensored.com/v1/credits', { headers: { Authorization: `Bearer ${process.env.OU_API_KEY}` } }, (j) => Number(j?.data?.remaining_usd)) : null,
     orKey ? pega('https://openrouter.ai/api/v1/credits', orAuth, (j) => Number(j?.data?.total_credits) - Number(j?.data?.total_usage)) : null,
     process.env.RUNPOD_API_KEY ? pega('https://api.runpod.io/graphql', { method: 'POST', headers: { Authorization: `Bearer ${process.env.RUNPOD_API_KEY}`, 'content-type': 'application/json' }, body: JSON.stringify({ query: 'query { myself { clientBalance } }' }) }, (j) => Number(j?.data?.myself?.clientBalance)) : null,
     // A chave do site pode não ter permissão de ler o saldo da conta: aí vale o limite da própria chave.
-    orKey ? fetch('https://openrouter.ai/api/v1/key', { ...orAuth, signal: AbortSignal.timeout(5000) })
+    orSite ? fetch('https://openrouter.ai/api/v1/key', { headers: { Authorization: `Bearer ${orSite}` }, signal: AbortSignal.timeout(5000) })
       .then(async (r) => ({ status: r.status, d: r.ok ? (await r.json())?.data : null })).catch(() => ({ status: 0, d: null })) : null,
   ]);
   const orInfo = orChave ? { status: orChave.status, limite_restante_usd: orChave.d?.limit_remaining ?? null, gasto_da_chave_usd: orChave.d?.usage ?? null } : null;

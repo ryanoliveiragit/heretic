@@ -110,6 +110,7 @@ async function askClaude(item, { claudeKey, claudeUrl, signal, conta }) {
   const source = { type: 'base64', media_type: item.mime, data: item.data };
   const block = item.kind === 'pdf' ? { type: 'document', title: item.name, source } : { type: 'image', source };
   return comPrazo(signal, async (sinal) => {
+    const t0 = Date.now();
     const res = await fetch(claudeUrl || 'https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': claudeKey, 'anthropic-version': '2023-06-01' },
@@ -123,7 +124,7 @@ async function askClaude(item, { claudeKey, claudeUrl, signal, conta }) {
     const base = Number(u.input_tokens) || 0, grava = Number(u.cache_creation_input_tokens) || 0, le = Number(u.cache_read_input_tokens) || 0;
     const saida = Number(u.output_tokens) || 0;
     const usd = (base * HAIKU.price_in + grava * HAIKU.price_cache_write + le * HAIKU.price_cache_read + saida * HAIKU.price_out) / 1e6;
-    if (conta) conta(HAIKU.model, { usage: { prompt_tokens: base + grava + le, completion_tokens: saida, cost: usd } });
+    if (conta) conta(HAIKU.model, { usage: { prompt_tokens: base + grava + le, completion_tokens: saida, cost: usd } }, Date.now() - t0);
     if (data.stop_reason === 'refusal') return '';
     const text = (Array.isArray(data.content) ? data.content : []).filter((b) => b?.type === 'text').map((b) => b.text || '').join('').trim();
     return REFUSED.test(text) ? '' : text;
@@ -133,6 +134,7 @@ async function askClaude(item, { claudeKey, claudeUrl, signal, conta }) {
 async function askInkling(item, { ouKey, ouUrl, signal, conta }) {
   if (!ouKey || item.kind !== 'image') return '';
   return comPrazo(signal, async (sinal) => {
+    const t0 = Date.now();
     const res = await fetch(ouUrl || 'https://api.openuncensored.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ouKey}` },
@@ -144,7 +146,7 @@ async function askInkling(item, { ouKey, ouUrl, signal, conta }) {
     });
     if (!res.ok) return '';
     const data = await res.json();
-    if (conta) conta(INKLING, data); // a OpenUncensored devolve o custo em cost.usd
+    if (conta) conta(INKLING, data, Date.now() - t0); // a OpenUncensored devolve o custo em cost.usd
     const text = String(data?.choices?.[0]?.message?.content || '').trim();
     return REFUSED.test(text) ? '' : text;
   });
@@ -156,6 +158,7 @@ async function askReader({ model, reasoning }, item, { apiKey, referer, orUrl, s
     ? { type: 'file', file: { filename: item.name, file_data: `data:${item.mime};base64,${item.data}` } }
     : { type: 'image_url', image_url: { url: `data:${item.mime};base64,${item.data}` } };
   return comPrazo(signal, async (sinal) => {
+    const t0 = Date.now();
     const res = await fetch(orUrl || 'https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}`, 'HTTP-Referer': referer },
@@ -171,7 +174,7 @@ async function askReader({ model, reasoning }, item, { apiKey, referer, orUrl, s
     });
     if (!res.ok) return '';
     const data = await res.json();
-    if (conta) conta(model, data); // o OpenRouter devolve o custo em usage.cost
+    if (conta) conta(model, data, Date.now() - t0); // o OpenRouter devolve o custo em usage.cost
     const text = String(data?.choices?.[0]?.message?.content || '').trim();
     return REFUSED.test(text) ? '' : text;
   });
