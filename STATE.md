@@ -1,4 +1,28 @@
 
+## 2026-11-21 (02h13) — PUBLICADO: registro de uso por usuário + seção "Usuários do 451" no painel
+
+Pedido do dono: no 451 Painel PWA, ver cada usuário (comprou?, o que usa, custo, lucro, se o Claude
+respondeu ou desceu) e os preços, para saber se está perdendo dinheiro. Regra: nunca as conversas.
+- `src/uso.js`: por mensagem guarda só números (nível, Claude respondeu/recusou/falhou, quem entregou,
+  para onde desceu, tokens, custo, créditos, buscas, imagens). Pagantes e dono um por um (id = hash da
+  chave, `idDaChave` em limits.js); grátis só em total por dia + visitantes únicos (PFADD). Pagamento
+  confirmado gravado sem prazo em `pay.js/markPaid` (os pedidos `pay:order:*` somem em 7 dias; o painel
+  também conta os que ainda estão lá). Teste prova que nenhum texto entra (`scripts/teste-painel.mjs`).
+- `GET /api/admin/painel` (app.js + `api/admin/painel.js`): só com chave de admin (`x-451-key`), CORS só
+  para a origem do painel. Devolve usuários, grátis (7/30 dias e total), totais com resultado, preços
+  (do catálogo, mensagem típica medida) e saldos ao vivo (OpenUncensored, OpenRouter, RunPod; cache 5 min).
+- Deploy `dpl_3D8U5jf6wbaMMe576hceZp56FzmW` (451sh.com); antes `dpl_2ZskMSn2…` (mesma mudança sem o
+  diagnóstico do OpenRouter). Undo: `npx vercel rollback https://451sh-2bqjh2iua-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`.
+- Painel (pasta do agente Super Hacking, `posts/painel/site`; backup em `backups/painel-antes-usuarios/`):
+  seção nova em index.html, app.js, app.css; sw.js v7. Chave de admin só no localStorage do aparelho.
+  Publicado com `openbot.replace_site` (site c5221478…) a partir de `painel-publicacao/site` (cópia; o
+  OpenBot só publica da pasta do próprio agente). A rotina de coleta dele republica da pasta dele, que
+  tem as mesmas mudanças. Veredito do topo = clientes (recebido − pagantes − grátis); uso do dono à parte.
+- Conferido no ar: pré-voo só libera o painel; sem chave 401; chave Pro 401; admin 200; painel público
+  carregou os dados reais em 390 px. A chave do OpenRouter do site NÃO lê o saldo da conta (`/credits`
+  falha; `/key` diz: sem limite, já gastou US$ 1,96) — não é a mesma chave do cofre (conta com US$ 4,18).
+- Antigo, não meu: o openbot.site bloqueia o service worker do painel (CSP `worker-src 'none'`).
+
 ## 2026-11-21 (01h41) — OpenUncensored recarregada: chave nova em produção
 
 - O dono comprou US$ 25 numa chave nova (a antiga, final …f802, estava com US$ 0). Chave salva no

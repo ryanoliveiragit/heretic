@@ -15,3 +15,5 @@
 
 ## Custos do 451
 - Sempre conferir o custo real de cada mudança no 451 (medidor por mensagem e laços de chamadas pagas): o projeto nunca pode dar prejuízo.
+- Nunca fazer teste em massa com as chaves reais (Claude, OpenUncensored, OpenRouter, RunPod): volume só com provedores falsos; com chave real, poucas chamadas e com o custo estimado antes.
+- Créditos também nunca podem deixar o projeto no vermelho.

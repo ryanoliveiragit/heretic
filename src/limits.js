@@ -87,6 +87,8 @@ async function sha256(text) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return [...new Uint8Array(bytes)].slice(0, 12).map(b => b.toString(16).padStart(2, '0')).join('');
 }
+/** Id do assinante a partir da chave Pro (o mesmo do teto de gasto): liga pagamento e uso sem guardar a chave. */
+export async function idDaChave(key) { return `key:${await sha256(String(key).trim().toUpperCase())}`; }
 
 /** Pro conta pela chave (vale em qualquer aparelho); grátis conta por aparelho e por IP. */
 export async function subjectsFor({ plan, proKey, visitorIds }) {

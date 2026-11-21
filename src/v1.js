@@ -16,6 +16,7 @@ import { planForKey, isAdminKey } from './plans.js';
 import { getPersona } from './persona.js';
 import { agentPrompt } from './agents.js';
 import { streamChat, MODEL_CATALOG, enhancePrompt, custoTurno } from './upstream.js';
+import { registraUso, nomeNivel } from './uso.js';
 import { bucketOf, subjectsFor, consumeQuota, refundQuota, spendStatus, addSpend } from './limits.js';
 import { checkGlobalBudget, recordCost } from './cost.js';
 import { creditBalance, spendCredits, priceCredits, throttle, MIN_TO_START, THROTTLE_SECONDS, THROTTLE_PRO_SECONDS } from './credits.js';
@@ -257,6 +258,8 @@ v1.post('/chat/completions', async (c) => {
     const doneBucket = bucketOf(doneId, tier);
     if (!admin && text && (doneBucket === 'pro' || doneBucket === 'pro_rapid')) await addSpend(subjects, doneBucket, cost).catch(() => {});
     if (doneBucket === 'credits' && text) await spendCredits(subjects[0].id, tier, priceCredits(cost)).catch(() => {});
+    // Painel do dono (21/11): só os números desta resposta, nunca o texto.
+    if (text) await registraUso({ sid: subjects[0]?.id, tier, admin, nivel: nomeNivel(modelId), usoJusto: bucket === 'pro_rapid', usage, custo: cost, creditos: doneBucket === 'credits' ? priceCredits(cost) : 0, fonte: 'api' }).catch(() => {});
     if (!text && !admin) await refundQuota(subjects, chargesFor(bucket)).catch(() => {});
     return {
       prompt_tokens: Number(usage.input_tokens) || 0,

@@ -12,6 +12,8 @@
 
 import { Hono } from 'hono';
 import { issuePaidKey, verifyPaidKey, keyFrom } from './plans.js';
+import { registraPagamento } from './uso.js';
+import { idDaChave } from './limits.js';
 
 export const PERIODS = {
   // Preços (dono 21/11, "subir tudo: 99 o mais barato") — o piso sobe para R$ 99/mês.
@@ -139,6 +141,8 @@ async function markPaid(order) {
   order.status = 'paid';
   order.expiresAt = order.targetExp;
   order.key = issuePaidKey('pro', order.expiresAt);
+  // Painel do dono (21/11): o pedido some do banco em 7 dias; o pagamento fica guardado por usuário.
+  if (order.period !== 'teste') await registraPagamento({ id: order.id, sid: await idDaChave(order.key), cents: order.cents, period: order.period, method: order.method, expiresAt: order.expiresAt }).catch(() => {});
   return saveOrder(order);
 }
 

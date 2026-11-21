@@ -9,13 +9,14 @@ import { getPersona, setPersona } from './persona.js';
 import { streamChat, qualityAnswer, enhancePrompt, imagePrompt, imageIntent, imageFollowups, agentTip, getRoutes, setRoute, MODEL_CATALOG, custoTurno } from './upstream.js';
 import { checkBudget, incrementUsage } from './budget.js';
 import { checkGlobalBudget, recordCost, recordFreeCost, freeClaudeOk } from './cost.js';
+import { registraUso, registraImagem, lePainel, nomeNivel, tabelaPrecos, saldosChaves } from './uso.js';
 import { AGENTS, agentPrompt } from './agents.js';
 import { planOf, tierOf, modelsFor, resolveModel, visitorIds, keyFrom, planForKey, isAdmin, FAIR_USE_MODEL, PUBLIC_MODELS } from './plans.js';
 import { creditBalance, spendCredits, addExtraCredits, priceCredits, throttle, MIN_TO_START, THROTTLE_SECONDS, THROTTLE_PRO_SECONDS } from './credits.js';
-import { LIMITS, RESOURCES, HIDDEN_BUCKETS, bucketOf, subjectsFor, peekQuota, consumeQuota, refundQuota, limitsStore, spendStatus, addSpend } from './limits.js';
+import { LIMITS, RESOURCES, HIDDEN_BUCKETS, bucketOf, subjectsFor, peekQuota, consumeQuota, refundQuota, limitsStore, spendStatus, addSpend, idDaChave } from './limits.js';
 import { readAttachments, newUploads } from './attachments.js';
 import { v1 } from './v1.js';
-import { pay, payWebhook } from './pay.js';
+import { pay, payWebhook, PERIODS } from './pay.js';
 
 // Mensagem de quando o Pro bate o uso justo também no Rapid: diz quando volta, no horário de Brasília.
 function fairUseStop(st) {
@@ -213,6 +214,8 @@ async function cobrancaImagem(subjects, pro, tier, admin = false) {
 // Depois do motor escolhido: confere o saldo (adulta custa mais) e, no fim, cobra créditos ou soma no teto.
 const podePagar = (cob, motor) => cob.modo !== 'creditos' || cob.saldo >= IMG_CREDITOS[motor];
 async function fecharCobranca(subjects, tier, cob, motor) {
+  // Painel do dono (21/11): só a contagem e o custo da imagem, nunca o pedido.
+  await registraImagem({ sid: subjects[0]?.id, tier, admin: cob.modo === 'admin', motor, custo: MOTOR_USD[motor], creditos: cob.modo === 'creditos' ? IMG_CREDITOS[motor] : 0 }).catch(() => {});
   if (cob.modo === 'creditos') { await spendCredits(subjects[0].id, tier, IMG_CREDITOS[motor]).catch(() => {}); return IMG_CREDITOS[motor]; }
   if (cob.modo === 'admin') return 0;
   if (tier !== 'free') await addSpend(subjects, 'pro', MOTOR_USD[motor]).catch(() => {});
@@ -482,6 +485,28 @@ app.post('/api/redeem', async (c) => {
 
 // Recarga de créditos avulsos (hoje manual; o webhook de pagamento usa o mesmo caminho depois).
 // Exige HERETIC_ADMIN_KEY no header x-heretic-admin. body: { code, amount }.
+// Painel do dono (21/11): uso de cada usuário (só números, nunca conversas). Abre só com a chave de
+// administrador e só para o endereço do 451 Painel (PWA), que guarda a chave no celular do dono.
+const PAINEL_ORIGEM = 'https://451-painel-das-redes-painel-pwa-com-seguidores-yhac8uqusz.openbot.site';
+const corsPainel = (c) => {
+  if (c.req.header('origin') === PAINEL_ORIGEM) {
+    c.header('Access-Control-Allow-Origin', PAINEL_ORIGEM);
+    c.header('Access-Control-Allow-Headers', 'x-451-key');
+    c.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    c.header('Access-Control-Max-Age', '86400');
+  }
+  c.header('Vary', 'Origin');
+  c.header('Cache-Control', 'no-store');
+};
+app.options('/api/admin/painel', (c) => { corsPainel(c); return c.body(null, 204); });
+app.get('/api/admin/painel', async (c) => {
+  corsPainel(c);
+  if (!isAdmin(c)) return c.json({ error: 'admin', message: 'Só com a chave de administrador.' }, 401);
+  const fx = Number(process.env.PAINEL_FX_BRL) || 5.94;
+  const [dados, saldos] = await Promise.all([lePainel({ fx, idDaChave }), saldosChaves()]);
+  return c.json({ ...dados, saldos, precos: tabelaPrecos(MODEL_CATALOG, PERIODS, fx) });
+});
+
 app.post('/api/admin/credits', async (c) => {
   const adminKey = process.env.ADMIN_KEY || process.env.HERETIC_ADMIN_KEY;
   if (!adminKey || (c.req.header('x-451-admin') || c.req.header('x-heretic-admin') || '') !== adminKey) return c.json({ error: 'unauthorized' }, 401);
@@ -669,6 +694,8 @@ app.post('/api/chat', async (c) => {
           const bal = await spendCredits(subjects[0].id, tier, priceCredits(cost)).catch(() => null);
           if (bal) send('credits', { spent: priceCredits(cost), balance: bal });
         }
+        // Painel do dono (21/11): só os números desta mensagem (nível, modelos, custo), nunca o texto.
+        if (fullText) await registraUso({ sid: subjects[0]?.id, tier, admin, nivel: nomeNivel(modelId), usoJusto: !!fairUse, usage, custo: cost, creditos: doneBucket === 'credits' ? priceCredits(cost) : 0 }).catch(() => {});
         // Resposta vazia não gasta o limite de quem perguntou.
         const quotas = fullText || admin ? reserved.quotas : await refundQuota(subjects, charges);
         send('usage', { quotas });
