@@ -693,7 +693,10 @@ async function personTarget(q) {
 async function webContext(query, signal, { person = false, name = '', detail = '' } = {}) {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) return null;
-  const model = process.env.SEARCH_MODEL || process.env.ROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct';
+  // Custo: 20/11 o padrão era o Llama 3.1 8B, e a Groq cobrou US$ 2,63 por 1M de tokens de entrada
+  // (130× a tabela) — US$ 0,70 em 106 buscas. O DeepSeek V4.1 Flash é barato de verdade e não
+  // depende do provedor caro: US$ 0,05/1M in e US$ 0,20/1M out. SEARCH_MODEL ainda sobrescreve.
+  const model = process.env.SEARCH_MODEL || process.env.ROUTER_MODEL || 'deepseek/deepseek-v4.1-flash';
   const ac = new AbortController();
   const to = setTimeout(() => ac.abort(), 30000); // pesquisa de pessoa com 8 fontes passava de 22 s e era cortada
   if (signal) signal.addEventListener('abort', () => ac.abort());
@@ -712,7 +715,9 @@ async function webContext(query, signal, { person = false, name = '', detail = '
         // Instruções no system; no user SÓ o termo de busca — o plugin web usa a mensagem do usuário
         // como consulta, e com as instruções junto o Exa buscava o texto delas (vinha Wikipédia aleatória).
         messages: [{ role: 'system', content: prompt }, { role: 'user', content: [name, (detail || '').trim()].filter(Boolean).join(' ') || String(query).slice(0, 500) }],
-        provider: { sort: 'throughput' },
+        // Freio de custo (20/11): a Groq cobrou 130× a tabela no Llama 8B. Excluída; SEARCH_BLOCK_PROVIDERS
+        // sobrescreve a lista. Se o provedor devolver custo acima do teto, a busca é descartada.
+        provider: { sort: 'throughput', ignore: String(process.env.SEARCH_BLOCK_PROVIDERS || 'groq').split(',') },
         plugins: [{ id: 'web', max_results: 4 }],
         web_search_options: { search_context_size: 'low' },
         max_tokens: 600, temperature: 0,
@@ -721,6 +726,14 @@ async function webContext(query, signal, { person = false, name = '', detail = '
     });
     if (!res.ok) return null;
     const data = await res.json();
+    // Teto de custo por busca (20/11): o provedor devolve o custo real em `usage.cost`; acima do
+    // limite a busca é descartada (o app segue sem ela) em vez de faturar um valor absurdo.
+    const buscaUsd = Number(data?.usage?.cost ?? data?.usage?.total_cost ?? 0);
+    const teto = Number(process.env.SEARCH_MAX_COST_USD || 0.02);
+    if (buscaUsd > teto) {
+      console.error('[busca] custo acima do teto: US$', buscaUsd, '>', teto, '— descartada');
+      return null;
+    }
     const msg = data?.choices?.[0]?.message || {};
     // LGPD (18/11): o resumo e os trechos passam pelo saneador ANTES de chegar ao Claude e aos cards.
     const text = sanitizePii((msg.content || '').trim());
@@ -938,9 +951,12 @@ function fallbackCatalog(route) {
       const or = MODEL_CATALOG.find(m => m.id === alvo);
       if (or) return or;
     }
-    // Sem equivalente no OpenRouter: o Rapid da OU é o último recurso.
+    // Sem equivalente no OpenRouter: 20/11 o OU zerou e o Titan/Rapid da OU também morreram — o
+    // fallback voltava para o Rapid da OU e girava em loop de 402 (20 avisos, zero resposta).
+    // Agora vai para o Dolphin no OpenRouter, que tem saldo e entrega.
     if (route.model === 'glm-5.3-flash-uncensored') return null;
-    return MODEL_CATALOG.find(m => m.id === 'zai-org/glm-5.3-flash-uncensored') || null;
+    return or('cognitivecomputations/dolphin-mistral-24b-venice-edition')
+      || MODEL_CATALOG.find(m => m.id === 'zai-org/glm-5.3-flash-uncensored') || null;
   }
   // Heretic Free (Pollinations) é grátis mas instável ("Load failed"): cai pro OpenRouter.
   if (route.provider === 'pollinations') {
@@ -1739,7 +1755,14 @@ async function* streamWithProvider(provider, model, catalog, messages, systemPro
 async function* streamReserves(route, reason, mode, messages, systemPrompt, payload, { onToken, onWarning, onToolCall, onReasoning, signal, usage = null } = {}) {
   let current = route, lastError = null, sent = false;
   const relay = (t) => { sent = true; if (onToken) onToken(t); };
-  for (let fb = fallbackCatalog(current); fb; fb = fallbackCatalog(current)) {
+  // 20/11: com o OpenUncensored zerado, a fila girava em loop (Rapid da OU → Titan da OU → Rapid...)
+  // e o site devolvia 20 avisos de redirecionamento sem nenhuma resposta. Teto de 4 saltos e
+  // memória de quem já falhou; o último recurso é sempre o OpenRouter (que tem saldo).
+  const tentados = new Set();
+  for (let salto = 0; salto < 4; salto++) {
+    const fb = fallbackCatalog(current);
+    if (!fb || tentados.has(fb.id)) break;
+    tentados.add(fb.id);
     if (onWarning) onWarning({ type: 'rerouted', reason: `${reason} — fallback para ${fb.provider}`, from: mode, to: fb.provider });
     try {
       yield* streamWithProvider(fb.provider, fb.api_model || fb.venice_model || fb.id, fb, messages, systemPrompt, payload, { onToken: relay, onWarning, onToolCall, onReasoning, signal, usage });
@@ -1748,6 +1771,15 @@ async function* streamReserves(route, reason, mode, messages, systemPrompt, payl
       if (sent || signal?.aborted) throw e;
       lastError = e;
       current = { provider: fb.provider, model: fb.id };
+    }
+  }
+  // Última linha: OpenRouter, que tem saldo. Só quando nada acima respondeu.
+  if (!sent && getApiKey('openrouter')) {
+    const ultimo = MODEL_CATALOG.find(m => m.id === 'cognitivecomputations/dolphin-mistral-24b-venice-edition');
+    if (ultimo && !tentados.has(ultimo.id)) {
+      if (onWarning) onWarning({ type: 'rerouted', reason: `${reason} — último recurso no OpenRouter`, from: mode, to: 'openrouter' });
+      yield* streamWithProvider(ultimo.provider, ultimo.id, ultimo, messages, systemPrompt, payload, { onToken: relay, onWarning, onToolCall, onReasoning, signal, usage });
+      return;
     }
   }
   if (lastError) throw lastError;
