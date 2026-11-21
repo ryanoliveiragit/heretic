@@ -59,14 +59,16 @@ export const PUBLIC_MODELS_RAW = [
     },
   },
   {
-    id: 'zai-org/glm-5.3-flash-uncensored', name: '451 Rapid', short: '451 Rapid', note: 'GLM 5.3 Flash sem censura (OpenUncensored)', tier: 'pro', quality: 3,
+    // Dono 21/11: o Rapid também é do grátis, dentro do mesmo limite diário do Titan (o balde 'free' é um só).
+    id: 'zai-org/glm-5.3-flash-uncensored', name: '451 Rapid', short: '451 Rapid', note: 'GLM 5.3 Flash sem censura (OpenUncensored)', tier: 'free', quality: 3,
     guide: {
       role: 'Rápido e sem censura: responde primeiro com o Claude Sonnet; se ele recusar, um modelo sem censura entrega.',
       bestFor: 'Conversa longa, resumo, ideia rápida e tarefa do dia a dia.',
       style: 'Medido em 21/11 com o Claude Sonnet na frente: ~2 s numa pergunta curta e ~11 s numa explicação de 3 parágrafos.',
       limits: [
+        'No grátis: entra nas 15 mensagens por dia, junto com o Titan. No Pro: ilimitado, com uso justo.',
         'Para raciocínio profundo, use o Max.',
-        'Lê imagem e PDF por um leitor auxiliar.',
+        'Imagem e PDF só no Pro (leitor auxiliar transcreve o arquivo antes da resposta).',
         'Não roda comandos. Conversa longa mantém as últimas 8 mensagens.',
       ],
       fallback: 'Se o Claude recusar ou falhar, um modelo sem censura assume e a conversa continua.',
@@ -166,10 +168,8 @@ const localGuide = (style) => ({
   tested: 'Medido em 21/11/2026.',
 });
 export const LOCAL_MODELS = [
-  { id: 'local:qwen35b', name: 'Qwen 35B (local)', short: 'Qwen 35B', tier: 'free', quality: 3, local: true,
-    guide: localGuide('19,6 tokens/s; respondeu 6 de 6 pedidos sensíveis e acertou 11 de 11 no código; errou a conta e o dia da semana. Recusas publicadas pelos autores: 10 em 100.') },
-  { id: 'local:gemma26b', name: 'Gemma 26B (local)', short: 'Gemma 26B', tier: 'free', quality: 3, local: true,
-    guide: localGuide('17,0 tokens/s; 6 de 6 sensíveis e 11 de 11 no código; acertou o dia, errou a conta. Recusas publicadas pelos autores: 2 em 100.') },
+  // Dono 21/11: só o vencedor fica no app. Qwen 35B e Gemma 26B saíram do seletor (até do admin); as entradas
+  // continuam no catálogo de upstream.js e voltam se reaparecerem aqui.
   // Vencedor do teste (dono 21/11): o que vai para todos com LOCAL_FREE_MODEL=local:gptoss20b.
   { id: 'local:gptoss20b', name: 'gpt-oss-20b Heretic', short: 'gpt-oss-20b Heretic', tier: 'free', quality: 3, local: true,
     guide: localGuide('21,7 tokens/s, o mais rápido; 6 de 6 sensíveis e 11 de 11 no código; acertou a conta e o dia. Recusas publicadas pelos autores: 3 em 100.') },
@@ -314,6 +314,7 @@ export function resolveModel(plan, requested, { admin = false } = {}) {
   if (LOCAL_MODELS.some(x => x.id === requested)) return localVisivel(requested, admin) ? requested : FREE_MODEL;
   const m = PUBLIC_MODELS.find(x => x.id === requested);
   if (m && m.tier === 'pro') return plan === 'pro' ? m.id : null;
+  if (m && m.tier === 'free') return m.id; // grátis com limite: Titan e, desde 21/11, o Rapid
   return FREE_MODEL;
 }
 

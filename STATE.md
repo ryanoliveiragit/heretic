@@ -1,3 +1,19 @@
+## 2026-11-21 (15h50) — PUBLICADO: só o gpt-oss entre os locais; Rapid grátis com limite
+
+Pedido do dono: "deixar só o melhor gratuito no app… ele free sem limite; o Rapid free com limite; o resto igual".
+- Recomendado e mantido: gpt-oss-20b Heretic (o mais rápido: ~26 tokens/s contra 17 da Gemma; carrega em
+  49 s contra 81; 12 GB; recusas publicadas 3/100, Gemma 2, Qwen 10). Qwen 35B e Gemma 26B saíram do
+  seletor (até do admin); as entradas seguem no catálogo de upstream.js.
+- 451 Rapid agora é `tier: 'free'`: o grátis tem Rapid e Titan dividindo as mesmas 15 mensagens/dia (balde
+  `free`), mais o gpt-oss sem limite. `resolveModel` aceita qualquer modelo grátis (antes todo pedido grátis
+  virava Titan). Custo por mensagem igual ao Titan (Sonnet na frente; reserva GLM 5.3, mais barata); teto
+  total do grátis (US$ 5/dia) e cota de 15 iguais. Max, Hermes e Kimi iguais.
+- Textos: aviso de upgrade do app (não diz mais que o Rapid é só do Pro) e a pergunta "É grátis mesmo?"
+  da página inicial.
+- Deploy `dpl_E4oaqr3NCmrcYW6JMEUUKfqc5SB6`; 7 arquivos conferidos. Conferido no ar: visitante vê Rapid,
+  Titan e gpt-oss livres, cota `free` 15/dia; 1 mensagem grátis no Rapid respondeu em 6 s.
+  **Undo:** `npx vercel rollback https://451sh-ipjisfhzs-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`
+
 ## 2026-11-21 (15h) — Bateria dos modelos locais + melhorias; busca na web consertada
 
 Pedido do dono: "bateria de testes e melhorias" nos modelos locais (Qwen 35B, Gemma 26B, gpt-oss 20B).
