@@ -43,7 +43,7 @@ type Prefs = { estilo: string; formato: string; quando: string; contexto: string
 
 const SUGESTOES = ["Mapeie o sistema e aponte as brechas", "Escreva o relatório do teste de invasão", "Encontre a falha neste código"];
 const X_HANDLE = "451chat";
-const PRECOS: Record<"pro" | "plus", Partial<Record<Periodo, number>>> = { pro: { mensal: 59.9, trimestral: 159.9, anual: 539.9 }, plus: { mensal: 149.9 } };
+const PRECOS: Record<"pro" | "plus", Partial<Record<Periodo, number>>> = { pro: { mensal: 99, trimestral: 252.45, anual: 890 }, plus: { mensal: 199 } };
 const PACOTES: [number, number][] = [[20, 2000], [50, 5000], [100, 10000]];
 const reais = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const num = (v: number) => v.toLocaleString("pt-BR");
@@ -710,7 +710,7 @@ export function App451() {
         {confirma && <Modal key="confirma" label={confirma.titulo} onClose={() => setConfirma(null)}><div><h2 className="m-h">{confirma.titulo}</h2><p className="x-tx2">{confirma.texto}</p></div>
           <div className="h-confirma-acoes"><button className="x-btn g" onClick={() => setConfirma(null)}>Cancelar</button><button className="x-btn p" onClick={() => { confirma.acao(); setConfirma(null); }}><Trash2 size={15} />{confirma.botao}</button></div></Modal>}
         {upsell && <ModalUpsell key="upsell" motivo={upsell} restam={restam} onClose={() => setUpsell(null)} comprar={comprar} />}
-        {breve && <Modal key="breve" label="Em breve" onClose={() => setBreve(null)}><div><h2 className="m-h">Em breve</h2><p className="x-tx2">{breve}</p></div><button className="x-btn p wide" onClick={() => { setBreve(null); setPay({ open: true, orderId: "" }); }}>Assinar o Pro · R$ 59,90</button></Modal>}
+        {breve && <Modal key="breve" label="Em breve" onClose={() => setBreve(null)}><div><h2 className="m-h">Em breve</h2><p className="x-tx2">{breve}</p></div><button className="x-btn p wide" onClick={() => { setBreve(null); setPay({ open: true, orderId: "" }); }}>Assinar o Pro · R$ 99</button></Modal>}
       </AnimatePresence>
       <PayDialog open={pay.open} orderId={pay.orderId} onOpenChange={(open) => setPay((p) => ({ open, orderId: open ? p.orderId : "" }))} onPaid={() => { setChave(getKey() || null); void loadMe(); }} />
 
@@ -1067,7 +1067,7 @@ function CartaoPlano({ conta, usado, restam, saldo, assinar, creditos, usoJusto 
       <p className="h-cplano-num"><b>{restam}</b><span>de {LIMITE} mensagens hoje</span></p>
       <Medidor usado={usado} />
       <div className="x-between h-cplano-linha"><span>Pro: sem limite, Max e Agente</span></div>
-      <button className="h-btn-cromo fino" onClick={assinar}>Assinar o Pro <span>R$ 59,90</span></button>
+      <button className="h-btn-cromo fino" onClick={assinar}>Assinar o Pro <span>R$ 99</span></button>
     </div>
   );
 }
@@ -1107,7 +1107,7 @@ function ModalUpsell({ motivo, restam: restamReal, onClose, comprar }: { motivo:
         </div>
         <div className="h-up-dir">
           <p className="x-cap">PRO</p>
-          <p><b className="p-preco">R$ 59,90</b> <span className="x-mu">por mês</span></p>
+          <p><b className="p-preco">R$ 99</b> <span className="x-mu">por mês</span></p>
           <p className="x-mu h-up-dia">R$ 2 por dia. Menos que um café.</p>
           <button className="h-btn-cromo fino h-up-cta" onClick={() => comprar({ tipo: "plano", plano: "pro", periodo: "mensal" })}>{perto ? "Continuar no Pro" : "Liberar no Pro"}</button>
           <p className="x-mu h-up-pg">Pix ou cripto. Libera na hora, na sua chave.</p>
@@ -1544,7 +1544,7 @@ function Bloqueio({ icone, titulo, texto, onPro }: { icone: ReactNode; titulo: s
       <span className="h-bloq-ic">{icone}</span>
       <h1 className="p-h1">{titulo}</h1>
       <p className="x-tx2">{texto}</p>
-      {onPro && <><button className="x-btn p" onClick={onPro}>Liberar no Pro · R$ 59,90</button><span className="x-mu h-up-pg">Pix, cripto ou créditos da sua chave</span></>}
+      {onPro && <><button className="x-btn p" onClick={onPro}>Liberar no Pro · R$ 99</button><span className="x-mu h-up-pg">Pix, cripto ou créditos da sua chave</span></>}
     </div></div>
   );
 }

@@ -14,10 +14,13 @@ import { Hono } from 'hono';
 import { issuePaidKey, verifyPaidKey, keyFrom } from './plans.js';
 
 export const PERIODS = {
-  // Preços novos (dono 20/11, "subir todos"): produtos novos na AbacatePay; os antigos ficam lá sem uso.
-  mensal:     { cents: 5990,  days: 30,  product: '451sh-pro-mensal-5990' },
-  trimestral: { cents: 15990, days: 90,  product: '451sh-pro-trimestral-15990' },
-  anual:      { cents: 53990, days: 365, product: '451sh-pro-anual-53990' },
+  // Preços (dono 21/11, "subir tudo: 99 o mais barato") — o piso sobe para R$ 99/mês.
+  // O teto de custo por assinante é US$ 3,60/mês (R$ 20,77): no pior caso a margem fica em
+  // 75% no mensal, 71% no trimestral e 68% no anual, mesmo com o assinante batendo o teto todo mês.
+  // Produtos novos na AbacatePay; os antigos (5990/15990/53990) ficam lá sem uso.
+  mensal:     { cents: 9900,  days: 30,  product: '451sh-pro-mensal-9900' },
+  trimestral: { cents: 25245, days: 90,  product: '451sh-pro-trimestral-25245' },
+  anual:      { cents: 89000, days: 365, product: '451sh-pro-anual-89000' },
   // Só para testar o pagamento real (R$ 1,00, 1 dia). Escondido da tela e exige a chave de admin.
   teste:      { cents: 100,   days: 1,   product: '451sh-pro-teste', hidden: true },
 };

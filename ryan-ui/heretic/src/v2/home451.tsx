@@ -296,7 +296,7 @@ export function Home451() {
         <Surge><span className="cap">Preços</span><h2 className="serif">Grátis, Pro ou só créditos.</h2><p className="l-lead">Você decide. Pix ou cripto, sem cartão.</p></Surge>
         <div className="l-cam">
           <Surge className="l-cam-c"><span className="cap">Grátis</span><b className="serif">R$ 0</b><ul><li>15 mensagens por dia</li><li>Sem conta, sem e-mail</li></ul><a className="l-btn" href="/app/">Começar grátis</a></Surge>
-          <Surge delay={0.06} className="l-cam-c" data-dest><span className="cap">Pro</span><b className="serif">R$ 59,90 <small>por mês</small></b><ul><li>Uso justo no Rapid, Titan e Max</li><li>Seu agente e a API</li><li>500 créditos por mês</li></ul><a className="l-btn claro" href="/app/?buy=1">Assinar o Pro</a></Surge>
+          <Surge delay={0.06} className="l-cam-c" data-dest><span className="cap">Pro</span><b className="serif">R$ 99 <small>por mês</small></b><ul><li>Uso justo no Rapid, Titan e Max</li><li>Seu agente e a API</li><li>500 créditos por mês</li></ul><a className="l-btn claro" href="/app/?buy=1">Assinar o Pro</a></Surge>
           <Surge delay={0.12} className="l-cam-c"><span className="cap">Só créditos <span className="l-pill">em breve</span></span><b className="serif">R$ 20 <small>= 2.000 créditos</small></b><ul><li>Hermes e Kimi sem plano</li><li>Não vencem</li></ul><span className="l-btn" aria-disabled="true">Em breve</span></Surge>
         </div>
       </div></section>
