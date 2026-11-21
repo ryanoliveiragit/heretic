@@ -1,4 +1,15 @@
 
+## 2026-11-21 (01h41) — OpenUncensored recarregada: chave nova em produção
+
+- O dono comprou US$ 25 numa chave nova (a antiga, final …f802, estava com US$ 0). Chave salva no
+  cofre do OpenBot como `OU_API_KEY` (final …f6f3) e trocada na Vercel em Production e Preview.
+- Republicado o mesmo deploy (sem código novo): `dpl_4BaD3NoebFnN4GNE6AtAyvmCTUZT` →
+  https://451sh-2bqjh2iua-dwadwdwas-projects.vercel.app, alias `451sh.com`; 215 arquivos iguais ao commit
+  `6419515` (a troca de modelos local não foi junto).
+- Conferido no ar: Hermes respondeu pela OpenUncensored sem cair na reserva; saldo US$ 25 → 24,9943.
+- Undo do deploy: `npx vercel rollback https://451sh-cgr6ijgvx-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`
+  (a chave antiga não tem saldo; voltar o deploy não volta a chave).
+
 ## 2026-11-21 (01h33) — PUBLICADO: todos os níveis começam pelo Claude
 
 Pedido do dono: "todos começam com o Claude; use o Sonnet e, no melhor modelo, o Opus". Decisões dele
