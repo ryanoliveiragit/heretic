@@ -284,6 +284,12 @@ function estimaSemConta(usage, conta, inChars, outChars) {
   usage.output_tokens = (usage.output_tokens || 0) + Math.ceil((outChars || 0) / 4);
 }
 // Custo que o provedor manda no stream: OpenUncensored em cost.usd; OpenRouter em usage.cost.
+// Painel do dono (21/11): a ordem dos modelos chamados na mensagem, sem texto. O último é quem entregou.
+function marcaRota(usage, model) {
+  if (!usage || !model) return;
+  const r = usage.rota || (usage.rota = []);
+  if (r[r.length - 1] !== model) r.push(model);
+}
 function somaCustoDoProvedor(usage, json) {
   const v = json?.cost?.usd ?? json?.usage?.cost;
   if (v == null || !Number.isFinite(Number(v))) return;
@@ -447,6 +453,7 @@ async function* anthropicTurnStream({ model, system, systemFixo = '', messages: 
     if (!/haiku/i.test(model)) body.fallbacks = 'default'; // server-side-fallback (não suportado no Haiku)
     headers['anthropic-beta'] = 'server-side-fallback-2026-07-01';
   }
+  marcaRota(usage, model);
   const up = await fetch(getBaseUrl(provider), {
     method: 'POST', headers, body: JSON.stringify(body), signal: ac.signal,
   });
@@ -888,6 +895,7 @@ async function webContext(query, signal, { person = false, name = '', detail = '
     const data = await res.json();
     // Medidor (21/11): a busca entra no custo da mensagem — mesmo descartada pelo teto, ela foi cobrada.
     contaAvulsa(usage, data, catDe('openrouter', model), prompt.length + String(query).length);
+    if (usage) usage.buscas = (usage.buscas || 0) + 1;
     // Teto de custo por busca (20/11): o provedor devolve o custo real em `usage.cost`; acima do
     // limite a busca é descartada (o app segue sem ela) em vez de faturar um valor absurdo.
     const buscaUsd = Number(data?.usage?.cost ?? data?.usage?.total_cost ?? 0);
@@ -1336,6 +1344,7 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
       // Caiu no meio da resposta: a tela limpa o pedaço antes de o sem censura escrever.
       if (claudeEscreveu && onWarning) onWarning({ type: 'refusal_forced' });
     }
+    if (usage) usage.claude = passa ? (passa.erro ? 'falhou' : 'recusou') : 'respondeu'; // painel do dono
     if (!passa) return;
     // Recusou ou falhou: entrega o sem censura do próprio nível (no Max, o Rapid) pelo laço protegido
     // abaixo, que detecta recusa, escala entre os sem censura e cai na reserva do OpenRouter. Antes,
@@ -1455,6 +1464,7 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
           // Busca web automática (OpenRouter, plugin Exa). A IA decidiu que esta pergunta pede web.
           ...(webSearch ? { plugins: [{ id: 'web', max_results: 3 }], web_search_options: { search_context_size: 'low' } } : {}),
         };
+        marcaRota(usage, route.model);
         const res = await fetch(getBaseUrl(route.provider), {
           method: 'POST',
           headers: {
@@ -1954,6 +1964,7 @@ async function* streamWithProvider(provider, model, catalog, messages, systemPro
   let inChars = 0, outChars = 0;
   const contando = (fn) => (t) => { outChars += String(t || '').length; if (fn) fn(t); };
   try {
+    marcaRota(usage, model);
     const res = await fetch(url, {
       method: 'POST',
       headers: {
