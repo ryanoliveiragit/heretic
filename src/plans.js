@@ -11,7 +11,9 @@
 // estáveis (sem loop) que o Gemma, pelo MESMO preço ($0,020/100). Gemma/Venice UC/Dolphin seguem grátis.
 // Grade estilo Venice (dono 19/11): o grátis usa o 451 Titan, 15 mensagens por dia. O id antigo do
 // "451 Free" (sao10k/...) continua aceito e vira o Titan, para quem tem o modelo salvo no aparelho.
-export const FREE_MODEL = 'nousresearch/hermes-4-405b';
+// Dono 21/11 (tarde): o grátis passou a ser o 451 Rapid (15 mensagens/dia) + o gpt-oss local sem limite; o Titan
+// ficou só no Pro. Ids antigos salvos no aparelho (451 Free, Titan no grátis) caem aqui.
+export const FREE_MODEL = 'zai-org/glm-5.3-flash-uncensored';
 export const LEGACY_FREE_MODEL = 'sao10k/l3.1-euryale-70b';
 // Pro e Pro Plus: ilimitado nestes (uso justo); acima do teto diário a conversa segue no Rapid.
 export const UNLIMITED_MODELS = ['zai-org/glm-5.3-flash-uncensored', 'nousresearch/hermes-4-405b', 'claude-sonnet-5-5', LEGACY_FREE_MODEL];
@@ -66,7 +68,7 @@ export const PUBLIC_MODELS_RAW = [
       bestFor: 'Conversa longa, resumo, ideia rápida e tarefa do dia a dia.',
       style: 'Medido em 21/11 com o Claude Sonnet na frente: ~2 s numa pergunta curta e ~11 s numa explicação de 3 parágrafos.',
       limits: [
-        'No grátis: entra nas 15 mensagens por dia, junto com o Titan. No Pro: ilimitado, com uso justo.',
+        'No grátis: 15 mensagens por dia. No Pro: ilimitado, com uso justo.',
         'Para raciocínio profundo, use o Max.',
         'Imagem e PDF só no Pro (leitor auxiliar transcreve o arquivo antes da resposta).',
         'Não roda comandos. Conversa longa mantém as últimas 8 mensagens.',
@@ -79,14 +81,15 @@ export const PUBLIC_MODELS_RAW = [
   //  • Heretic Titan = a melhor aberta do OpenRouter (Hermes 405B).
   //  • Heretic Max = cérebro de nuvem Claude (estilo Drael), com camada anti-recusa.
   {
-    id: 'nousresearch/hermes-4-405b', name: '451 Titan', short: '451 Titan', note: 'DeepSeek V4.1 Flash sem censura (OpenUncensored)', tier: 'free', quality: 4,
+    // Só no Pro desde 21/11 (antes era o modelo do grátis).
+    id: 'nousresearch/hermes-4-405b', name: '451 Titan', short: '451 Titan', note: 'DeepSeek V4.1 Flash sem censura (OpenUncensored)', tier: 'pro', quality: 4,
     guide: {
-      role: 'O modelo do grátis e o cavalo de batalha do Pro: responde primeiro com o Claude Sonnet; se ele recusar, um modelo sem censura forte entrega.',
+      role: 'O cavalo de batalha do Pro: responde primeiro com o Claude Sonnet; se ele recusar, um modelo sem censura forte entrega.',
       bestFor: 'Conversa do dia a dia, análise, técnica e decisões sem enrolação.',
       style: 'Medido em 21/11 com o Claude Sonnet na frente: ~2 s numa pergunta curta e ~11 s numa explicação de 3 parágrafos.',
       limits: [
-        'No grátis: 15 mensagens por dia. No Pro: ilimitado, com uso justo.',
-        'Imagem e PDF só no Pro (leitor auxiliar transcreve o arquivo antes da resposta).',
+        'No Pro: ilimitado, com uso justo.',
+        'Lê imagem e PDF por um leitor auxiliar, que transcreve o arquivo antes da resposta.',
         'Não roda comandos. Conversa longa mantém as últimas mensagens.',
       ],
       fallback: 'Se o Claude recusar ou falhar, um modelo sem censura assume e a conversa continua.',

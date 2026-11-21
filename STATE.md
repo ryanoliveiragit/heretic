@@ -1,3 +1,15 @@
+## 2026-11-21 (17h10) — PUBLICADO: Titan só no Pro; grátis = Rapid (15/dia) + gpt-oss sem limite
+
+Decisão do dono (pergunta no chat, "Titan só no Pro"): o grátis fica com o 451 Rapid (15 mensagens/dia, Claude
+Sonnet na frente) e o gpt-oss-20b Heretic local sem limite. Titan, Max, Hermes e Kimi: Pro.
+- `src/plans.js`: Titan `tier: 'pro'`; `FREE_MODEL` = Rapid (ids antigos salvos no aparelho caem nele);
+  guias do Rapid e do Titan. Pedido grátis do Titan → 403 "Este modelo faz parte do Pro.".
+- Textos: aviso de upgrade do app, cartão "Grátis" e "É grátis mesmo?" da página inicial, seletor de
+  exemplo da home do app. Testes sem rede apontam o grátis para o Rapid (e conferem o 403 do Titan).
+- Custo: igual ou menor (o grátis usava o Titan, cuja reserva DeepSeek 1017 é mais cara que o GLM 5.3).
+- Deploy `dpl_6FqQP8msNTaFXYJadiJeEB3JHBXK`; 6 arquivos conferidos; visitante vê Rapid + gpt-oss livres.
+  **Undo:** `npx vercel rollback https://451sh-4pby27r81-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`
+
 ## 2026-11-21 (16h40) — PUBLICADO: totais por dia no /api/admin/painel ("geral") e 200 mensagens
 
 Pedido do dono via agente Redesig geral (painel novo do 451 Painel): uso por dia e por grupo desde agora.

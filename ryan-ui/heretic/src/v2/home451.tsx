@@ -15,7 +15,7 @@ import { PlushPet } from "./plush-pet";
 
 const Cig = ({ s = 18 }: { s?: number }) => <img src="/icons/cigarra-mini.svg" alt="" style={{ width: s }} />;
 const MODELOS: ModelOption[] = [
-  { id: "titan", name: "451 Titan", short: "Titan", note: "Equilibrado, o do Grátis", tier: "free", quality: 3 },
+  { id: "rapid", name: "451 Rapid", short: "Rapid", note: "Rápido, o do Grátis", tier: "free", quality: 3 },
   { id: "max", name: "451 Max", short: "Max", note: "O mais forte, pensa antes", tier: "pro", quality: 4, locked: true },
 ];
 

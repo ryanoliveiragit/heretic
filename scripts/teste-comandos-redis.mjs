@@ -105,7 +105,6 @@ async function mede(nome, chave, modelo) {
 }
 const resultados = [];
 for (const [n, k, m] of [
-  ['grátis, Titan (Claude na frente)', null, 'nousresearch/hermes-4-405b'],
   ['grátis, Rapid (Claude na frente)', null, 'zai-org/glm-5.3-flash-uncensored'],
   ['grátis, gpt-oss local', null, 'local:gptoss20b'],
   ['Pro, Rapid', 'PRO-A', 'zai-org/glm-5.3-flash-uncensored'],

@@ -70,8 +70,10 @@ const PASSOS = modo === 'uso-justo' ? [
   ['Pro, API, Rapid', () => api('PRO-A', '451-rapid-uncensored')],
   ['Pro, site, Kimi (créditos)', () => site('PRO-A', 'kimi-k3.1-pro-uncensored')],
   ['Pro, modo qualidade', () => site('PRO-A', 'zai-org/glm-5.3-flash-uncensored', { quality: true })],
-  ['Grátis, site (Titan)', () => site(null, 'nousresearch/hermes-4-405b')],
-  ['Grátis, de novo', () => site(null, 'nousresearch/hermes-4-405b')],
+  // 21/11: o grátis é o Rapid; o Titan ficou só no Pro (pedido grátis do Titan → 403).
+  ['Grátis, site (Rapid)', () => site(null, 'zai-org/glm-5.3-flash-uncensored')],
+  ['Grátis, de novo', () => site(null, 'zai-org/glm-5.3-flash-uncensored')],
+  ['Grátis pedindo o Titan (só Pro)', () => site(null, 'nousresearch/hermes-4-405b')],
 ];
 console.log(`freio do grátis: US$ ${freio}/dia | modo: ${modo}`);
 // O grátis exige 8 s entre mensagens (THROTTLE_SECONDS); o Pro, 3 s.

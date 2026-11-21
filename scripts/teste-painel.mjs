@@ -59,7 +59,7 @@ const passos = [
   ['Pro: Max (o Opus recusa, o GLM entrega)', () => site('PRO-A', 'claude-sonnet-5-5', { opusRecusa: true })],
   ['Pro: API Titan', () => api('PRO-A', '451-titan-uncensored')],
   ['Pro: Kimi (créditos)', () => site('PRO-A', 'kimi-k3.1-pro-uncensored')],
-  ['Grátis: Titan', () => site(null, 'nousresearch/hermes-4-405b')],
+  ['Grátis: Rapid', () => site(null, 'zai-org/glm-5.3-flash-uncensored')],
   ['Dono (admin): Max', () => site('DONO-TESTE', 'claude-sonnet-5-5')],
 ];
 for (const [n, fn] of passos) { await sleep(3300); console.log(`- ${n}: ${await fn()}`); }

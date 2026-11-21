@@ -1092,7 +1092,7 @@ function ModalUpsell({ motivo, restam: restamReal, onClose, comprar }: { motivo:
   const textos: Record<Upsell, [string, string]> = {
     perto: [`Faltam ${restam}. E você está no meio do alvo.`, `Quando acabarem, esta conversa para aqui até ${RENOVA}. No Pro você termina agora, sem contar mensagem.`],
     acabou: ["Acabou por hoje. O alvo não.", `Suas ${LIMITE} mensagens grátis voltam ${RENOVA}. No Pro, esta conversa continua agora, do ponto onde parou.`],
-    modelo: ["Esse modelo é do Pro.", "O 451 Max pensa antes de responder. E no Pro o Rapid e o Titan ficam sem limite diário."],
+    modelo: ["Esse modelo é do Pro.", "No Pro você usa o 451 Titan e o 451 Max, e o Rapid fica sem limite diário."],
     agente: ["O agente é do Pro.", "Ele reescreve seu pedido como um pentester sênior antes de mandar: mais contexto, entrega em passos, sem rodeio. E fica do lado dando dicas enquanto você pesquisa."],
     arena: ["A arena é do Pro.", "Dois modelos respondem e um juiz escolhe."],
     api: ["A API é do Pro.", "Use o 451 no seu código com a mesma chave."],

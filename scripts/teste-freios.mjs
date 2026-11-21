@@ -71,8 +71,8 @@ console.log(`   saldo depois: ${(await creditos.creditBalance(sid, 'pro')).total
 await sleep(3300); linha('saldo 32: só cabe uma resposta mais curta', await site('PRO-B', 'kimi-k3.1-pro-uncensored', um('Explique rapidamente.')));
 console.log(`   saldo depois: ${(await creditos.creditBalance(sid, 'pro')).total} (nunca negativo)`);
 console.log('2) Teto total do grátis no dia (US$ 0,001 só neste teste):');
-await sleep(9000); linha('grátis, 1ª mensagem', await site(null, 'nousresearch/hermes-4-405b', um('oi')));
-await sleep(9000); linha('grátis, 2ª mensagem', await site(null, 'nousresearch/hermes-4-405b', um('oi de novo'), '203.0.113.21'));
+await sleep(9000); linha('grátis, 1ª mensagem', await site(null, 'zai-org/glm-5.3-flash-uncensored', um('oi')));
+await sleep(9000); linha('grátis, 2ª mensagem', await site(null, 'zai-org/glm-5.3-flash-uncensored', um('oi de novo'), '203.0.113.21'));
 
 console.log('3) Pro com histórico de 300 mil caracteres (Rapid):');
 const historico = [];
