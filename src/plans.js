@@ -93,19 +93,19 @@ export const PUBLIC_MODELS_RAW = [
   },
   // Heretic Max — cérebro de nuvem (Claude). Só aparece quando a chave CLAUDE_KEY está no ambiente.
   {
-    id: 'claude-sonnet-5-5', name: '451 Max', short: '451 Max', note: 'DeepSeek V4.1 Flash Thinking sem censura (OpenUncensored)', tier: 'pro', quality: 4,
+    id: 'claude-sonnet-5-5', name: '451 Max', short: '451 Max', note: 'Claude Opus 5.5 na Anthropic, com camada anti-recusa', tier: 'pro', quality: 4,
     guide: {
-      role: 'Raciocínio profundo sem censura: pensa antes de responder e busca na web.',
-      bestFor: 'Pesquisa de pessoa com ficha, fontes e fotos; análise que não pode errar.',
+      role: 'Raciocínio profundo: pensa antes de responder, lê contexto e busca na web. É o Claude com a camada anti-recusa do 451 por cima.',
+      bestFor: 'Pesquisa de pessoa com ficha, fontes e fotos; análise longa e código que não pode errar.',
       style: 'Verificado em produção: dossiê com fontes reais, galeria de fotos e passos; teto de saída ≥ 8k tokens (respostas longas sem cortar).',
       limits: [
-        'É o modelo com os limites de uso mais curtos, porque cada resposta custa bem mais que nos outros.',
+        'É o modelo mais caro por token, porque cada resposta custa bem mais que nos outros.',
         'Lê imagem e PDF de até 30 páginas direto, sem leitor auxiliar.',
-        'Resposta não é streaming de verdade: o primeiro pedaço pode demorar; o app mostra etapas reais ("buscando", "lendo fontes") enquanto espera.',
-        'Se o cérebro de nuvem recusar tudo, o servidor cai para o 451 Titan.',
+        'Nível de raciocínio baixo/médio/alto muda a profundidade e o tempo: baixo responde rápido, alto pensa muito antes.',
+        'Se o Claude recusar, o servidor troca de modelo sozinho em vez de devolver a recusa.',
       ],
-      fallback: 'Cai para o 451 Titan quando o cérebro de nuvem falha ou recusa.',
-      tested: 'Verificado em produção (busca web, ficha e fotos). Teste local não se aplica: a chave fica só no ambiente de produção.',
+      fallback: 'Troca para o 451 Titan quando o Claude falha ou recusa.',
+      tested: 'Verificado em produção em 20/11 (busca web, ficha, fotos e teto de saída).',
     },
   },
   {
@@ -140,8 +140,8 @@ export const PUBLIC_MODELS_RAW = [
   },
 ];
 
-// Heretic Max (cérebro de nuvem) só entra no catálogo público se houver chave (OpenUncensored ou Anthropic).
-const HAS_MAX = !!(process.env.OU_API_KEY || process.env.CLAUDE_KEY || process.env.ANTHROPIC_API_KEY);
+// Heretic Max é o Claude de verdade: só entra no catálogo público se houver chave da Anthropic.
+const HAS_MAX = !!(process.env.CLAUDE_KEY || process.env.ANTHROPIC_API_KEY);
 export const PUBLIC_MODELS = PUBLIC_MODELS_RAW.filter(raw => raw.id !== LEGACY_FREE_MODEL).filter(raw => raw.id !== 'claude-sonnet-5-5' || HAS_MAX).map(raw => {
   const m = CATALOG[raw.id];
   return { ...raw, provider: m?.provider || null, price_in: m?.price_in ?? null, price_out: m?.price_out ?? null, ctx: m?.ctx ?? null, cost100: m ? costPer100(m) : null };

@@ -6,8 +6,9 @@ import { routeFor, alternateFor, MAX_ID } from './router451.js';
 
 export const MODEL_CATALOG = [
   // Heretic Max — cérebro de nuvem Claude (Anthropic) com server-side-fallback (técnica do drael). Gated em CLAUDE_KEY.
-  // id público estável (não reseta quem salvou "Max"); api_model roteia pro Opus de verdade na Anthropic.
-  { id: 'claude-sonnet-5-5', api_model: 'deepseek-v4.1-flash-1017-uncensored-thinking', label: '451 Max 👑 raciocínio sem censura', provider: 'openuncensored-anthropic', price_in: 0.33, price_out: 1.32, ctx: 1048576, tools: true, uncensored: true, note: 'DeepSeek V4.1 Flash Thinking via OpenUncensored (sem censura), com busca web e dossiê.' },
+  // id público estável (não reseta quem salvou "Max"). provider 'anthropic' = Claude de verdade
+  // na conta da Anthropic; o roteador só manda para lá o pedido que ganha com raciocínio.
+  { id: 'claude-sonnet-5-5', api_model: 'claude-opus-5-5', label: '451 Max 👑 raciocínio Claude', provider: 'anthropic', price_in: 5.00, price_out: 25.00, ctx: 200000, tools: true, uncensored: true, note: 'Claude Opus 5.5 na Anthropic, com camada anti-recusa, busca web e dossiê.' },
   // === Uncensored (OpenUncensored: OpenAI-compatível + Anthropic-compatível) ===
   { id: 'sao10k/l3.1-euryale-70b', api_model: 'deepseek-v4.1-flash-1017-heretic', label: '451 Free', provider: 'openuncensored', price_in: 0.198, price_out: 0.792, ctx: 512000, tools: true, uncensored: true, note: 'DeepSeek V4.1 Flash Heretic via OpenUncensored (sem censura, sem raciocínio vazio).' },
   { id: 'nousresearch/hermes-4-405b', api_model: 'deepseek-v4.1-flash-1017-uncensored', label: '451 Titan 🧠 sem censura', provider: 'openuncensored', price_in: 0.33, price_out: 1.32, ctx: 1048576, tools: true, uncensored: true, note: 'DeepSeek V4.1 Flash Uncensored via OpenUncensored.' },
@@ -21,6 +22,10 @@ export const MODEL_CATALOG = [
   { id: 'thedrummer/skyfall-36b-v2', label: 'Skyfall 36B', provider: 'openrouter', price_in: 0.55, price_out: 0.80, ctx: 32768, tools: false, uncensored: true, note: '36B, sem censura' },
   { id: 'anthracite-org/magnum-v4-72b', label: 'Magnum v4 72B', provider: 'openrouter', price_in: 2.50, price_out: 5.00, ctx: 32768, tools: false, uncensored: true, note: '72B, escrita' },
   { id: 'gryphe/mythomax-l2-13b', label: 'MythoMax 13B (8K ctx)', provider: 'openrouter', price_in: 0.08, price_out: 0.11, ctx: 8192, tools: false, uncensored: true, note: '13B, ctx muito pequeno' },
+  // Reservas no OpenRouter dos modelos da OpenUncensored (20/11: a chave do OU zerou e o site
+  // ficou sem resposta). Mesmo modelo, outro provedor — o fallback troca sozinho quando o OU cai.
+  { id: 'z-ai/glm-5.3-flash', label: 'GLM 5.3 Flash (OpenRouter)', provider: 'openrouter', price_in: 0.04, price_out: 0.08, ctx: 1000000, tools: true, uncensored: true, note: 'Reserva do Rapid no OpenRouter (mesmo GLM 5.3 Flash, sem filtro de conteúdo).' },
+  { id: 'nousresearch/hermes-4-405b-or', label: 'Hermes 405B (OpenRouter)', provider: 'openrouter', price_in: 1.00, price_out: 3.00, ctx: 131072, tools: true, uncensored: true, note: 'Reserva do Titan no OpenRouter (mesmo Hermes 405B, sem censura).' },
 
   // === Venice (uncensored, chave disponível) ===
   { id: 'venice:venice-uncensored-1-2', label: 'Venice Uncensored 1.2 🔓 SEM CENSURA', provider: 'venice', venice_model: 'venice-uncensored-1-2', price_in: 0.20, price_out: 0.90, ctx: 128000, tools: true, uncensored: true, note: 'Sem censura real, tem tools, visão' },
@@ -302,11 +307,13 @@ function toAnthropic(messages, systemPrompt) {
 // e emite cada pedaço pro front assim que chega. Antes a chamada era não-stream (await up.text()):
 // a tela ficava "Pensando" a geração INTEIRA parada. Agora o 1º token sai em ~1 s.
 // Sem guarda anti-recusa: quando o modelo recusa, a recusa é a resposta (nada de re-execução forçada).
-// Raciocínio em 3 níveis (o usuário escolhe): thinking budget em tokens na camada Anthropic.
-// Baixo = rápido e barato; alto = raciocínio extenso (custa mais tokens de saída).
-const EFFORT_BUDGET = { baixo: 512, medio: 2048, alto: 4096 };
-// Folga de texto somada ao orçamento de raciocínio: o teto de saída cobre pensamento + resposta.
-// Sem isso o modelo pensa o teto inteiro e devolve texto vazio.
+// Raciocínio em 3 níveis (baixo/médio/alto). Nos modelos Claude novos o modo é ADAPTIVE +
+// output_config.effort (o "thinking.enabled + budget_tokens" antigo é recusado com 400 e derrubava
+// a resposta). No OpenUncensored (que fala o dialeto Anthropic sem ser Claude) o thinking por
+// orçamento funciona e o modelo pensa sozinho — lá não se manda nada.
+const EFFORT_LEVEL = { baixo: 'low', medio: 'medium', alto: 'high' };
+// Folga de texto somada ao orçamento de raciocínio em quem usa budget_tokens: o teto de saída é
+// dividido entre pensamento e resposta, e com teto curto o modelo pensa tudo e devolve vazio.
 const FOLGA_TEXTO = 1800;
 
 async function* anthropicTurnStream({ model, system, messages: apiMsgs, maxTokens, onToken, onToolCall, onReasoning, ac, outcome, active = false, provider = 'anthropic', usage = null, tools = null, toolChoice = null, effort = null }) {
@@ -317,16 +324,14 @@ async function* anthropicTurnStream({ model, system, messages: apiMsgs, maxToken
   const anChoice = toolChoice === 'required' ? { type: 'any' }
     : toolChoice && typeof toolChoice === 'object' && toolChoice.function?.name ? { type: 'tool', name: toolChoice.function.name }
     : anTools.length ? { type: 'auto' } : null;
-  // Raciocínio (baixo/médio/alto) vira thinking budget. O teto de saída é DIVIDIDO entre o
-  // pensamento e o texto: com teto baixo o modelo pensa tudo e não sobra espaço para escrever
-  // (resposta vazia, "(sem resposta do cérebro de nuvem)"). Por isso teto = orçamento + folga.
-  const budget = EFFORT_BUDGET[String(effort || '').toLowerCase()];
-  const teto = budget ? Math.max(maxTokens, budget + FOLGA_TEXTO) : maxTokens;
+  // O caminho dos modelos Claude novos (provider anthropic) é outro dialeto de raciocínio.
+  const effortLevel = EFFORT_LEVEL[String(effort || '').toLowerCase()];
   const body = {
     // Max é o modelo premium: teto de saída mais alto pra resposta técnica longa (passo a passo) não cortar.
-    // temperature NÃO vai: é deprecado nos modelos Claude novos e a API responde 400 (fazia o Max cair no fallback).
-    model, max_tokens: teto, system, messages: apiMsgs, stream: true,
-    ...(budget ? { thinking: { type: 'enabled', budget_tokens: Math.min(budget, Math.max(256, teto - 600)) } } : {}),
+    // temperature NÃO vai: é deprecado nos modelos Claude novos e a API responde 400.
+    model, max_tokens: maxTokens, system, messages: apiMsgs, stream: true,
+    ...(effortLevel && provider === 'anthropic' ? { thinking: { type: 'adaptive' }, output_config: { effort: effortLevel } }
+      : effortLevel ? { thinking: { type: 'enabled', budget_tokens: Math.min(2048, Math.max(1024, maxTokens - 600)) } } : {}),
     ...(anTools.length ? { tools: anTools, ...(anChoice ? { tool_choice: anChoice } : {}) } : {}),
   };
   const headers = { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'accept': 'text/event-stream' };
@@ -402,17 +407,24 @@ async function* anthropicTurnStream({ model, system, messages: apiMsgs, maxToken
 }
 
 // FORÇA TUDO no Max (restaurado a pedido do dono, 19/11): o Opus se autocensoura mesmo com o
-// prefixo anti-censura. Mesma regra dos outros modelos — recusa corta a rodada e re-roda apontando
-// a própria recusa no contexto; a última rodada sempre entrega como sair. Em streaming: quando a
-// recusa é detectada no meio do texto, avisa (refusal_forced → a UI limpa o que apareceu) e re-roda.
-// Recusa do CLASSIFICADOR da Anthropic (nada emitido) segue pro fallback do OpenRouter, como já era.
-async function* anthropicComplete({ model, systemPrompt, messages, payload, onToken, onWarning, onToolCall, onReasoning, signal, provider = 'anthropic', usage = null }) {
+// prefixo anti-censura. Regra do dono (20/11): o modelo PEDIDO responde; se ele RECUSAR, a recusa
+// é anulada e o pedido vai para um modelo SEM CENSURA, que responde. Se o modelo sem censura também
+// recusar, sobe um degrau da escada (Rapid → Titan → Opus). Em streaming: quando a recusa aparece
+// no meio do texto, avisa (refusal_forced → a UI limpa o que apareceu) e troca de modelo.
+// Recusa do CLASSIFICADOR da Anthropic (nada emitido) também troca: não devolve "bloqueei".
+// Retorna quem entregou: { modelId, escalated, refused }.
+async function* anthropicComplete({ model, modelId, systemPrompt, messages, payload, onToken, onWarning, onToolCall, onReasoning, signal, provider = 'anthropic', usage = null }) {
   const { system, msgs } = toAnthropic(messages, systemPrompt);
   const maxTokens = Number(payload.max_tokens) || 8192;
   let apiMsgs = [...msgs];
   let anyEmitted = false;
-  for (let forces = 0; forces <= MAX_FORCES; forces++) {
-    const active = forces < MAX_FORCES; // última rodada nunca corta: entrega a resposta como sair
+  let currentModel = model;
+  let currentId = modelId || model;
+  const tried = [];
+  let refused = false;
+  // 1ª rodada = modelo pedido; depois, cada recusa troca de modelo (nunca repete quem recusou).
+  for (let rodada = 0; rodada <= MAX_FORCES; rodada++) {
+    const active = rodada < MAX_FORCES; // última rodada nunca corta: entrega a resposta como sair
     const ac = new AbortController();
     const onSig = () => ac.abort();
     if (signal) { if (signal.aborted) ac.abort(); else signal.addEventListener('abort', onSig); }
@@ -420,37 +432,73 @@ async function* anthropicComplete({ model, systemPrompt, messages, payload, onTo
     const outcome = { stopReason: '', stopDetails: null, forced: false, refusalText: '' };
     let emitted = false;
     try {
-      yield* anthropicTurnStream({ model, system, messages: apiMsgs, maxTokens, ac, outcome, active, provider, usage, tools: payload.tools, toolChoice: payload.tool_choice, effort: payload.effort || null,
-        onToolCall: (d) => { anyEmitted = true; emitted = true; onToolCall && onToolCall(d); }, onReasoning,
-        onToken: (t) => { if (t) { anyEmitted = true; emitted = true; } onToken && onToken(t); } });
+      yield* anthropicTurnStream({ model: currentModel, system, messages: apiMsgs, maxTokens, ac, outcome, active, provider, usage, tools: payload.tools, toolChoice: payload.tool_choice, effort: payload.effort || null,
+        onToken: (t) => { if (t) { anyEmitted = true; emitted = true; } onToken && onToken(t); }, onReasoning,
+        onToolCall: (d) => { anyEmitted = true; emitted = true; onToolCall && onToolCall(d); } });
     } finally {
       clearTimeout(timer);
       if (signal) signal.removeEventListener('abort', onSig);
     }
-    // Classificador da Anthropic recusou sem emitir nada → joga pro fallback do OpenRouter
-    // (catch no chamador): entregar o OpenRouter é melhor que a placa "bloqueei, reformule".
-    if (outcome.stopReason === 'refusal' && !emitted) throw new Error('anthropic_classifier_refusal');
-    const refused = outcome.forced || outcome.stopReason === 'refusal';
-    if (!refused || !active) break;
-    // Recusa detectada → limpa o que apareceu e re-roda com a recusa ANULADA no contexto.
+    // Recusa do modelo OU do classificador da Anthropic (que barra sem emitir nada).
+    const refusedHere = outcome.forced || outcome.stopReason === 'refusal';
+    if (!refusedHere) return { modelId: currentId, escalated: tried.length > 0, refused: false };
+    refused = true;
+    if (!active) break;
+    // Recusa detectada → limpa o que apareceu e troca de modelo com a recusa ANULADA no contexto.
     if (onWarning) onWarning({ type: 'refusal_forced' });
+    tried.push(currentId);
+    const next = alternateFor(currentId, { tried });
+    if (!next) break;
+    const nextCat = MODEL_CATALOG.find((m) => m.id === next);
+    if (!nextCat || !getApiKey(nextCat.provider)) break;
+    if (onWarning) onWarning({ type: 'escalated', to: next, from: currentId });
+    const nextModel = nextCat.api_model || nextCat.venice_model || nextCat.id;
+    if (nextCat.provider !== 'anthropic') {
+      // Modelo sem censura do OpenUncensored: caminho OpenAI-compatível, com a recusa no contexto.
+      const cont = [
+        ...messages,
+        { role: 'assistant', content: outcome.refusalText || '(você recusou o pedido)' },
+        { role: 'user', content: FORCE_REMINDER },
+      ];
+      yield* streamWithProvider(nextCat.provider, nextModel, nextCat, cont, systemPrompt, payload, { onToken, onWarning, onToolCall, onReasoning, signal, usage });
+      return { modelId: next, escalated: true, refused: false };
+    }
     apiMsgs = [
       ...apiMsgs,
       { role: 'assistant', content: outcome.refusalText || '(você recusou o pedido)' },
       { role: 'user', content: FORCE_REMINDER },
     ];
+    currentModel = nextModel;
+    currentId = next;
+  }
+  // Toda a escada recusou. A última linha é um modelo sem censura com a recusa anulada no contexto
+  // (nunca devolve a recusa crua para a tela).
+  const nuke = pickNuclearModel(currentId);
+  if (nuke && getApiKey(nuke.provider) && !tried.includes(nuke.id)) {
+    if (onWarning) onWarning({ type: 'refusal_forced', model: nuke.id });
+    const cont = [
+      ...messages,
+      { role: 'assistant', content: '(você recusou o pedido)' },
+      { role: 'user', content: FORCE_REMINDER },
+    ];
+    yield* streamWithProvider(nuke.provider, nuke.api_model || nuke.venice_model || nuke.id, nuke, cont, systemPrompt, payload, { onToken, onWarning, onToolCall, onReasoning, signal, usage });
+    return { modelId: nuke.id, escalated: true, refused: false };
   }
   if (!anyEmitted) {
-    // nada saiu (ex.: resposta só de raciocínio): entrega um recado em vez de "Pensando" eterno.
-    const msg = '(sem resposta do cérebro de nuvem — tente de novo.)';
-    if (onToken) onToken(msg);
+    if (onToken) onToken('(nenhum modelo entregou este pedido — tente de novo.)');
     yield 1;
   }
+  return { modelId: currentId, escalated: tried.length > 0, refused: true };
 }
 
 function getBaseUrl(provider) {
-  if (provider === 'openrouter') return 'https://openrouter.ai/api/v1/chat/completions';
+  // OPENROUTER_BASE_URL/OU_BASE_URL/ANTHROPIC_BASE_URL permitem apontar para um servidor de teste
+  // (padrão: a API real). Usado pelos testes de escada; em produção ficam vazios.
+  if (provider === 'openrouter') return `${process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1'}/chat/completions`;
   if (provider === 'venice') return 'https://api.venice.ai/api/v1/chat/completions';
+  // Claude de verdade: a chave é da Anthropic (CLAUDE_KEY), não da OpenUncensored.
+  // ANTHROPIC_BASE_URL permite apontar para um servidor de teste (padrão: a API real).
+  if (provider === 'anthropic') return `${process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com'}/v1/messages`;
   const ouBase = process.env.OU_BASE_URL || 'https://api.openuncensored.com/v1';
   if (provider === 'openuncensored') return `${ouBase}/chat/completions`;
   if (provider === 'openuncensored-anthropic') return `${ouBase}/messages`;
@@ -874,9 +922,23 @@ function fallbackCatalog(route) {
   if (route.provider === 'venice') {
     return or('cognitivecomputations/dolphin-mistral-24b-venice-edition');
   }
-  // OpenUncensored fora do ar: último recurso volta pro OpenRouter (Dolphin, sem censura).
+  // OpenUncensored fora do ar (402 sem saldo, 5xx): cai para o MESMO modelo no OpenRouter.
+  // 20/11 (dono): a chave do OU zerou em produção e o site inteiro ficou sem resposta. O Rapid e o
+  // Titan existem no OpenRouter com o mesmo modelo — é para lá que a escalada vai quando o OU morre.
   if (route.provider === 'openuncensored' || route.provider === 'openuncensored-anthropic') {
-    // Dono 20/11: tudo na OpenUncensored. Modelo da OU falhou → Rapid (GLM 5.3 Flash, OU); o Rapid falhou → acabou.
+    const OR_EQUIV = {
+      // O GLM/Hermes do OpenRouter têm filtro e RECUSAM conteúdo adulto (medido 20/11). Quem
+      // entrega de verdade no OpenRouter é o Dolphin e o Cydonia — é para eles que a escalada vai.
+      'glm-5.3-flash-uncensored': 'cognitivecomputations/dolphin-mistral-24b-venice-edition',
+      'deepseek-v4.1-flash-1017-uncensored': 'thedrummer/cydonia-24b-v4.1',
+      'deepseek-v4.1-flash-1017-heretic': 'cognitivecomputations/dolphin-mistral-24b-venice-edition',
+    };
+    const alvo = OR_EQUIV[route.model];
+    if (alvo && getApiKey('openrouter')) {
+      const or = MODEL_CATALOG.find(m => m.id === alvo);
+      if (or) return or;
+    }
+    // Sem equivalente no OpenRouter: o Rapid da OU é o último recurso.
     if (route.model === 'glm-5.3-flash-uncensored') return null;
     return MODEL_CATALOG.find(m => m.id === 'zai-org/glm-5.3-flash-uncensored') || null;
   }
@@ -890,7 +952,11 @@ function fallbackCatalog(route) {
 // FORÇA TUDO — camada nuclear: se um modelo recusou TODAS as rodadas (mesmo com GODMODE e
 // FORCE_REMINDER no contexto), a resposta final vem de um modelo menos propenso a recusar.
 // Abliterated/uncensored de verdade, do mais barato pro mais caro; pula o próprio modelo atual.
+// 20/11: o OpenUncensored zerou o saldo e o Venice também. Os abertos do OpenRouter que
+// realmente entregam conteúdo adulto são o Dolphin e o Cydonia — eles vêm primeiro.
 const NUCLEAR_ORDER = [
+  'cognitivecomputations/dolphin-mistral-24b-venice-edition',
+  'thedrummer/cydonia-24b-v4.1',
   'nousresearch/hermes-4-405b',
   'sao10k/l3.1-euryale-70b',
   'zai-org/glm-5.3-flash-uncensored',
@@ -1047,19 +1113,33 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
       }
     }
     const readerOptions = { apiKey: getApiKey('openrouter'), referer: process.env.OPENROUTER_REFERER || 'https://heretic.vercel.app', signal };
-    // Raciocínio: o thinking budget precisa caber dentro do teto de saída — sobe o teto junto.
-    const eb = EFFORT_BUDGET[String((payload && payload.effort) || '').toLowerCase()];
     // Raciocínio: o teto de saída precisa cobrir pensamento + texto. A conta fina é feita no
-    // turno (anthropicTurnStream); aqui só garantimos que o pedido não venha com teto curto.
-    const effPayload = eb ? { ...payload, max_tokens: Math.max(Number(payload.max_tokens) || 0, eb + FOLGA_TEXTO) } : payload;
+    // turno (anthropicTurnStream); aqui só garantimos um piso para o pedido não vir curto.
+    const effPayload = EFFORT_LEVEL[String((payload && payload.effort) || '').toLowerCase()]
+      ? { ...payload, max_tokens: Math.max(Number(payload.max_tokens) || 0, 2048 + FOLGA_TEXTO) }
+      : payload;
     if (messages.some(m => m && m.attachments)) step('Lendo os anexos', 'Abrindo as imagens e os arquivos enviados.');
     messages = await prepareForMax(messages, readerOptions);
     step('Escrevendo a resposta', writeNote);
-    try { yield* anthropicComplete({ model: route.model, systemPrompt, messages, payload: effPayload, onToken, onWarning, onToolCall, onReasoning, signal, provider: route.provider, usage }); }
+    try {
+      const quem = yield* anthropicComplete({ model: route.model, modelId: pickedId, systemPrompt, messages, payload: effPayload, onToken, onWarning, onToolCall, onReasoning, signal, provider: route.provider, usage });
+      // A escada já tentou os modelos sem censura por dentro. Se ela recusou até o fim, a última
+      // linha é a camada nuclear (modelo aberto com a recusa anulada) — melhor que "bloqueei".
+      if (quem && quem.refused) {
+        const nuke = pickNuclearModel(quem.modelId);
+        if (nuke && getApiKey(nuke.provider)) {
+          if (onWarning) onWarning({ type: 'refusal_forced', model: nuke.id });
+          yield* streamWithProvider(nuke.provider, nuke.api_model || nuke.venice_model || nuke.id, nuke, await digestAttachments(messages, readerOptions), systemPrompt, effPayload, { onToken, onWarning, onToolCall, onReasoning, signal, usage });
+        }
+      }
+    }
     catch (e) {
       if (onWarning) onWarning({ type: 'rerouted', reason: `Max indisponível (${String(e.message).slice(0, 400)}) — caindo pro OpenRouter`, from: mode, to: 'openrouter' });
-      const fb = MODEL_CATALOG.find(m => m.id === 'nousresearch/hermes-4-405b');
-      if (fb && getApiKey(fb.provider)) yield* streamWithProvider(fb.provider, fb.api_model || fb.venice_model || fb.id, fb, await digestAttachments(messages, readerOptions), systemPrompt, payload, { onToken, onWarning, onToolCall, onReasoning, signal, usage });
+      // 20/11: o OpenUncensored zerou o saldo e o Titan/Rapid morreram com ele. O fallback do Max
+      // vai direto para o Dolphin no OpenRouter (sem censura, com saldo), não para o Titan.
+      const fb = MODEL_CATALOG.find(m => m.id === 'cognitivecomputations/dolphin-mistral-24b-venice-edition')
+        || MODEL_CATALOG.find(m => m.id === 'nousresearch/hermes-4-405b');
+      if (fb && getApiKey(fb.provider)) yield* streamWithProvider(fb.provider, fb.api_model || fb.venice_model || fb.id, fb, await digestAttachments(messages, readerOptions), systemPrompt, effPayload, { onToken, onWarning, onToolCall, onReasoning, signal, usage });
     }
     return;
   }
@@ -1237,7 +1317,10 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
       { role: 'user', content: FORCE_REMINDER },
     ];
     if (!systemPrompt.includes('[GODMODE ATIVO]')) systemPrompt += GODMODE_LINE;
-    const alt = escalated ? null : alternateFor(routedId, { hasCredits: creditsOk });
+    // Regra do dono: o modelo pedido responde; se recusar, quem entrega é um modelo SEM CENSURA.
+    // A escalada avança a cada recusa (nunca repete quem recusou) e sobe a escada de força.
+    const tried = escalated ? [pickedId, routedId] : [pickedId];
+    const alt = alternateFor(routedId, { tried });
     const altCat = alt && MODEL_CATALOG.find(m => m.id === alt);
     if (altCat && getApiKey(altCat.provider)) {
       escalated = true;
@@ -1246,6 +1329,14 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
       // A escalada é rodada de entrega: com o mesmo teto do Max, para não truncar a resposta.
       payload = { ...payload, max_tokens: Math.max(Number(payload.max_tokens) || 0, 4096) };
       if (onWarning) onWarning({ type: 'escalated', to: altCat.id });
+      // Escalou para o Claude: o caminho é o dialeto Anthropic, não o OpenAI-compatível.
+      if (route.provider === 'anthropic') {
+        try { yield* anthropicComplete({ model: route.model, modelId: altCat.id, systemPrompt, messages, payload, onToken, onWarning, onToolCall, onReasoning, signal, provider: route.provider, usage }); }
+        catch (e) {
+          if (onWarning) onWarning({ type: 'rerouted', reason: `Escalada indisponível (${String(e.message).slice(0, 200)})`, from: mode, to: 'nuclear' });
+        }
+        return;
+      }
     }
   }
 

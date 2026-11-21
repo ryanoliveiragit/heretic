@@ -62,7 +62,10 @@ async function remainingBalance() {
 }
 
 /**
- * Antes de despachar: o mês já passou do teto? O saldo da chave acabou?
+ * Antes de despachar: o mês já passou do teto? O saldo dos provedores acabou?
+ * 20/11: o OpenUncensored zerou e o app inteiro devolvia 402 mesmo com o Claude (Anthropic) e o
+ * OpenRouter com saldo. O bloqueio só vale quando TODOS os provedores estão sem saldo — senão o
+ * fallback assume e o usuário continua sendo atendido.
  * ok=false com reason 'monthly_budget' ou 'ou_balance'.
  */
 export async function checkGlobalBudget() {
@@ -70,7 +73,28 @@ export async function checkGlobalBudget() {
   const spent = await monthlySpent();
   if (spent >= budget) return { ok: false, reason: 'monthly_budget', spent, budget };
   const min = Number(process.env.OU_MIN_BALANCE_USD || 1);
-  const balance = await remainingBalance();
-  if (balance != null && balance < min) return { ok: false, reason: 'ou_balance', balance, min };
-  return { ok: true, spent, budget, balance };
+  const [ou, anthropic] = await Promise.all([remainingBalance(), anthropicAlive()]);
+  const ouOk = ou == null || ou >= min;
+  const anthropicOk = anthropic == null || anthropic >= min;
+  if (!ouOk && !anthropicOk) return { ok: false, reason: 'ou_balance', balance: ou, anthropic, min };
+  return { ok: true, spent, budget, balance: ou, anthropic };
+}
+
+// A Anthropic não expõe crédito: o sinal é HTTP 200 numa chamada mínima. Guarda por 10 min.
+let _anthropic = { at: 0, ok: null };
+async function anthropicAlive() {
+  const key = process.env.CLAUDE_KEY || process.env.ANTHROPIC_API_KEY;
+  if (!key) return null;
+  if (Date.now() - _anthropic.at < 10 * 60 * 1000) return _anthropic.ok === false ? 0 : null;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/models', {
+      headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      signal: AbortSignal.timeout(8000),
+    });
+    _anthropic = { at: Date.now(), ok: res.ok };
+    return res.ok ? null : 0;
+  } catch {
+    _anthropic = { at: Date.now(), ok: null };
+    return null;
+  }
 }

@@ -14,6 +14,7 @@
 import { Hono } from 'hono';
 import { planForKey, isAdminKey } from './plans.js';
 import { getPersona } from './persona.js';
+import { agentPrompt } from './agents.js';
 import { streamChat, MODEL_CATALOG, enhancePrompt } from './upstream.js';
 import { bucketOf, subjectsFor, consumeQuota, refundQuota, spendStatus, addSpend } from './limits.js';
 import { checkGlobalBudget, recordCost } from './cost.js';
@@ -22,7 +23,10 @@ import { creditBalance, spendCredits, priceCredits, throttle, MIN_TO_START, THRO
 export const v1 = new Hono();
 
 // Identidade certa na API: o modelo responde por esta camada, não pela infraestrutura de trás.
-const IDENTITY = 'Contexto técnico: você atende pela API do 451 (451sh.com), que roda modelos abertos sem censura sobre a infraestrutura da OpenUncensored. A Venice é só transporte antigo e não aparece para o cliente. Não diga que roda na Venice, na OpenAI ou na Anthropic; se perguntarem o modelo, responda o nome 451 informado aqui.';
+// A identidade mora na persona (regra do dono 20/11): aqui só entra o contexto da API, sem
+// repetir nem contradizer "sem censura". Antes este bloco dizia "modelos abertos sobre a
+// OpenUncensored" e o Max (Claude) respondia diferente do chat do site.
+const IDENTITY = 'Contexto técnico: você atende pela API do 451 (451sh.com). Se perguntarem qual modelo ou IA você é, responda o nome 451 informado nesta conversa — nunca o nome do provedor, da infraestrutura ou de outro modelo.';
 
 // Ids públicos da API (dono 19/11): canônico = 451-<modelo>-uncensored; o id curto antigo (451-titan)
 // segue valendo como alias. Nome de exibição não muda.
@@ -218,13 +222,17 @@ v1.post('/chat/completions', async (c) => {
   }
   if (!reserved.ok) return oaErr(c, 429, 'Limite de uso atingido. Tente mais tarde.', 'rate_limit');
 
-  // Monta o prompt: persona do 451 + identidade + as mensagens system do cliente (opencode manda as dele).
+  // Monta o prompt: o MESMO do chat do site (plano + persona + agente + identidade), para o modelo
+  // responder igual aqui e lá. Antes a API montava só persona + IDENTITY + idLine, sem o plano e
+  // sem o prompt de agente — e o Max respondia diferente do chat (dono 20/11).
   const parsed = toChat(messages);
   const chat = parsed.chat;
   const publicId = PUBLIC_BY_INTERNAL[modelId] || body.model || '451-titan';
   const modeloNome = API_MODELS.find(m => m.id === publicId)?.name || '451';
-  const idLine = `O modelo em uso se chama "${modeloNome}" (id ${publicId}). Se perguntarem qual modelo você é, responda "${modeloNome}" — o nome 451, nunca o do provedor ou da infraestrutura.`;
-  const systemPrompt = [getPersona(), IDENTITY, idLine, ...parsed.sysParts].filter(Boolean).join('\n\n');
+  const planLine = `Plano ${tier === 'plus' ? 'Pro Plus' : 'Pro'}. Respostas diretas, sem repetir contexto.`;
+  const idLine = `Identidade: você é o ${modeloNome} (451sh.com). Se perguntarem qual modelo ou IA você é, responda "${modeloNome}" — nunca o nome do provedor, da infraestrutura ou de outro modelo.`;
+  const agent = agentPrompt(body.agent);
+  const systemPrompt = [planLine, getPersona(), agent, IDENTITY, idLine, ...parsed.sysParts].filter(Boolean).join('\n\n');
   const cap = Math.min(Number(body.max_tokens) || 4096, 8192);
   const tools = Array.isArray(body.tools) ? body.tools.filter(t => t && t.function && t.function.name) : [];
   // Raciocínio (baixo/médio/alto): aceita o campo do próprio app (effort) ou o padrão OpenAI (reasoning_effort).
