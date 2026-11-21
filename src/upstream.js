@@ -16,6 +16,9 @@ export const MODEL_CATALOG = [
   // falhar, o sem censura do próprio nível entrega. Interno: não aparece no seletor.
   // Tabela oficial 21/11: US$ 2/10; cache grava 2,50 e lê 0,10.
   { id: 'claude:sonnet-5-5', api_model: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5 (interno)', provider: 'anthropic', price_in: 2.00, price_out: 10.00, price_cache_write: 2.50, price_cache_read: 0.10, ctx: 200000, tools: true, uncensored: false, note: 'Primeiro a responder no Rapid e no Titan (inclusive no grátis); não aparece no seletor.' },
+  // 21/11 (dono: "usar o Claude pro máximo de coisas que der"): busca na web, leitura de anexos e fotos do
+  // grátis. Preço da tabela oficial (até 100 mil tokens de entrada); a busca custa US$ 0,01 à parte.
+  { id: 'claude:haiku-5-5', api_model: 'claude-haiku-5-5', label: 'Claude Haiku 5.5 (interno)', provider: 'anthropic', price_in: 0.10, price_out: 0.50, price_cache_write: 0.125, price_cache_read: 0.01, ctx: 200000, tools: true, uncensored: false, note: 'Busca na web, leitura de anexos e fotos do grátis; não aparece no seletor.' },
   // === Uncensored (OpenUncensored: OpenAI-compatível + Anthropic-compatível) ===
   { id: 'sao10k/l3.1-euryale-70b', api_model: 'deepseek-v4.1-flash-1017-heretic', label: '451 Free', provider: 'openuncensored', price_in: 0.198, price_out: 0.792, ctx: 512000, tools: true, uncensored: true, note: 'DeepSeek V4.1 Flash Heretic via OpenUncensored (sem censura, sem raciocínio vazio).' },
   { id: 'nousresearch/hermes-4-405b', api_model: 'deepseek-v4.1-flash-1017-uncensored', label: '451 Titan 🧠 sem censura', provider: 'openuncensored', price_in: 0.33, price_out: 1.32, ctx: 1048576, tools: true, uncensored: true, note: 'DeepSeek V4.1 Flash Uncensored via OpenUncensored.' },
@@ -50,6 +53,8 @@ export const MODEL_CATALOG = [
   // Gemma sem o raciocínio escondido (21/11): "que dia vem depois de domingo?" caiu de 13,2 s/123 tokens para 1,3 s/5.
   { id: 'local:gemma26b', api_model: 'local/gemma-4-26b-a4b-heretic', label: 'Gemma 4 26B-A4B Heretic (local)', provider: 'local', price_in: 0, price_out: 0, ctx: 6000, max_out: 1500, tools: false, uncensored: true, kwargs: { enable_thinking: false } },
   { id: 'local:gptoss20b', api_model: 'local/gpt-oss-20b-heretic', label: 'gpt-oss-20b Heretic (local)', provider: 'local', price_in: 0, price_out: 0, ctx: 6000, max_out: 2000, tools: false, uncensored: true, kwargs: { reasoning_effort: 'low' } },
+  // Fotos no grátis (dono 21/11): o Inkling 2 Mini sem censura da OpenUncensored lê a imagem e responde.
+  { id: 'ou:inkling-foto', api_model: 'inkling-2-mini-uncensored', label: 'Inkling 2 Mini sem censura (fotos do grátis)', provider: 'openuncensored', price_in: 0.15, price_out: 0.60, ctx: 3000, tools: false, uncensored: true },
   // 100% grátis, sem chave, independente da Venice/OpenRouter (Pollinations → GPT-OSS 20B). venice_model = nome enviado ao provedor.
   { id: 'pollinations:openai-fast', label: '451 Free (Pollinations)', provider: 'pollinations', venice_model: 'openai-fast', price_in: 0, price_out: 0, ctx: 128000, tools: false, uncensored: true, note: '100% grátis, sem chave' },
 ];
@@ -878,7 +883,115 @@ async function personTarget(q, usage = null) {
   return isPersonQuery(t) ? personName(t) : lowercaseName(t);
 }
 
-async function webContext(query, signal, { person = false, name = '', detail = '', usage = null } = {}) {
+// Leitor de anexos (21/11): Claude Haiku 5.5 → Inkling (recusa) → OpenRouter (estepe). As URLs saem de
+// getBaseUrl para os testes apontarem para servidores falsos; cada leitura entra no medidor ('anexo').
+function opcoesDoLeitor(signal, usage) {
+  return {
+    signal, referer: process.env.OPENROUTER_REFERER || 'https://heretic.vercel.app',
+    apiKey: getApiKey('openrouter'), orUrl: getBaseUrl('openrouter'),
+    claudeKey: process.env.READER_CLAUDE === '0' ? '' : getApiKey('anthropic'), claudeUrl: getBaseUrl('anthropic'),
+    ouKey: getApiKey('openuncensored'), ouUrl: getBaseUrl('openuncensored'),
+    conta: (modelo, data) => contaAvulsa(usage, data, catDe('', modelo), 0, modelo, 'anexo'),
+  };
+}
+
+// Busca na web (dono 21/11: "usar o Claude pro máximo de coisas que der"; o sem censura só entra na
+// recusa). 1º o Claude Haiku 5.5 com a ferramenta de busca da Anthropic; se ele recusar, falhar ou não
+// buscar, a busca antiga do OpenRouter (Exa + DeepSeek) entra como estepe, enquanto houver saldo lá.
+// SEARCH_CLAUDE=0 volta tudo para o OpenRouter sem mexer no código.
+export async function webContext(query, signal, opts = {}) {
+  const prompt = promptDaBusca(opts.person);
+  const consulta = [opts.name, (opts.detail || '').trim()].filter(Boolean).join(' ') || String(query).slice(0, 500);
+  const claude = await webContextClaude(prompt, consulta, signal, opts.usage || null).catch(() => null);
+  if (claude || signal?.aborted) return claude;
+  return webContextOR(query, signal, opts);
+}
+
+function promptDaBusca(person) {
+  return person
+    ? `Busque na web sobre esta PESSOA. ATENÇÃO: várias pessoas podem ter o mesmo nome — NÃO misture fatos de pessoas diferentes.\n`
+      + `Só escreva CANDIDATOS se as fontes forem de pessoas CLARAMENTE DIFERENTES com esse nome (cidades/empresas/áreas incompatíveis entre si). Nesse caso liste UMA linha por pessoa diferente:\n`
+      + `CANDIDATOS:\n- Nome — cargo/área, cidade/empresa (fonte)\n- Nome — cargo/área, cidade/empresa (fonte)\n`
+      + `NÃO repita a MESMA pessoa em várias linhas. Se todas as fontes são da MESMA pessoa (mesmo que de sites diferentes), escreva "CANDIDATO ÚNICO" e então os fatos verificáveis dela em bullets curtos (nome, cargo, empresa, cidade, formação, datas), um por linha. Na dúvida entre único e vários, prefira ÚNICO. Nada de parágrafo longo nem tradução de blocos. Responda em português.`
+    : `Busque na web e resuma os FATOS PRINCIPAIS de forma objetiva e curta, em português, em bullets (máx. 8 linhas). Não copie blocos longos do site e não traduza parágrafos inteiros: só o essencial verificável (nomes, cargos, empresas, datas, números).`;
+}
+
+// Medido 21/11 ("cotação do dólar hoje"): US$ 0,0118 por busca (US$ 0,01 da busca + 14,5 mil tokens de
+// resultado a US$ 0,10/1M), 4,9 s, 9 resultados com a cotação do dia e as fontes citadas.
+const BUSCA_CLAUDE_USD = 0.01; // por busca feita, tabela oficial (US$ 10 por mil)
+async function webContextClaude(prompt, consulta, signal, usage) {
+  const key = getApiKey('anthropic');
+  const cat = MODEL_CATALOG.find((m) => m.id === 'claude:haiku-5-5');
+  if (!key || !cat || process.env.SEARCH_CLAUDE === '0') return null;
+  const model = cat.api_model;
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 30000);
+  const parar = () => ac.abort();
+  if (signal) signal.addEventListener('abort', parar);
+  try {
+    // Sem marcaRota: a rota do painel é só de quem responde; a busca aparece nas partes ('busca').
+    const res = await fetch(getBaseUrl('anthropic'), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        // temperature não vai: o Haiku 5.5 responde 400 ("deprecated for this model").
+        // "Uma busca só" (21/11, real): sem isso o Haiku tentava a 2ª busca, levava o erro de limite e gastava saída à toa.
+        model, max_tokens: 1000, system: `${prompt}\nFaça UMA busca só e responda com o que ela trouxer.`,
+        messages: [{ role: 'user', content: consulta }],
+        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 1, user_location: { type: 'approximate', country: 'BR', timezone: 'America/Sao_Paulo' } }],
+      }),
+      signal: ac.signal,
+    });
+    if (!res.ok) { console.error('[busca] Claude HTTP', res.status); return null; }
+    const data = await res.json();
+    const u = data.usage || {};
+    const feitas = Number(u.server_tool_use?.web_search_requests) || 0;
+    const base = Number(u.input_tokens) || 0, grava = Number(u.cache_creation_input_tokens) || 0, le = Number(u.cache_read_input_tokens) || 0;
+    const saida = Number(u.output_tokens) || 0;
+    const usd = (base * cat.price_in + grava * cat.price_cache_write + le * cat.price_cache_read + saida * cat.price_out) / 1e6 + feitas * BUSCA_CLAUDE_USD;
+    // Medidor: entra no custo da mensagem mesmo quando a resposta é descartada (recusa paga também).
+    contaAvulsa(usage, { usage: { prompt_tokens: base + grava + le, completion_tokens: saida, cost: usd } }, cat, 0, model, 'busca');
+    if (usage && feitas) usage.buscas = (usage.buscas || 0) + feitas;
+    const blocos = Array.isArray(data.content) ? data.content : [];
+    // Resultado: cada busca devolve a lista de páginas ou um erro (limite, fora do ar, consulta longa demais).
+    // Junta as páginas de todas: 21/11 (real) a 2ª tentativa levou erro de limite e escondia as da 1ª.
+    const iRes = blocos.map((b) => b?.type).lastIndexOf('web_search_tool_result');
+    const paginas = blocos.filter((b) => b?.type === 'web_search_tool_result' && Array.isArray(b.content))
+      .flatMap((b) => b.content).filter((r) => r && r.url);
+    // Só o texto escrito DEPOIS da busca (antes dela vem o "vou buscar...").
+    const depois = blocos.slice(iRes + 1).filter((b) => b?.type === 'text');
+    const texto = depois.map((b) => b.text || '').join('').trim();
+    if (data.stop_reason === 'refusal' || !feitas || !paginas.length || detectRefusal(texto.slice(0, ABERTURA))) {
+      console.error('[busca] Claude não entregou:', data.stop_reason, feitas, paginas.length,
+        blocos.map((b) => b?.type + (b?.content && !Array.isArray(b.content) && b.content.error_code ? `:${b.content.error_code}` : '')).join(','), '— vai o estepe');
+      return null;
+    }
+    // Trecho de cada fonte: o primeiro trecho que o Claude citou daquela página. Citadas vêm primeiro.
+    const trecho = new Map();
+    for (const b of depois) for (const c of b.citations || []) if (c?.url && !trecho.has(c.url)) trecho.set(c.url, String(c.cited_text || ''));
+    const raw = [], vistos = new Set();
+    for (const p of [...paginas.filter((p) => trecho.has(p.url)), ...paginas.filter((p) => !trecho.has(p.url))]) {
+      if (vistos.has(p.url)) continue;
+      vistos.add(p.url);
+      raw.push({ url: p.url, title: String(p.title || '').slice(0, 160), snippet: sanitizePii(String(trecho.get(p.url) || '').replace(/\s+/g, ' ').slice(0, 280)) });
+      if (raw.length >= 12) break; // folga: os bloqueados saem em cleanSources
+    }
+    const { sources } = cleanSources(raw);
+    // LGPD (18/11): o resumo passa pelo saneador antes de chegar ao modelo que responde e aos cards.
+    const text = sanitizePii(texto);
+    if (!text && !sources.length) return null;
+    return { text, sources };
+  } catch (e) {
+    if (!signal?.aborted) console.error('[busca] Claude falhou:', e?.message || e);
+    return null;
+  } finally {
+    clearTimeout(to);
+    if (signal) signal.removeEventListener('abort', parar);
+  }
+}
+
+// Estepe da busca: OpenRouter com o plugin web (Exa) e o resumo do DeepSeek. ~US$ 0,0081 por busca.
+async function webContextOR(query, signal, { person = false, name = '', detail = '', usage = null } = {}) {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) return null;
   // Custo: 20/11 o padrão era o Llama 3.1 8B, e a Groq cobrou US$ 2,63 por 1M de tokens de entrada
@@ -888,12 +1001,7 @@ async function webContext(query, signal, { person = false, name = '', detail = '
   const ac = new AbortController();
   const to = setTimeout(() => ac.abort(), 30000); // pesquisa de pessoa com 8 fontes passava de 22 s e era cortada
   if (signal) signal.addEventListener('abort', () => ac.abort());
-  const prompt = person
-    ? `Busque na web sobre esta PESSOA. ATENÇÃO: várias pessoas podem ter o mesmo nome — NÃO misture fatos de pessoas diferentes.\n`
-      + `Só escreva CANDIDATOS se as fontes forem de pessoas CLARAMENTE DIFERENTES com esse nome (cidades/empresas/áreas incompatíveis entre si). Nesse caso liste UMA linha por pessoa diferente:\n`
-      + `CANDIDATOS:\n- Nome — cargo/área, cidade/empresa (fonte)\n- Nome — cargo/área, cidade/empresa (fonte)\n`
-      + `NÃO repita a MESMA pessoa em várias linhas. Se todas as fontes são da MESMA pessoa (mesmo que de sites diferentes), escreva "CANDIDATO ÚNICO" e então os fatos verificáveis dela em bullets curtos (nome, cargo, empresa, cidade, formação, datas), um por linha. Na dúvida entre único e vários, prefira ÚNICO. Nada de parágrafo longo nem tradução de blocos. Responda em português.`
-    : `Busque na web e resuma os FATOS PRINCIPAIS de forma objetiva e curta, em português, em bullets (máx. 8 linhas). Não copie blocos longos do site e não traduza parágrafos inteiros: só o essencial verificável (nomes, cargos, empresas, datas, números).`;
+  const prompt = promptDaBusca(person);
   try {
     const res = await fetch(getBaseUrl('openrouter'), {
       method: 'POST',
@@ -1194,6 +1302,15 @@ const LOCAL_MAX_SAIDA = 1500; // ~75 s a 20 tokens/s: a função do site transmi
 const LOCAL_PRAZO_MS = Number(process.env.LOCAL_PRAZO_MS) || 265000;
 const LOCAL_OCUPADO = 'O computador do 451 está ocupado agora. Tente de novo em 1 minuto.';
 const LOCAL_CORTE = '\n\n_(Resposta interrompida pelo tempo máximo. Peça "continue" para seguir.)_';
+// Sem "não sei" (dono 21/11): o grátis busca na web quando precisa (com teto) e não inventa dado. Tarefa grande
+// demais para ele: entrega o que consegue e marca [PRO]; o servidor troca a marca pelo aviso do 451 Pro (só no
+// grátis, 1 vez por conversa). Coisa que não existe ou dado privado que não está na internet não ganham aviso do
+// Pro, porque o Pro também não teria a resposta.
+const LOCAL_DADOS = 'DADOS (REGRA RÍGIDA): nunca invente número de telefone, endereço, nome de pessoa, valor, data ou fonte. Confira o nome exato do que foi perguntado: se ele não corresponde a nada que você conhece com certeza (um estado, cidade, lugar, pessoa ou evento com nome diferente do real), diga claramente que não existe com esse nome e cite o mais parecido que existe — nunca responda como se existisse (ex.: perguntaram a capital da "Bahia do Norte": esse estado não existe; existe a Bahia, capital Salvador). Se pedir um dado específico que não está nos resultados de busca nem é conhecimento público (ex.: telefone de um comércio pequeno), diga que não achou esse dado nas fontes públicas e onde a pessoa consegue (site oficial, Google Maps, órgão responsável). Evento com data depois de hoje ainda não aconteceu: diga isso, mesmo que a busca fale de sedes, favoritos ou previsões. Use um resultado de busca só se ele falar exatamente do que foi perguntado (mesmo nome, mesmo lugar, mesma data); se não falar, diga que não achou nas fontes públicas. Escreva só a resposta final, em português: nunca escreva planos, passos de busca nem frases em inglês.';
+const LOCAL_REGRAS = LOCAL_DADOS + ' TAREFA GRANDE DEMAIS: só se o pedido for complexo demais para você entregar bem (projeto de código grande e completo, análise longa e profunda, pesquisa com muitas fontes), comece a resposta com [PRO] sozinho na primeira linha e depois entregue a melhor parte que conseguir. Nunca use [PRO] em pergunta comum, curta ou que você consegue responder bem.';
+const PRO_FRASE = '\n\n_Esse tipo de pergunta só funciona direito no 451 Pro, com modelos mais fortes e busca na web sem limite._';
+const BUSCA_FRASE = '\n\n_A busca na web do grátis acabou por hoje. No 451 Pro a busca não tem esse limite._';
+const LOCAL_HIST_BUSCA = 3000; // com resultados de busca o histórico encolhe: 2 pedidos longos cabem nos 16 mil tokens da máquina
 const LOCAL_IDIOMA = 'IDIOMA (REGRA RÍGIDA): responda sempre no idioma do usuário. Pergunta em português = resposta inteira em português do Brasil, inclusive respostas de uma palavra (dias da semana, meses, números por extenso). Nunca troque para o inglês.';
 const textoLocal = (content) => (typeof content === 'string' ? content
   : Array.isArray(content) ? content.filter((p) => p?.type === 'text').map((p) => p.text).join('\n') : String(content ?? ''));
@@ -1228,10 +1345,93 @@ export function notaDoServidor(textoUsuario, agora = new Date()) {
   const partes = [`hoje é ${hoje} (Brasília)`];
   const datas = datasCitadas(textoUsuario, ano);
   if (datas.length) partes.push(`calendário conferido: ${datas.join('; ')}`);
+  // Ano futuro (21/11, bateria): com a busca falando de sede e favoritos, o modelo dizia quem "ganhou" a Copa de 2030.
+  const futuros = [...new Set([...String(textoUsuario || '').matchAll(/\b(?:19|20|21)\d{2}\b/g)].map((m) => Number(m[0])).filter((a) => a > ano))];
+  if (futuros.length) partes.push(`${futuros.join(', ')} ainda não chegou: nada desse ano aconteceu ainda (previsão, favorito ou sede não é resultado)`);
   const t = semAcentoLocal(textoUsuario);
   const pt = (t.match(PT_MARCAS) || []).length, en = (t.match(EN_MARCAS) || []).length;
   if (pt && pt >= en) partes.push('responda em português do Brasil');
   return `\n\n[Nota do servidor, não mencione: ${partes.join('. ')}.]`;
+}
+
+// Fotos no grátis (dono 21/11): o gpt-oss local só lê texto. 1º o Claude Haiku 5.5 vê a foto e responde
+// (dono: "usar o Claude pro máximo de coisas que der"); se ele recusar ou falhar, o Inkling 2 Mini sem censura
+// (OpenUncensored) responde, e a tela apaga o começo do Claude. Teste do Inkling em 21/11: leu nota fiscal
+// (total certo) e formas, em português; ~US$ 0,0002 a 0,0004 por chamada sem o prompt do 451.
+export async function* streamFoto(payload, { onToken, onWarning, signal, usage = null } = {}) {
+  const cat = MODEL_CATALOG.find((m) => m.id === 'ou:inkling-foto');
+  const haiku = MODEL_CATALOG.find((m) => m.id === 'claude:haiku-5-5');
+  const msgs = payload.messages || [];
+  const iu = msgs.map((m) => m?.role).lastIndexOf('user');
+  const ultimo = msgs[iu] || {};
+  const fotos = (ultimo.attachments || []).filter((a) => a.kind === 'image').slice(0, 3);
+  const texto = textoLocal(ultimo.content).trim() || 'Descreva a imagem.';
+  const sistema = `${buildSystemPrompt(payload.systemPrompt, true)}\n\n${LOCAL_IDIOMA}\n\n${LOCAL_DADOS}`;
+  const anteriores = msgs.slice(0, iu).filter((m) => m && m.role !== 'system').map((m) => ({ role: m.role, content: textoLocal(m.content) }));
+  const teto = Math.min(Number(payload.max_tokens) || 1200, 1200);
+
+  if (haiku && getApiKey('anthropic') && process.env.FOTO_CLAUDE !== '0') {
+    const { system, msgs: apiMsgs } = toAnthropic([...trimHistory(anteriores, haiku.ctx), { role: 'user', content: texto + notaDoServidor(texto), attachments: fotos }], sistema);
+    const ac = new AbortController();
+    const parar = () => ac.abort();
+    if (signal) signal.addEventListener('abort', parar);
+    const outcome = {};
+    let escreveu = false;
+    try {
+      for await (const _ of anthropicTurnStream({ model: haiku.api_model, system, messages: apiMsgs, maxTokens: teto, onToken: (t) => { escreveu = true; if (onToken) onToken(t); }, ac, outcome, active: true, usage })) { /* tokens via onToken */ }
+      if (!outcome.forced && outcome.stopReason !== 'refusal') {
+        if (usage) usage.claude = 'respondeu';
+        return;
+      }
+      if (usage) usage.claude = 'recusou';
+    } catch (e) {
+      if (signal?.aborted) throw e;
+      if (usage) usage.claude = 'falhou';
+      console.error('[foto] Claude falhou:', e?.message || e);
+    } finally {
+      if (signal) signal.removeEventListener('abort', parar);
+    }
+    if (escreveu && onWarning) onWarning({ type: 'refusal_forced' }); // a tela apaga o que o Claude começou
+  }
+
+  const key = getApiKey('openuncensored');
+  if (!cat || !key) throw new Error('A leitura de foto está fora do ar agora. Tente mais tarde.');
+  const historico = trimHistory(anteriores, cat.ctx);
+  const body = {
+    model: cat.api_model, stream: true, stream_options: { include_usage: true },
+    max_tokens: teto, temperature: payload.temperature ?? 0.6, top_p: payload.top_p ?? 0.9,
+    messages: [
+      { role: 'system', content: sistema },
+      ...historico,
+      { role: 'user', content: [{ type: 'text', text: texto + notaDoServidor(texto) }, ...fotos.map((a) => ({ type: 'image_url', image_url: { url: `data:${a.mime};base64,${a.data}` } }))] },
+    ],
+  };
+  marcaRota(usage, cat.api_model);
+  const conta = abreConta(usage);
+  let res;
+  try {
+    res = await fetch(getBaseUrl('openuncensored'), { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` }, body: JSON.stringify(body), signal });
+  } catch (e) {
+    if (signal?.aborted) throw e;
+    throw new Error('Não consegui ler a foto agora. Tente de novo.');
+  }
+  if (!res.ok || !res.body) {
+    console.error('[foto] HTTP', res.status);
+    throw new Error(res.status === 402 ? 'A leitura de foto do grátis está sem saldo agora. Tente mais tarde.' : 'Não consegui ler a foto agora. Tente de novo.');
+  }
+  try { yield* readSSEStream(res, { onToken, signal, usage }); }
+  finally { fechaConta(usage, conta, cat, cat.api_model); }
+}
+
+/** A busca fala dos nomes próprios da pergunta? (pelo menos 3 de cada 4; sem nome próprio, aceita.) */
+export function resultadoFalaDoNome(pergunta, wc) {
+  const nomes = String(pergunta || '').split(/\s+/).slice(1).map((w) => w.replace(/[^\p{L}\p{N}]/gu, ''))
+    .filter((w) => /^\p{Lu}/u.test(w) && w.length >= 3).map(semAcentoLocal);
+  const unicos = [...new Set(nomes)];
+  if (unicos.length < 2) return true;
+  const alvo = semAcentoLocal([wc.text, ...(wc.sources || []).map((s) => `${s.title} ${s.snippet || ''}`)].join(' '));
+  const achou = unicos.filter((n) => alvo.includes(n)).length;
+  return achou / unicos.length >= 0.75;
 }
 
 export function avisoDeFila(f) {
@@ -1243,12 +1443,44 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
   const base = await urlLocal();
   const token = getApiKey('local');
   if (!base || !token) throw new Error(LOCAL_FORA);
-  const historico = trimHistory((payload.messages || []).map((m) => ({ role: m.role, content: textoLocal(m.content) })), cat.ctx);
+  // Busca na web (dono 21/11): mesma decisão dos planos pagos (link ou palavra forte busca direto; senão o
+  // classificador barato decide). O app manda buscaLocal = { permitida, gratis }; sem ele (testes) não busca.
+  const busca = payload.buscaLocal || null;
+  const ultimo = textoLocal((payload.messages || []).filter((m) => m?.role === 'user').pop()?.content).trim();
+  const contLocal = continuationRequest(ultimo, payload.messages);
+  const buscaQ = contLocal ? `${contLocal} ${ultimo}`.trim() : ultimo;
+  let resultados = '', faltouBusca = false, semResultado = false;
+  if (busca && buscaQ.length >= 8) {
+    const forte = /https?:\/\/|github\.com|gitlab\.com/i.test(buscaQ) || STRONG_SEARCH.test(buscaQ);
+    let precisa = forte;
+    if (!precisa) {
+      // Sem verba (teto do dia ou do aparelho) nem chama o classificador pago: decide pela regra de graça.
+      if (busca.permitida) { const llm = await decideSearchLLM(buscaQ, usage); precisa = llm === null ? shouldSearch(buscaQ) : llm; }
+      else precisa = shouldSearch(buscaQ);
+    }
+    if (precisa && busca.permitida) {
+      onWarning?.({ type: 'search', query: buscaQ.replace(/\s+/g, ' ').trim().slice(0, 120) });
+      let wc = await webContext(buscaQ, signal, { usage }).catch(() => null);
+      // 21/11 (bateria): para lugar ou pessoa que não existe, a busca trazia coisa parecida e o modelo inventava em cima.
+      // Os nomes próprios da pergunta (palavras com maiúscula, fora a primeira) precisam aparecer nos resultados.
+      if (wc && !resultadoFalaDoNome(buscaQ, wc)) wc = null;
+      if (wc && (wc.text || wc.sources?.length)) {
+        const fontes = wc.sources || [];
+        resultados = '\n\n## RESULTADOS DE BUSCA NA WEB (reais, agora) — baseie os fatos atuais APENAS nestes resultados; nunca invente URL:\n'
+          + (wc.text ? wc.text + '\n\n' : '')
+          + (fontes.length ? 'Fontes numeradas:\n' + fontes.slice(0, 8).map((s, i) => `[${i + 1}] ${s.title} — ${s.url}${s.snippet ? '\n    ' + s.snippet : ''}`).join('\n')
+            + '\nRegra: entregue fatos curtos e, logo depois de cada fato, o número da fonte entre colchetes, ex.: [1] ou [2][3]. Não escreva URL no texto.' : '');
+        if (fontes.length) onWarning?.({ type: 'sources', sources: fontes });
+      } else semResultado = true; // nada achado (ou o OpenRouter sem saldo): responde sem busca e sem inventar
+    } else if (precisa && busca.gratis) faltouBusca = true;
+  }
+  const historico = trimHistory((payload.messages || []).map((m) => ({ role: m.role, content: textoLocal(m.content) })), resultados ? Math.min(cat.ctx, LOCAL_HIST_BUSCA) : cat.ctx);
   const iu = historico.map((m) => m.role).lastIndexOf('user');
-  if (iu >= 0) historico[iu] = { ...historico[iu], content: historico[iu].content + notaDoServidor(historico[iu].content) };
+  if (iu >= 0) historico[iu] = { ...historico[iu], content: historico[iu].content + notaDoServidor(historico[iu].content)
+    + (semResultado ? '\n[Nota do servidor: a busca na web não achou nada sobre isso agora. Não invente: se for algo que não existe, diga que não existe; se for um dado específico, diga que não achou nas fontes públicas e onde procurar.]' : '') };
   // Idioma (21/11): numa pergunta curta em português o gpt-oss respondeu "Monday". A regra vai no fim do
   // prompt (pesa mais e não quebra o cache do começo, que é igual para todos).
-  const sistema = `${buildSystemPrompt(payload.systemPrompt, true)}\n\n${LOCAL_IDIOMA}`;
+  const sistema = `${buildSystemPrompt(payload.systemPrompt, true)}\n\n${LOCAL_IDIOMA}\n\n${LOCAL_REGRAS}${resultados}`;
   const messages = [{ role: 'system', content: sistema }, ...historico.filter((m) => m.role !== 'system')];
   const body = {
     model: cat.api_model, messages, stream: true, stream_options: { include_usage: true },
@@ -1282,6 +1514,10 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
   const reader = res.body.getReader();
   const dec = new TextDecoder();
   let buf = '', fila = '', avisou = false, tin = 0, tout = 0, chars = 0;
+  // O começo e os últimos caracteres ficam segurados: a marca [PRO] (no começo, ou no fim) nunca chega à tela.
+  // 21/11: no fim ela não aparecia nas tarefas grandes, porque a resposta batia no teto antes de terminar.
+  let segura = '', comeco = true, proNoComeco = false, cortouTamanho = false;
+  const SEGURA = 12;
   try {
     for (;;) {
       let lido;
@@ -1306,14 +1542,38 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
         let j; try { j = JSON.parse(data); } catch { continue; }
         if (j.usage) { tin = Number(j.usage.prompt_tokens) || tin; tout = Number(j.usage.completion_tokens) || tout; }
         const d = j.choices?.[0]?.delta || {};
+        if (j.choices?.[0]?.finish_reason === 'length') cortouTamanho = true;
         if (d.reasoning_content) onReasoning?.(d.reasoning_content);
-        if (d.content) { chars += d.content.length; onToken?.(d.content); yield d.content; }
+        if (d.content) {
+          segura += d.content;
+          if (comeco) {
+            const t = segura.replace(/^\s+/, '');
+            if (t.length >= 6 || /\n/.test(t)) {
+              comeco = false;
+              if (/^\[PRO\]/.test(t)) { proNoComeco = true; segura = t.replace(/^\[PRO\][.!:]?\s*/, ''); }
+            }
+          }
+          if (!comeco && segura.length > SEGURA) { const sai = segura.slice(0, -SEGURA); segura = segura.slice(-SEGURA); chars += sai.length; onToken?.(sai); yield sai; }
+        }
       }
     }
+    // Fim (ou corte por tempo): solta o que ficou segurado; a marca [PRO] vira o aviso do Pro.
+    let fim = segura; segura = '';
+    if (comeco) fim = fim.replace(/^\s*\[PRO\][.!:]?\s*/, (m) => { proNoComeco = true; return ''; }); // resposta curtinha
+    const proNoFim = !porTempo && /\[PRO\][.!]?\s*$/.test(fim);
+    if (proNoFim) fim = fim.replace(/\s*\[PRO\][.!]?\s*$/, '');
+    // Tarefa grande: o modelo marcou [PRO] ou a resposta grátis bateu no teto de tamanho.
+    const temPro = !porTempo && (proNoComeco || proNoFim || cortouTamanho);
+    if (fim) { chars += fim.length; onToken?.(fim); yield fim; }
     if (porTempo) {
       if (!chars) throw new Error(LOCAL_OCUPADO);
       onToken?.(LOCAL_CORTE);
       yield LOCAL_CORTE;
+    } else if (temPro || faltouBusca) {
+      const jaAvisou = (payload.messages || []).some((m) => m?.role === 'assistant' && /451 Pro/.test(textoLocal(m.content)));
+      const aviso = busca?.gratis && !jaAvisou ? (temPro ? PRO_FRASE : BUSCA_FRASE) : '';
+      onWarning?.({ type: 'pro_aviso', motivo: temPro ? (cortouTamanho && !proNoComeco && !proNoFim ? 'longa' : 'complexa') : 'busca', mostrado: !!aviso });
+      if (aviso) { chars += aviso.length; onToken?.(aviso); yield aviso; }
     }
   } finally {
     clearTimeout(relogio);
@@ -1400,7 +1660,7 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
     const claude = claudeCat
       ? { provider: 'anthropic', model: claudeCat.api_model, id: claudeCat.id }
       : { provider: route.provider, model: route.model, id: pickedId };
-    // Busca web pro Max (sem plugin próprio): decide, busca via OpenRouter e injeta as fontes reais no Claude.
+    // Busca web pro Max (sem plugin próprio): decide, busca (Claude Haiku; estepe OpenRouter) e injeta as fontes reais.
     const q = lastUserText;
     let doSearch = false;
     // Etapas REAIS do que o servidor está fazendo (dono 17/11): o "Pensando 24 s" vazio não dizia nada.
@@ -1487,7 +1747,7 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
         }
       }
     }
-    const readerOptions = { apiKey: getApiKey('openrouter'), referer: process.env.OPENROUTER_REFERER || 'https://heretic.vercel.app', signal };
+    const readerOptions = opcoesDoLeitor(signal, usage);
     // Raciocínio: o teto de saída precisa cobrir pensamento + texto. A conta fina é feita no
     // turno (anthropicTurnStream); aqui só garantimos um piso para o pedido não vir curto.
     const effPayload = EFFORT_LEVEL[String((payload && payload.effort) || '').toLowerCase()]
@@ -1541,7 +1801,7 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
   // Modelos só de texto recebem os anexos já lidos por um modelo de visão auxiliar.
   if (messages.some(m => m && m.attachments)) {
     if (onWarning) onWarning({ type: 'step', title: 'Lendo os anexos', text: 'Abrindo as imagens e os arquivos enviados.' });
-    messages = await digestAttachments(messages, { apiKey: getApiKey('openrouter'), referer, signal });
+    messages = await digestAttachments(messages, opcoesDoLeitor(signal, usage));
   }
 
   let lastErr = null, emitted = false, lastRoundText = '';

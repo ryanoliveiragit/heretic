@@ -71,6 +71,12 @@ export function anthropicBlocks(text, attachments) {
 }
 
 // ── leitura auxiliar para modelos só de texto ──
+// 21/11 (dono: "usar o Claude pro máximo de coisas que der"; o sem censura só entra na recusa):
+// 1º o Claude Haiku 5.5, que lê imagem e PDF direto; se recusar ou falhar, o Inkling 2 Mini
+// (OpenUncensored, só imagem); por último o leitor antigo do OpenRouter, como estepe.
+// Cada leitura entra no medidor da mensagem pelo options.conta(modelo, resposta com usage/custo).
+const HAIKU = { model: 'claude-haiku-5-5', price_in: 0.10, price_out: 0.50, price_cache_write: 0.125, price_cache_read: 0.01 };
+const INKLING = 'inkling-2-mini-uncensored';
 // O GLM não aceita desligar o raciocínio (a API responde 400): cada leitor leva a própria configuração.
 const READERS = [
   { model: 'qwen/qwen3.7-flash', reasoning: { enabled: false } },
@@ -78,6 +84,7 @@ const READERS = [
 ];
 const READ_PROMPT = 'Leia o anexo e devolva somente o conteúdo dele, em texto. Transcreva todo o texto visível, na íntegra e no idioma original, mantendo tabelas e números exatos. Se houver imagem, descreva objetivamente pessoas, objetos, cenário, gráficos e qualquer detalhe relevante. Não opine, não comente e não escreva introdução.';
 const REFUSED = /^\s*(desculpe|sinto muito|não posso|não consigo|i can(?:no|')t|i'm sorry|sorry)/i;
+const maxTokens = () => Number(process.env.READER_MAX_TOKENS) || 8000;
 
 const readCache = new Map();
 
@@ -86,44 +93,103 @@ async function cacheKey(item) {
   return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function askReader({ model, reasoning }, item, { apiKey, referer, signal }) {
-  const part = item.kind === 'pdf'
-    ? { type: 'file', file: { filename: item.name, file_data: `data:${item.mime};base64,${item.data}` } }
-    : { type: 'image_url', image_url: { url: `data:${item.mime};base64,${item.data}` } };
+/** Chamada com prazo de 60 s que também para quando o usuário cancela. */
+async function comPrazo(signal, fn) {
   const ctrl = new AbortController();
   const stop = () => ctrl.abort();
   if (signal) signal.addEventListener('abort', stop);
   const timer = setTimeout(stop, 60000);
-  try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  try { return await fn(ctrl.signal); } catch { return ''; } finally {
+    clearTimeout(timer);
+    if (signal) signal.removeEventListener('abort', stop);
+  }
+}
+
+async function askClaude(item, { claudeKey, claudeUrl, signal, conta }) {
+  if (!claudeKey) return '';
+  const source = { type: 'base64', media_type: item.mime, data: item.data };
+  const block = item.kind === 'pdf' ? { type: 'document', title: item.name, source } : { type: 'image', source };
+  return comPrazo(signal, async (sinal) => {
+    const res = await fetch(claudeUrl || 'https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': claudeKey, 'anthropic-version': '2023-06-01' },
+      // temperature não vai: o Haiku 5.5 responde 400 ("deprecated for this model").
+      body: JSON.stringify({ model: HAIKU.model, max_tokens: maxTokens(), messages: [{ role: 'user', content: [block, { type: 'text', text: READ_PROMPT }] }] }),
+      signal: sinal,
+    });
+    if (!res.ok) return '';
+    const data = await res.json();
+    const u = data.usage || {};
+    const base = Number(u.input_tokens) || 0, grava = Number(u.cache_creation_input_tokens) || 0, le = Number(u.cache_read_input_tokens) || 0;
+    const saida = Number(u.output_tokens) || 0;
+    const usd = (base * HAIKU.price_in + grava * HAIKU.price_cache_write + le * HAIKU.price_cache_read + saida * HAIKU.price_out) / 1e6;
+    if (conta) conta(HAIKU.model, { usage: { prompt_tokens: base + grava + le, completion_tokens: saida, cost: usd } });
+    if (data.stop_reason === 'refusal') return '';
+    const text = (Array.isArray(data.content) ? data.content : []).filter((b) => b?.type === 'text').map((b) => b.text || '').join('').trim();
+    return REFUSED.test(text) ? '' : text;
+  });
+}
+
+async function askInkling(item, { ouKey, ouUrl, signal, conta }) {
+  if (!ouKey || item.kind !== 'image') return '';
+  return comPrazo(signal, async (sinal) => {
+    const res = await fetch(ouUrl || 'https://api.openuncensored.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ouKey}` },
+      body: JSON.stringify({
+        model: INKLING, temperature: 0, max_tokens: maxTokens(),
+        messages: [{ role: 'user', content: [{ type: 'text', text: READ_PROMPT }, { type: 'image_url', image_url: { url: `data:${item.mime};base64,${item.data}` } }] }],
+      }),
+      signal: sinal,
+    });
+    if (!res.ok) return '';
+    const data = await res.json();
+    if (conta) conta(INKLING, data); // a OpenUncensored devolve o custo em cost.usd
+    const text = String(data?.choices?.[0]?.message?.content || '').trim();
+    return REFUSED.test(text) ? '' : text;
+  });
+}
+
+async function askReader({ model, reasoning }, item, { apiKey, referer, orUrl, signal, conta }) {
+  if (!apiKey) return '';
+  const part = item.kind === 'pdf'
+    ? { type: 'file', file: { filename: item.name, file_data: `data:${item.mime};base64,${item.data}` } }
+    : { type: 'image_url', image_url: { url: `data:${item.mime};base64,${item.data}` } };
+  return comPrazo(signal, async (sinal) => {
+    const res = await fetch(orUrl || 'https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}`, 'HTTP-Referer': referer },
       body: JSON.stringify({
         model,
         messages: [{ role: 'user', content: [{ type: 'text', text: READ_PROMPT }, part] }],
         temperature: 0,
-        max_tokens: Number(process.env.READER_MAX_TOKENS) || 8000,
+        max_tokens: maxTokens(),
         reasoning,
         ...(item.kind === 'pdf' ? { plugins: [{ id: 'file-parser', pdf: { engine: 'pdf-text' } }] } : {}),
       }),
-      signal: ctrl.signal,
+      signal: sinal,
     });
     if (!res.ok) return '';
     const data = await res.json();
+    if (conta) conta(model, data); // o OpenRouter devolve o custo em usage.cost
     const text = String(data?.choices?.[0]?.message?.content || '').trim();
     return REFUSED.test(text) ? '' : text;
-  } catch { return ''; } finally {
-    clearTimeout(timer);
-    if (signal) signal.removeEventListener('abort', stop);
-  }
+  });
 }
+
+const LEITORES = [
+  (item, options) => askClaude(item, options),
+  (item, options) => askInkling(item, options),
+  ...READERS.map((reader) => (item, options) => askReader(reader, item, options)),
+];
 
 async function readOne(item, options) {
   const key = await cacheKey(item);
   if (readCache.has(key)) return readCache.get(key);
   let text = '';
-  for (const reader of READERS) {
-    text = await askReader(reader, item, options);
+  for (const ler of LEITORES) {
+    if (options?.signal?.aborted) break;
+    text = await ler(item, options || {});
     if (text) break;
   }
   if (text) {

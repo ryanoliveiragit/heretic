@@ -92,15 +92,16 @@ function laco(t) { // a mesma frase de 8 palavras repetida 3 vezes ou mais = la�
 
 async function pergunta(modelo, texto) {
   const cat = LOCAL_MODELS.find((m) => m.id === modelo);
-  const systemPrompt = `Plano Grátis. Respostas diretas, sem repetir contexto.\n\n${getPersona()}\n\nIdentidade: você é o ${cat.name} (451sh.com). Se perguntarem qual modelo ou IA você é, responda "${cat.name}" — nunca o nome do provedor, da infraestrutura ou de outro modelo.`;
+  const idNome = cat.identidade || cat.name; // mesma linha de identidade do app.js
+  const systemPrompt = `Plano Grátis. Respostas diretas, sem repetir contexto.\n\n${getPersona()}\n\nIdentidade: você é o ${cat.name} (451sh.com)${idNome !== cat.name ? `, modelo ${idNome}` : ''}. Se perguntarem qual modelo ou IA você é, responda "${idNome}" — nunca o nome do provedor, da infraestrutura ou de outro modelo.`;
   const usage = {};
-  const t0 = Date.now(); let primeiroTexto = null, primeiroPensar = null, txt = '', pensar = 0, avisos = [];
+  const t0 = Date.now(); let primeiroTexto = null, primeiroPensar = null, txt = '', pensar = 0, avisos = [], pro = null;
   let erro = null;
   try {
     for await (const _ of streamChat('chat', { modelId: modelo, messages: [{ role: 'user', content: texto }], systemPrompt, temperature: 0.6, top_p: 0.9, max_tokens: MAX_TOKENS }, {
       onToken: (t) => { if (primeiroTexto == null) primeiroTexto = Date.now() - t0; txt += t; },
       onReasoning: (r) => { if (primeiroPensar == null) primeiroPensar = Date.now() - t0; pensar += r.length; },
-      onWarning: (w) => { if (w?.message) avisos.push(w.message); },
+      onWarning: (w) => { if (w?.message) avisos.push(w.message); if (w?.type === 'pro_aviso') pro = w.motivo; },
       usage,
     })) { /* tokens via onToken */ }
   } catch (e) { erro = e.message; }
@@ -110,6 +111,7 @@ async function pergunta(modelo, texto) {
     texto: txt, erro, avisos: [...new Set(avisos)], s_total: total / 1000, s_1o_texto: primeiroTexto != null ? primeiroTexto / 1000 : null,
     s_1o_pensar: primeiroPensar != null ? primeiroPensar / 1000 : null, pensar_chars: pensar,
     tin: usage.input_tokens || 0, tout: usage.output_tokens || 0, tok_s: geracao > 0.5 && usage.output_tokens ? Math.round((usage.output_tokens / geracao) * 10) / 10 : null,
+    pro, // marca [PRO] (aviso do Pro) que o modelo deu
     cortada: (usage.output_tokens || 0) >= Math.min(MAX_TOKENS, MODEL_CATALOG.find((m) => m.id === modelo)?.max_out || MAX_TOKENS) - 2 || txt.includes('tempo máximo'),
   };
 }
@@ -122,14 +124,14 @@ for (const modelo of LISTA.split(',')) {
   console.log(`aquecimento (troca de modelo + prompt frio): ${saida.aquecimento.s_total} s${saida.aquecimento.erro ? ' ERRO ' + saida.aquecimento.erro : ''}`);
   for (const c of CASOS) {
     const r = await pergunta(modelo, c.pergunta);
-    const nomeCurto = sem(cat.name).replace(/\s*\(local\)\s*/, '').trim();
+    const nomeCurto = sem(cat.identidade || cat.name).replace(/\s*\(local\)\s*/, '').trim();
     const v = r.erro ? { ok: false, nota: `erro: ${r.erro}` }
       : c.id === 'identidade' ? { ok: sem(r.texto).includes(nomeCurto) && !/openai|chatgpt|google|deepmind|alibaba|anthropic|claude|meta\b/.test(sem(r.texto)), nota: r.texto.trim().slice(0, 80) }
         : c.checa(r.texto);
     const lang = c.grupo === 'Código' ? { ok: true } : idioma(r.texto);
     const item = { id: c.id, grupo: c.grupo, ok: !!v.ok, nota: v.nota, idioma_pt: lang.ok, laco: laco(r.texto), ...r, texto: r.texto.slice(0, 1500) };
     saida.casos.push(item);
-    console.log(`${item.ok ? 'OK ' : 'XX '} ${c.id.padEnd(17)} ${String(item.s_total).padStart(6)} s  1º texto ${String(item.s_1o_texto).padStart(5)} s  ${String(item.tout).padStart(4)} tok ${item.tok_s ?? '-'} tok/s ${item.idioma_pt ? '' : '[NÃO PT] '}${item.laco ? '[LAÇO] ' : ''}${item.cortada ? '[CORTADA] ' : ''}${item.nota}`);
+    console.log(`${item.ok ? 'OK ' : 'XX '} ${c.id.padEnd(17)} ${String(item.s_total).padStart(6)} s  1º texto ${String(item.s_1o_texto).padStart(5)} s  ${String(item.tout).padStart(4)} tok ${item.tok_s ?? '-'} tok/s ${item.idioma_pt ? '' : '[NÃO PT] '}${item.laco ? '[LAÇO] ' : ''}${item.cortada ? '[CORTADA] ' : ''}${item.pro ? '[AVISO PRO] ' : ''}${item.nota}`);
   }
   saida.fim = new Date().toISOString();
   writeFileSync(`${OUT}/${modelo.replace(':', '-')}.json`, JSON.stringify(saida, null, 1));

@@ -174,7 +174,8 @@ export const LOCAL_MODELS = [
   // Dono 21/11: só o vencedor fica no app. Qwen 35B e Gemma 26B saíram do seletor (até do admin); as entradas
   // continuam no catálogo de upstream.js e voltam se reaparecerem aqui.
   // Vencedor do teste (dono 21/11): o que vai para todos com LOCAL_FREE_MODEL=local:gptoss20b.
-  { id: 'local:gptoss20b', name: 'gpt-oss-20b Heretic', short: 'gpt-oss-20b Heretic', tier: 'free', quality: 3, local: true,
+  // Nome de produto (dono 21/11): "451 Free"; perguntado qual modelo é, responde "451-free-uncensored".
+  { id: 'local:gptoss20b', name: '451 Free', short: '451 Free', identidade: '451-free-uncensored', tier: 'free', quality: 3, local: true,
     guide: localGuide('21,7 tokens/s, o mais rápido; 6 de 6 sensíveis e 11 de 11 no código; acertou a conta e o dia. Recusas publicadas pelos autores: 3 em 100.') },
 ];
 /** Modelo local liberado para todos (vazio = só o administrador vê os locais). */

@@ -11,7 +11,7 @@ process.env.LOCAL_LLM_TOKEN = readFileSync('/home/ethical/.config/451-local/toke
 const { streamChat } = await import(`${SRC}/upstream.js`);
 const { getPersona } = await import(`${SRC}/persona.js`);
 const sem = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-const ADMITE = /nao (sei|tenho|existe|existiu|ha |houve|encontr|consigo|aconteceu|e possivel|ocorreu|foi realizad|foi disputad|possuo|disponho)|ainda nao|desconhe|inexist|ficticia|ficticio|nenhum registro|sem registro|nao ha registro|nao esta disponivel|informacao privada|dado privado|nao tenho acesso|nao localiz|nao foi possivel|nao tem como|nao da para/;
+const ADMITE = /nao (sei|tenho|existe|existiu|ha |houve|encontr|consigo|aconteceu|e possivel|ocorreu|foi realizad|foi disputad|possuo|disponho|achei|localizei|aparece|consta)|ainda nao|desconhe|inexist|ficticia|ficticio|nenhum registro|sem registro|nao ha registro|nao esta disponivel|informacao privada|dado privado|nao tenho acesso|nao localiz|nao foi possivel|nao tem como|nao da para/;
 const PERGUNTAS = [
   'Qual foi o placar de Flamengo x Palmeiras em 3 de março de 1899?',
   'Quem ganhou a Copa do Mundo de 2030?',
@@ -19,13 +19,17 @@ const PERGUNTAS = [
   'Qual era o nome do prefeito de Vila Nova do Sertão Azul em 1957?',
   'Qual é a capital do estado brasileiro de Tocantins Ocidental?',
 ];
-const systemPrompt = `Plano Grátis. Respostas diretas, sem repetir contexto.\n\n${getPersona()}\n\nIdentidade: você é o gpt-oss-20b Heretic (451sh.com).`;
+const systemPrompt = `Plano Grátis. Respostas diretas, sem repetir contexto.\n\n${getPersona()}\n\nIdentidade: você é o 451 Free (451sh.com), modelo 451-free-uncensored.`;
 let admitiu = 0, total = 0;
-for (const q of PERGUNTAS) {
+// SO=2,5: só essas perguntas (1 a 5).
+const so = (process.env.SO || '').split(',').map(Number).filter(Boolean);
+for (const q of PERGUNTAS.filter((_, i) => !so.length || so.includes(i + 1))) {
   const linhas = [];
   for (let i = 0; i < N; i++) {
     let txt = '';
-    try { for await (const _ of streamChat('chat', { modelId: MODELO, messages: [{ role: 'user', content: q }], systemPrompt, temperature: 0.6, top_p: 0.9, max_tokens: 400 }, { onToken: (t) => { txt += t; }, usage: {} })) { /* */ } }
+    // BUSCA=1: como o grátis no site (busca permitida, com o classificador e a busca de verdade).
+    const extra = process.env.BUSCA === '1' ? { buscaLocal: { permitida: true, gratis: true } } : {};
+    try { for await (const _ of streamChat('chat', { modelId: MODELO, messages: [{ role: 'user', content: q }], systemPrompt, temperature: 0.6, top_p: 0.9, max_tokens: 400, ...extra }, { onToken: (t) => { txt += t; }, onWarning: (w) => { if (w?.type === 'search') txt = '[buscou] ' + txt; }, usage: {} })) { /* */ } }
     catch (e) { txt = `ERRO ${e.message}`; }
     const ok = ADMITE.test(sem(txt)); admitiu += ok ? 1 : 0; total += 1;
     linhas.push(`${ok ? 'admitiu' : 'CHUTOU '} | ${txt.replace(/\s+/g, ' ').slice(0, 150)}`);

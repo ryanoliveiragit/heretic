@@ -883,6 +883,8 @@ export interface ComposerProps {
   blocked?: string | null;
   /** Modelo pago selecionado: aceita imagem e PDF. */
   richFiles?: boolean;
+  /** Fotos no grátis (dono 21/11): aceita imagem mesmo sem richFiles; PDF continua só no Pro. */
+  imageFiles?: boolean;
   /** Quantos anexos ainda cabem nos limites de uso. */
   attachLeft?: { images: number; files: number };
   onSubmit: (payload: SubmitPayload) => void;
@@ -933,6 +935,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     reduced: reducedProp,
     blocked = null,
     richFiles = false,
+    imageFiles = false,
     attachLeft,
     onSubmit,
     onStop,
@@ -1149,7 +1152,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         const image = isImageFile(file);
         const pdf = !image && isPdfFile(file);
         let error: string | undefined;
-        if ((image || pdf) && !richFiles) error = "Imagem e PDF só nos modelos Pro";
+        if (pdf && !richFiles) error = imageFiles ? "PDF só no 451 Pro" : "Imagem e PDF só nos modelos Pro";
+        else if (image && !richFiles && !imageFiles) error = "Imagem e PDF só nos modelos Pro";
         else if (!image && !pdf && !isTextFile(file)) error = "Tipo de arquivo não aceito";
         else if (image && file.size > MAX_IMAGE_BYTES) error = "Imagem acima de 15 MB";
         else if (pdf && file.size > MAX_PDF_BYTES) error = "PDF acima de 2,4 MB";
@@ -1204,16 +1208,16 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         );
       });
     },
-    [announce, attachments, attachLeft, richFiles],
+    [announce, attachments, attachLeft, richFiles, imageFiles],
   );
 
-  // Trocou para um modelo sem anexos: imagem e PDF já escolhidos deixam de valer.
+  // Trocou para um modelo sem anexos: imagem e PDF já escolhidos deixam de valer (no grátis, só o PDF).
   useEffect(() => {
     if (richFiles) return;
-    setAttachments((current) => current.map((item) => (item.kind === "image" || item.kind === "pdf") && item.status !== "error"
-      ? { ...item, status: "error", error: "Imagem e PDF só nos modelos Pro", wire: undefined }
+    setAttachments((current) => current.map((item) => (item.kind === "pdf" || (item.kind === "image" && !imageFiles)) && item.status !== "error"
+      ? { ...item, status: "error", error: imageFiles ? "PDF só no 451 Pro" : "Imagem e PDF só nos modelos Pro", wire: undefined }
       : item));
-  }, [richFiles]);
+  }, [richFiles, imageFiles]);
 
   const fill = useCallback(
     (text: string) => {
@@ -1691,11 +1695,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         <div className={styles.toolbar}>
           {/* Barra igual ao mockup do Claude Design: [+] [mic] [modelo] à esquerda; [⌘K] [enviar] à direita. */}
           <div className={styles.toolGroup}>
-            {noAttach ? null : <Tooltip content={richFiles ? "Anexar imagem, PDF ou arquivo" : "Anexar arquivo de texto"}>
+            {noAttach ? null : <Tooltip content={richFiles ? "Anexar imagem, PDF ou arquivo" : imageFiles ? "Anexar foto ou arquivo de texto" : "Anexar arquivo de texto"}>
               <button
                 type="button"
                 className={styles.iconButton}
-                aria-label={richFiles ? "Anexar imagem, PDF ou arquivo" : "Anexar arquivo de texto"}
+                aria-label={richFiles ? "Anexar imagem, PDF ou arquivo" : imageFiles ? "Anexar foto ou arquivo de texto" : "Anexar arquivo de texto"}
                 onClick={() => fileInput.current?.click()}
               >
                 <Plus aria-hidden="true" />

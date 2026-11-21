@@ -222,6 +222,16 @@ export function App451() {
   const [avisouPerto, setAvisouPerto] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [menu, setMenu] = useState(false);
+  // A trilha de navegação das mensagens só aparece acima de 820 px; no celular ela ficava escondida pelo CSS mas
+  // continuava medindo a página a cada letra da resposta e a cada rolagem. Agora só liga em tela larga.
+  const [largo, setLargo] = useState(() => !celular());
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(max-width: 820px)");
+    const muda = () => setLargo(!mq.matches);
+    mq.addEventListener?.("change", muda);
+    return () => mq.removeEventListener?.("change", muda);
+  }, []);
   const ladoRef = useRef<HTMLElement>(null);
   const fundoRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef(false); menuRef.current = menu;
@@ -247,7 +257,6 @@ export function App451() {
       pos = ini.aberto ? Math.min(0, dx) : Math.min(0, -w + Math.max(0, dx));
       el.style.transform = `translateX(${pos}px)`;
       const f = fundo(); if (f) { f.style.opacity = String(Math.max(0, 1 + pos / w)); f.style.pointerEvents = "auto"; }
-      if (e.cancelable) e.preventDefault();
     };
     const fim = () => {
       const el = lado(); if (!ini || !el) { ini = null; return; }
@@ -261,7 +270,10 @@ export function App451() {
       ini = null; arrasta = false;
     };
     window.addEventListener("touchstart", comeca, { passive: true });
-    window.addEventListener("touchmove", move, { passive: false });
+    // Scroll no celular (dono 21/11, "lento, estranho"): o ouvinte NÃO passivo na janela inteira obrigava o navegador
+    // a esperar o JavaScript a cada movimento do dedo antes de rolar. Passivo: a rolagem não espera mais; o gesto
+    // da borda continua (só move o menu; arrasto vertical é ignorado em move()).
+    window.addEventListener("touchmove", move, { passive: true });
     window.addEventListener("touchend", fim);
     window.addEventListener("touchcancel", fim);
     return () => { window.removeEventListener("touchstart", comeca); window.removeEventListener("touchmove", move); window.removeEventListener("touchend", fim); window.removeEventListener("touchcancel", fim); };
@@ -684,7 +696,7 @@ export function App451() {
               </div>
             ) : (
               <>
-                <MessageScroller className="h-scroller" viewportClassName="h-scroll-vp" contentClassName="x-w760 x-thread" navigation="rail" label="Conversa" railClassName="h-rail"
+                <MessageScroller className="h-scroller" viewportClassName="h-scroll-vp" contentClassName="x-w760 x-thread" navigation={largo ? "rail" : undefined} label="Conversa" railClassName="h-rail"
                   labels={{ navigationLabel: "Ir para mensagem", preview: "Mensagem", goToUser: "Ir para a sua mensagem {index} de {total}", goToAssistant: "Ir para a resposta {index} de {total}", goToMessage: "Ir para a mensagem {index} de {total}" }}>
                   {msgs.map((m) => (
                     <div key={m.id} data-slot="message" data-from={m.tipo === "ia" || m.tipo === "img" ? "assistant" : "user"}>
@@ -743,6 +755,7 @@ export function App451() {
         onStop={() => { pararResp.current?.(); for (const m of msgs) if (m.tipo === "img" && !m.src && !m.erro) cancelarImagem(m.id); }}
         blocked={temLimite && restam <= 0 ? `Volta ${RENOVA}` : null}
         richFiles={atual.tier === "pro" && !atual.locked}
+        imageFiles={!pro}
         attachLeft={{ images: me?.quotas?.find((q) => q.resource === "image_upload")?.remaining ?? 0, files: me?.quotas?.find((q) => q.resource === "files")?.remaining ?? 0 }}
         enhanceIcon={<PlushPet bicho={pet.bicho} cor={pet.cor} size={28} ativo={agente && pro} />} enhanceLabel={pet.nome}
         enhanceAvailable onEnhance={() => (pro ? setAgente((a) => !a) : setUpsell("agente"))} enhance={agente && pro} enhanceLocked={!pro}

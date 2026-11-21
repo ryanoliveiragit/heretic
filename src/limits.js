@@ -37,7 +37,8 @@ const DEFAULT_LIMITS = {
     credits: { '5h': 10, day: 20, week: 80, month: 200 },
   },
   image_upload: {
-    free: { '5h': 0, day: 0, week: 0, month: 0 },
+    // Fotos no grátis (dono 21/11): 3 por dia por aparelho, lidas pelo Inkling sem censura (verba diária em cost.js).
+    free: { '5h': 3, day: 3, week: 15, month: 40 },
     pro: { '5h': 15, day: 30, week: 100, month: 300 },
     pro_rapid: { '5h': 15, day: 30, week: 100, month: 300 },
     credits: { '5h': 5, day: 15, week: 50, month: 120 },

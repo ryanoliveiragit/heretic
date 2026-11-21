@@ -77,6 +77,58 @@ export async function freeClaudeOk() { return (await freeGastoHoje()) < freeClau
 /** O grátis ainda funciona hoje (teto total)? */
 export async function freeDiaOk() { return (await freeGastoHoje()) < freeDayUsd(); }
 
+// Busca na web do grátis nos modelos locais (dono 21/11): teto de R$ 30 por mês, ~US$ 0,17 por dia com o dólar a
+// 5,95 (umas 14 buscas pelo Claude Haiku a US$ 0,0118), e 5 buscas por aparelho por dia (dia em UTC). Passou, o grátis responde sem
+// buscar e mostra o aviso do Pro. Ajuste por FREE_SEARCH_DAY_USD e FREE_SEARCH_PER_DEVICE na Vercel.
+export const buscaGratisDiaUsd = () => Number(process.env.FREE_SEARCH_DAY_USD || 0.17);
+export const buscasPorAparelho = () => Number(process.env.FREE_SEARCH_PER_DEVICE || 5);
+const diaUtc = () => new Date().toISOString().slice(0, 10);
+const buscaUsdKey = () => `gratis:busca:usd:${diaUtc()}`;
+const buscaAparelhoKey = (id) => `gratis:busca:n:${diaUtc()}:${id}`;
+/** Ainda tem verba de busca hoje, no total e neste aparelho? */
+export async function buscaGratisOk(aparelho) {
+  let usd = mem.get(buscaUsdKey()) || 0, n = mem.get(buscaAparelhoKey(aparelho)) || 0;
+  if (hasRedis()) {
+    try { const [a, b] = await pipeline([['GET', buscaUsdKey()], ['GET', buscaAparelhoKey(aparelho)]]); usd = Number(a) || 0; n = Number(b) || 0; }
+    catch (e) { console.error('[custo] redis falhou, usando memória:', e.message); }
+  }
+  return usd < buscaGratisDiaUsd() && n < buscasPorAparelho();
+}
+// Fotos do grátis (dono 21/11): lidas pelo Inkling 2 Mini sem censura da OpenUncensored, ~US$ 0,001 a 0,002 cada com
+// o prompt do 451. Verba de US$ 0,08 por dia (~R$ 14 por mês, umas 40 fotos); por aparelho vale a cota image_upload do
+// grátis (3 por dia, limits.js). Ajuste por FREE_PHOTO_DAY_USD na Vercel.
+export const fotoGratisDiaUsd = () => Number(process.env.FREE_PHOTO_DAY_USD || 0.08);
+const fotoUsdKey = () => `gratis:foto:usd:${diaUtc()}`;
+export async function fotoGratisOk() {
+  let usd = mem.get(fotoUsdKey()) || 0;
+  if (hasRedis()) {
+    try { usd = Number((await pipeline([['GET', fotoUsdKey()]]))[0]) || 0; }
+    catch (e) { console.error('[custo] redis falhou, usando memória:', e.message); }
+  }
+  return usd < fotoGratisDiaUsd();
+}
+export async function registraFotoGratis(usd) {
+  const v = Math.max(0, Number(usd) || 0);
+  if (hasRedis()) {
+    try { await pipeline([['INCRBYFLOAT', fotoUsdKey(), String(v)], ['EXPIRE', fotoUsdKey(), '172800']]); return; }
+    catch (e) { console.error('[custo] redis falhou, usando memória:', e.message); }
+  }
+  mem.set(fotoUsdKey(), (mem.get(fotoUsdKey()) || 0) + v);
+}
+/** Uma busca do grátis feita: soma o custo real no dia e conta 1 para o aparelho. */
+export async function registraBuscaGratis(aparelho, usd) {
+  const v = Math.max(0, Number(usd) || 0);
+  if (hasRedis()) {
+    try {
+      await pipeline([['INCRBYFLOAT', buscaUsdKey(), String(v)], ['EXPIRE', buscaUsdKey(), '172800'],
+        ['INCR', buscaAparelhoKey(aparelho)], ['EXPIRE', buscaAparelhoKey(aparelho), '172800']]);
+      return;
+    } catch (e) { console.error('[custo] redis falhou, usando memória:', e.message); }
+  }
+  mem.set(buscaUsdKey(), (mem.get(buscaUsdKey()) || 0) + v);
+  mem.set(buscaAparelhoKey(aparelho), (mem.get(buscaAparelhoKey(aparelho)) || 0) + 1);
+}
+
 // Saldo da chave OpenUncensored: uma checagem por hora (custa zero e evita bater na API a cada chat).
 let _balance = { at: 0, usd: null };
 async function remainingBalance() {

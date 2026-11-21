@@ -1,7 +1,7 @@
 // 451.sh — service worker do PWA.
 // Arquivos fixos (design system, vendor, assets do app, ícones, fontes): cache primeiro.
 // Páginas HTML: rede primeiro, cache se estiver offline. API: nunca entra no cache.
-const VERSION = "451-6fb277d1"; // trocado a cada build: o cache antigo é apagado no activate
+const VERSION = "451-b67db9b6"; // trocado a cada build: o cache antigo é apagado no activate
 const SHELL = ["/", "/m.html", "/app/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {

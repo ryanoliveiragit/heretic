@@ -330,6 +330,9 @@ export function MessageScroller({
     updateActiveRailItem();
   }, [followThreshold, setFollowing, updateActiveRailItem]);
 
+  // Dedo na tela (dono 21/11, scroll "estranho" no celular): enquanto a pessoa toca, a conversa NÃO rola sozinha.
+  // Antes, cada pedaço da resposta mandava rolar até o fim e puxava de volta quem tentava subir.
+  const touchingRef = useRef(false);
   const leaveLiveEdge = useCallback(() => {
     programmaticScrollRef.current = false;
   }, []);
@@ -350,8 +353,10 @@ export function MessageScroller({
 
     const observer = new ResizeObserver(() => {
       scheduleRailSync();
-      if (!followOutput || !followingRef.current) return;
-      scrollToEnd(reduce || !smooth ? "auto" : "smooth");
+      if (!followOutput || !followingRef.current || touchingRef.current) return;
+      // Acompanhar o texto que chega é instantâneo: uma rolagem suave reiniciada a cada pedaço travava o celular
+      // e escondia a rolagem da pessoa (os 320 ms de "rolagem do app" ignoravam o dedo).
+      scrollToEnd("auto");
     });
     observer.observe(content);
 
@@ -455,9 +460,12 @@ export function MessageScroller({
         onViewportWheel?.(event);
       }}
       onTouchStart={(event) => {
+        touchingRef.current = true;
         leaveLiveEdge();
         onViewportTouchStart?.(event);
       }}
+      onTouchEnd={() => { touchingRef.current = false; }}
+      onTouchCancel={() => { touchingRef.current = false; }}
       onKeyDown={(event) => {
         if (["ArrowUp", "PageUp", "Home"].includes(event.key)) {
           leaveLiveEdge();

@@ -1,3 +1,49 @@
+## 2026-11-21 (19h45 UTC) — PUBLICADO: OpenRouter vira estepe; Claude Haiku 5.5 na busca, nos anexos e nas fotos do grátis (+ pacote do grátis)
+
+Decisão do dono (pergunta no chat): "Publicar tudo já", sem rodar de novo a bateria do grátis com a busca nova.
+- Deploy `dpl_3aHt7hwKnTdQqMyHvMPrzx7wA3H4` (https://451sh-a4i9qwyv2-dwadwdwas-projects.vercel.app), READY, alias
+  451sh.com. 14 arquivos conferidos por sha1 (src, api, public/sw.js, app e bundle `index-Bj8ZsZzE.js`); domínio
+  servindo o bundle novo (md5 igual) e o service worker `451-b67db9b6`; `/.env` 404; rotas `/api/me` 200,
+  `/api/chat` 400 sem corpo, `/api/local/registro` 401, `/api/admin/painel` 401 (`/api/models` 404 é rota interna).
+- Produção como visitante (451 Free): busca com 9 fontes e a cotação do dia; foto da nota lida pelo Claude (total
+  certo, 2 s); tarefa grande termina com o aviso do Pro (`pro_aviso`, motivo `longa`), sem a marca `[PRO]` na tela.
+  Sem erro de página. Custo dos testes no ar: ~US$ 0,013.
+- Local (build novo, sem chaves pagas): scroll no celular respeita o dedo com a resposta chegando (0 → 670 px do
+  fim; 1.483 px 3 s depois); trilha de navegação só no computador; seletor mostra "451 Free". 404 do
+  `/_vercel/insights/script.js` é antigo (igual no deploy anterior). Typecheck do app: erros antigos, nenhum nas
+  linhas alteradas.
+- **Undo:** `npx vercel rollback https://451sh-kwo3gnx80-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`
+  (deploy anterior `dpl_6FqQP8msNTaFXYJadiJeEB3JHBXK`).
+- Não testado: iPhone/Safari de verdade; a bateria "não sei" do grátis com a busca do Claude (antes: 13/15).
+
+
+Pedido do dono: "usar o Claude pro máximo de coisas que der"; "a uncensored entra na parte da censura".
+- Busca (`webContext`, `src/upstream.js`): 1º Claude Haiku 5.5 + ferramenta de busca da Anthropic (1 por mensagem,
+  "UMA busca só"); recusa, erro ou nenhuma página → busca antiga do OpenRouter (Exa + DeepSeek) como estepe.
+  `SEARCH_CLAUDE=0` volta ao OpenRouter. Junta as páginas de todos os blocos de resultado (no real, a 2ª tentativa
+  vinha com erro `max_uses_exceeded` e escondia as páginas da 1ª).
+- Leitor de anexos (`src/attachments.js`): Claude Haiku → Inkling (OU, só imagem) → OpenRouter (Qwen/GLM).
+  Cada leitura agora entra no medidor (papel `anexo`). `READER_CLAUDE=0` pula o Claude.
+- Fotos do grátis (`streamFoto`): o Claude Haiku responde; recusa ou falha → `refusal_forced` (a tela apaga) e o
+  Inkling responde. `FOTO_CLAUDE=0` pula o Claude.
+- Catálogo: `claude:haiku-5-5` interno (US$ 0,10/0,50; cache 0,125/0,01). Reserva quando a OU cai: continua o
+  Dolphin no OpenRouter (estepe, sem recarga).
+- Medido real (chave `ANTHROPIC_API_KEY_VAGAS`; a `ANTHROPIC_API_KEY` do cofre está sem saldo): busca US$ 0,0118,
+  4,9 s, 9 fontes; foto US$ 0,00056, 2,3 s (sem o prompt do 451); PDF de 1 página US$ 0,0002, 0,8 s. Testes
+  reais somaram US$ 0,0244.
+- OpenRouter 15–20/11 (atividade da conta): US$ 5,07 — busca 2,37; Kimi/Hermes/GLM antigos e testes 1,80;
+  reserva 0,75; leitor ≤ 0,16. Saldo US$ 3,92.
+- Testes sem rede, todos ok: `teste-claude-apoio` (16 conferências), `teste-busca-gratis` (18 casos, com recusa
+  na busca e na foto), `teste-claude-frente`, `teste-freios`, `teste-painel`, `teste-prazo-local`,
+  `teste-comandos-redis`. Reais: `scripts/real-claude-apoio.mjs` (`SO=busca` faz só a busca).
+- Mesmo pacote, também não publicado: busca do grátis no gpt-oss (R$ 30/mês, 5 por aparelho), fotos do grátis
+  (3/dia, US$ 0,08/dia), aviso do Pro, nome 451 Free / identidade 451-free-uncensored, scroll do celular.
+- Troca de modelos não publicada (`backups/troca-modelos-2111/troca.patch`): fora do código; reaplica com
+  `git apply -C1` (o contexto mudou com a linha do Haiku).
+- Backups: `backups/upstream.js.antes-claude-2111`, `backups/attachments.js.antes-claude-2111`. Durante a
+  edição, um recorte apagou parte do `upstream.js` local; restaurado da cópia de 15h40 da bateria (idêntica fora
+  das edições) e as edições reaplicadas com âncoras únicas. Nada disso chegou ao ar.
+
 ## 2026-11-21 (17h10) — PUBLICADO: Titan só no Pro; grátis = Rapid (15/dia) + gpt-oss sem limite
 
 Decisão do dono (pergunta no chat, "Titan só no Pro"): o grátis fica com o 451 Rapid (15 mensagens/dia, Claude

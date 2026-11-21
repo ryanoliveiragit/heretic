@@ -6,9 +6,9 @@ import { health, listProjects, createProject, deleteProject,
   listConversations, createConversation, deleteConversation,
   listMessages, addMessage } from './store.js';
 import { getPersona, setPersona } from './persona.js';
-import { streamChat, qualityAnswer, enhancePrompt, imagePrompt, imageIntent, imageFollowups, agentTip, getRoutes, setRoute, MODEL_CATALOG, custoTurno } from './upstream.js';
+import { streamChat, streamFoto, qualityAnswer, enhancePrompt, imagePrompt, imageIntent, imageFollowups, agentTip, getRoutes, setRoute, MODEL_CATALOG, custoTurno } from './upstream.js';
 import { checkBudget, incrementUsage } from './budget.js';
-import { checkGlobalBudget, recordCost, recordFreeCost, freeClaudeOk, freeDiaOk } from './cost.js';
+import { checkGlobalBudget, recordCost, recordFreeCost, freeClaudeOk, freeDiaOk, buscaGratisOk, registraBuscaGratis, fotoGratisOk, registraFotoGratis } from './cost.js';
 import { cortaHistorico, caracteresDe, FREE_MAX_INPUT_CHARS, PRO_MAX_INPUT_CHARS } from './entrada.js';
 import { registraUso, registraImagem, lePainel, nomeNivel, tabelaPrecos, saldosChaves } from './uso.js';
 import { AGENTS, agentPrompt } from './agents.js';
@@ -554,8 +554,21 @@ app.post('/api/chat', async (c) => {
 
   const parsed = readAttachments(body.messages);
   if (parsed.error) return c.json({ error: parsed.error, message: ATTACHMENT_ERRORS[parsed.error] }, 400);
-  if (parsed.count && bucket === 'free') return c.json({ error: 'pro_attachment', message: 'Imagem e PDF fazem parte dos modelos Pro.' }, 403);
-  if (parsed.count && bucket === 'local') return c.json({ error: 'local_attachment', message: 'Os modelos locais leem só texto. Para imagem e PDF, escolha outro modelo.' }, 400);
+  // Fotos no grátis (dono 21/11): a foto da mensagem atual vai para o Inkling sem censura (verba do dia + 3 por
+  // aparelho na cota image_upload); PDF é do Pro. Foto antiga no histórico não volta a ser enviada.
+  const ultimoUser = [...parsed.messages].reverse().find((m) => m && m.role === 'user');
+  const anexosAgora = (ultimoUser && ultimoUser.attachments) || [];
+  const gratisSemAdmin = tier === 'free' && !admin;
+  const fotoGratis = gratisSemAdmin && anexosAgora.length > 0;
+  if (fotoGratis && anexosAgora.some((a) => a.kind === 'pdf')) return c.json({ error: 'pro_attachment', message: 'Ler PDF só funciona no 451 Pro.' }, 403);
+  if (gratisSemAdmin && !fotoGratis) parsed.messages = parsed.messages.map((m) => (m && m.attachments ? (({ attachments, ...resto }) => resto)(m) : m));
+  if (!fotoGratis && anexosAgora.length && bucket === 'free') return c.json({ error: 'pro_attachment', message: 'Imagem e PDF fazem parte dos modelos Pro.' }, 403);
+  // Aviso do Pro (dono 21/11): no grátis, imagem e PDF são do 451 Pro (o gpt-oss lê só texto).
+  if (!fotoGratis && anexosAgora.length && bucket === 'local') {
+    return tier === 'free' && !admin
+      ? c.json({ error: 'pro_attachment', message: 'Ler imagem e PDF só funciona no 451 Pro.' }, 403)
+      : c.json({ error: 'local_attachment', message: 'O 451 Free lê só texto. Para imagem e PDF, escolha outro modelo.' }, 400);
+  }
   const chatMessages = cortaHistorico(parsed.messages, plan === 'pro' ? PRO_MAX_INPUT_CHARS : FREE_MAX_INPUT_CHARS);
   // Teto total do grátis no dia (dono 21/11): passou, pausa até amanhã. Falha do Redis não bloqueia.
   if (bucket === 'free' && !admin && !(await freeDiaOk().catch(() => true))) return c.json({ error: 'free_day_cap', message: MSG_GRATIS_PAUSA }, 429);
@@ -578,6 +591,17 @@ app.post('/api/chat', async (c) => {
   const freio = tier === 'free' ? THROTTLE_SECONDS : THROTTLE_PRO_SECONDS;
   if (!admin && !(await throttle(throttleId, freio))) {
     return c.json({ error: 'slow_down', message: `Calma: espere ${freio} segundos entre uma mensagem e outra.` }, 429);
+  }
+  if (fotoGratis && !((await freeDiaOk().catch(() => true)) && (await fotoGratisOk().catch(() => true)))) {
+    return c.json({ error: 'pro_attachment', message: 'As fotos do grátis acabaram por hoje. No 451 Pro a leitura de imagem não tem esse limite.' }, 403);
+  }
+  // Busca na web nos modelos locais (dono 21/11): o grátis busca com teto próprio (R$ 30/mês e 5 por aparelho/dia,
+  // dentro do teto total do grátis). Pro e admin buscam como nos outros modelos.
+  let buscaLocal = null;
+  if (bucket === 'local') {
+    const gratis = tier === 'free' && !admin;
+    const permitida = !gratis || ((await freeDiaOk().catch(() => true)) && (await buscaGratisOk(throttleId).catch(() => true)));
+    buscaLocal = { permitida, gratis };
   }
   // Modelos de ponta só com créditos.
   let limiteSaida = null; // créditos: a saída máxima que o saldo paga
@@ -608,8 +632,9 @@ app.post('/api/chat', async (c) => {
     const st = await spendStatus(subjects, 'pro_rapid').catch(() => ({}));
     if (st.blocked) return c.json({ error: 'fair_use_cap', message: fairUseStop(st), resetAt: st.resetAt }, 429);
   }
-  let charges = chargesFor(bucket);
-  let reserved = admin || bucket === 'local' ? { ok: true, quotas: [] } : await consumeQuota(subjects, charges);
+  // Foto do grátis: conta só na cota de imagens do grátis (3 por dia), não nas mensagens.
+  let charges = fotoGratis ? [{ resource: 'image_upload', bucket: 'free', amount: uploads.images }] : chargesFor(bucket);
+  let reserved = admin || (bucket === 'local' && !fotoGratis) ? { ok: true, quotas: [] } : await consumeQuota(subjects, charges);
   // Uso justo do "ilimitado": passou do teto do dia nos modelos 451 → a conversa segue no Rapid.
   let fairUse = spendFair;
   if (!reserved.ok && bucket === 'pro' && reserved.quota?.resource === 'messages') {
@@ -617,6 +642,8 @@ app.post('/api/chat', async (c) => {
     charges = chargesFor(bucket);
     reserved = await consumeQuota(subjects, charges);
   }
+  // Passou das 3 fotos do dia no grátis: aviso do Pro (403, para o app não abrir o "acabaram as mensagens").
+  if (!reserved.ok && fotoGratis) return c.json({ error: 'pro_attachment', message: 'Você já usou as 3 fotos de hoje do grátis. No 451 Pro a leitura de imagem não tem esse limite.' }, 403);
   if (!reserved.ok) return c.json({ error: 'limit_reached', quota: reserved.quota, requested: reserved.requested }, 429);
 
   const userMsg = body.messages?.filter(m => m.role === 'user').pop();
@@ -624,8 +651,11 @@ app.post('/api/chat', async (c) => {
 
   const agent = agentPrompt(body.agent);
   const planLine = `Plano ${TIER_LABEL[tier]}. Respostas diretas, sem repetir contexto.`;
-  const modelNome = [...PUBLIC_MODELS, ...LOCAL_MODELS].find(p => p.id === modelId)?.name || '451';
-  const idLine = `Identidade: você é o ${modelNome} (451sh.com). Se perguntarem qual modelo ou IA você é, responda "${modelNome}" — nunca o nome do provedor, da infraestrutura ou de outro modelo.`;
+  const modeloInfo = [...PUBLIC_MODELS, ...LOCAL_MODELS].find(p => p.id === modelId);
+  const modelNome = modeloInfo?.name || '451';
+  // O 451 Free se apresenta pelo id do modelo (dono 21/11): "451-free-uncensored".
+  const idNome = modeloInfo?.identidade || modelNome;
+  const idLine = `Identidade: você é o ${modelNome} (451sh.com)${idNome !== modelNome ? `, modelo ${idNome}` : ''}. Se perguntarem qual modelo ou IA você é, responda "${idNome}" — nunca o nome do provedor, da infraestrutura ou de outro modelo.`;
   const systemPrompt = agent ? `${planLine}\n\n${getPersona()}\n\n${agent}\n\n${idLine}` : `${planLine}\n\n${getPersona()}\n\n${idLine}`;
   // Sampling calmo por padrão: temperatura 1.0 + top_p 1.0 fazia os modelos menores
   // (ex.: Venice UC grátis) degenerarem em texto sem sentido e misturar idioma. 0.6/0.9 +
@@ -678,7 +708,7 @@ app.post('/api/chat', async (c) => {
         // Claude na frente (dono 21/11): Pro e grátis começam pelo Claude. Uso justo (pro_rapid) e
         // Kimi/Hermes (créditos) não. O grátis para de usar o Claude quando o gasto do dia passa do freio.
         const claudeFirst = bucket === 'pro' || (bucket === 'free' && (await freeClaudeOk().catch(() => false)));
-        const chatPayload = { messages: sendMessages, systemPrompt, modelId, ...params, creditsOk: bucket === 'credits', claudeFirst, inicio };
+        const chatPayload = { messages: sendMessages, systemPrompt, modelId, ...params, creditsOk: bucket === 'credits', claudeFirst, inicio, buscaLocal };
         // Modelo que de fato respondeu pode mudar no meio (roteador e escalada por recusa): o
         // custo/cota têm de seguir quem respondeu, não o que foi pedido.
         let doneId = modelId;
@@ -694,7 +724,9 @@ app.post('/api/chat', async (c) => {
           usage,
         };
         // Modo Qualidade (best-of-2) só no Pro; caso contrário, stream normal de 1 modelo.
-        if (body.quality && plan === 'pro' && !parsed.count && bucket !== 'local') {
+        if (fotoGratis) {
+          for await (const _ of streamFoto(chatPayload, handlers)) { /* tokens via onToken */ }
+        } else if (body.quality && plan === 'pro' && !parsed.count && bucket !== 'local') {
           await qualityAnswer(mode, chatPayload, handlers);
         } else {
           for await (const _ of streamChat(mode, chatPayload, handlers)) { /* tokens via onToken */ }
@@ -708,6 +740,12 @@ app.post('/api/chat', async (c) => {
         // 21/11: soma TODAS as chamadas do turno (Opus que recusou + o sem censura que entregou).
         const cost = custoTurno(usage, cat);
         if (cost > 0) await recordCost(cost).catch(() => {});
+        if (fotoGratis && cost > 0) await registraFotoGratis(cost).catch(() => {});
+        // Busca do grátis no modelo local: entra na verba de busca do dia e na conta do aparelho.
+        if (buscaLocal?.gratis && Number(usage.buscas) > 0) {
+          const usdBusca = (usage.partes || []).filter((p) => p.p === 'busca').reduce((t, p) => t + (Number(p.usd) || 0), 0);
+          await registraBuscaGratis(throttleId, usdBusca || 0.0118).catch(() => {}); // 21/11: busca pelo Claude Haiku
+        }
         if (cost > 0 && tier === 'free') await recordFreeCost(cost).catch(() => {}); // freio diário do grátis
         // O balde também pode ter mudado (escalada para modelo de créditos, por exemplo).
         const doneBucket = bucketOf(doneId, tier);
