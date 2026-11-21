@@ -15,7 +15,7 @@ import { Hono } from 'hono';
 import { planForKey, isAdminKey } from './plans.js';
 import { getPersona } from './persona.js';
 import { agentPrompt } from './agents.js';
-import { streamChat, MODEL_CATALOG, enhancePrompt } from './upstream.js';
+import { streamChat, MODEL_CATALOG, enhancePrompt, custoTurno } from './upstream.js';
 import { bucketOf, subjectsFor, consumeQuota, refundQuota, spendStatus, addSpend } from './limits.js';
 import { checkGlobalBudget, recordCost } from './cost.js';
 import { creditBalance, spendCredits, priceCredits, throttle, MIN_TO_START, THROTTLE_SECONDS, THROTTLE_PRO_SECONDS } from './credits.js';
@@ -169,7 +169,7 @@ v1.post('/agent/refine', async (c) => {
   const usage = {};
   const refined = await enhancePrompt('chat', text, undefined, usage).catch(() => '');
   const cat = MODEL_CATALOG.find(m => m.id === 'zai-org/glm-5.3-flash-uncensored');
-  const cost = ((Number(usage.input_tokens) || 0) * (cat?.price_in || 0) + (Number(usage.output_tokens) || 0) * (cat?.price_out || 0)) / 1e6;
+  const cost = custoTurno(usage, cat);
   if (cost > 0) await recordCost(cost).catch(() => {});
   return c.json({ refined: refined || text, changed: !!refined && refined !== text });
 });
@@ -251,8 +251,8 @@ v1.post('/chat/completions', async (c) => {
   let doneId = modelId; // o roteador/escalada pode trocar o modelo que responde
   const settleCost = async (text) => {
     const cat = MODEL_CATALOG.find(m => m.id === doneId);
-    const cost = usage.cost_usd != null ? Number(usage.cost_usd)
-      : ((Number(usage.input_tokens) || 0) * (cat?.price_in || 0) + (Number(usage.output_tokens) || 0) * (cat?.price_out || 0)) / 1e6;
+    // 21/11: soma TODAS as chamadas do turno (Opus que recusou + o sem censura que entregou).
+    const cost = custoTurno(usage, cat);
     if (cost > 0) await recordCost(cost).catch(() => {});
     const doneBucket = bucketOf(doneId, tier);
     if (!admin && text && (doneBucket === 'pro' || doneBucket === 'pro_rapid')) await addSpend(subjects, doneBucket, cost).catch(() => {});

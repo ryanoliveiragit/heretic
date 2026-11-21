@@ -12,3 +12,6 @@
 
 ## Claude Design
 - Redesenhos do Heretic no Claude Design: sempre com Opus 5.5 no esforço Max (dono trocou do Fable 5.2 em 15/11).
+
+## Custos do 451
+- Sempre conferir o custo real de cada mudança no 451 (medidor por mensagem e laços de chamadas pagas): o projeto nunca pode dar prejuízo.

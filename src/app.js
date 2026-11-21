@@ -6,7 +6,7 @@ import { health, listProjects, createProject, deleteProject,
   listConversations, createConversation, deleteConversation,
   listMessages, addMessage } from './store.js';
 import { getPersona, setPersona } from './persona.js';
-import { streamChat, qualityAnswer, enhancePrompt, imagePrompt, imageIntent, imageFollowups, agentTip, getRoutes, setRoute, MODEL_CATALOG } from './upstream.js';
+import { streamChat, qualityAnswer, enhancePrompt, imagePrompt, imageIntent, imageFollowups, agentTip, getRoutes, setRoute, MODEL_CATALOG, custoTurno } from './upstream.js';
 import { checkBudget, incrementUsage } from './budget.js';
 import { checkGlobalBudget, recordCost } from './cost.js';
 import { AGENTS, agentPrompt } from './agents.js';
@@ -654,9 +654,8 @@ app.post('/api/chat', async (c) => {
         // Custo real do turno: o provedor devolve ou.cost_usd; sem ele, estima por tokens × preço
         // do modelo que respondeu de verdade (doneId).
         const cat = MODEL_CATALOG.find(m => m.id === doneId);
-        const cost = usage.cost_usd != null
-          ? Number(usage.cost_usd)
-          : ((Number(usage.input_tokens) || 0) * (cat?.price_in || 0) + (Number(usage.output_tokens) || 0) * (cat?.price_out || 0)) / 1e6;
+        // 21/11: soma TODAS as chamadas do turno (Opus que recusou + o sem censura que entregou).
+        const cost = custoTurno(usage, cat);
         if (cost > 0) await recordCost(cost).catch(() => {});
         // O balde também pode ter mudado (escalada para modelo de créditos, por exemplo).
         const doneBucket = bucketOf(doneId, tier);
