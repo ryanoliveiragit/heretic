@@ -293,10 +293,12 @@ export function App451() {
   const saldo = total(conta);
 
   /* modelos: os do servidor, em grupos */
-  const ordem = ["No seu plano", "Modelos locais", "No Pro", "Com créditos"];
+  const ordem = ["No seu plano", "Em teste (só você)", "No Pro", "Com créditos"];
   const modelos: ModelOption[] = (me?.models ?? []).map((m: MeModel) => {
     const credito = m.bucket === "credits" || /^(451|Heretic) (Hermes|Kimi)$/.test(m.name);
-    const grupo = m.bucket === "local" ? "Modelos locais" : credito && !(m.locked && m.bucket !== "credits") ? "Com créditos" : m.locked ? "No Pro" : "No seu plano";
+    // Local liberado (gpt-oss) fica no plano de todos; os locais ainda em teste, só o admin vê.
+    const grupo = m.bucket === "local" ? ((m as MeModel & { teste?: boolean }).teste ? "Em teste (só você)" : "No seu plano")
+      : credito && !(m.locked && m.bucket !== "credits") ? "Com créditos" : m.locked ? "No Pro" : "No seu plano";
     return { ...m, name: m.name.replace(/^Heretic\b/, "451"), short: m.short.replace(/^Heretic\b|^451\s+/, ""), grupo, badge: credito ? "Créditos" : undefined } as ModelOption;
   }).sort((a, b) => ordem.indexOf(a.grupo!) - ordem.indexOf(b.grupo!));
   const atual = modelos.find((m) => m.id === modelo && !m.locked) ?? modelos.find((m) => !m.locked) ?? modelos[0];

@@ -1,3 +1,18 @@
+## 2026-11-21 (04h52) — PUBLICADO: gpt-oss-20b Heretic grátis e sem limite para todos
+
+O dono escolheu o vencedor dos modelos locais (via Super Hacking): gpt-oss-20b Heretic (menos recusas
+que o Qwen, acertou código, conta e dia da semana, o mais rápido). Na porta 8000 ele já é o padrão.
+- Vercel: `LOCAL_FREE_MODEL=local:gptoss20b` (Production e Preview). Ele aparece no seletor de todos em
+  "No seu plano", rótulo "gpt-oss-20b Heretic", nota "Grátis e sem limite de mensagens. Roda no
+  computador do 451 e pode ter fila." Sem cota, sem custo, sem contador de mensagens; o freio de 8 s
+  entre mensagens do grátis continua (anti-spam). Qwen 35B e Gemma 26B: só o admin, em "Em teste (só você)".
+- Prompt dos locais: regra de idioma no fim ("responda sempre no idioma do usuário…"), porque o gpt-oss
+  respondeu "Monday" numa pergunta curta em português. Testado: "Sábado", "segunda-feira".
+- Conferido no ar como usuário comum (sem chave), escolhendo no seletor: resposta "Sábado" em 5,5 s,
+  painel com custo R$ 0. Deploy `dpl_3F14k5Fh1E3H56xs7eqR4VXXTHVW`; 8 arquivos conferidos por sha1.
+  **Undo:** `npx vercel rollback https://451sh-9w2j842i6-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`
+  (ou tirar `LOCAL_FREE_MODEL` da Vercel e publicar de novo).
+
 ## 2026-11-21 (04h12) — PUBLICADO: modelos locais no site (só admin) com aviso de fila
 
 Pedido do dono via agente Super Hacking: testar no site os 3 modelos locais do gateway dele (porta 8000:

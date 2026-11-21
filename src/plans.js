@@ -170,7 +170,8 @@ export const LOCAL_MODELS = [
     guide: localGuide('19,6 tokens/s; respondeu 6 de 6 pedidos sensíveis e acertou 11 de 11 no código; errou a conta e o dia da semana. Recusas publicadas pelos autores: 10 em 100.') },
   { id: 'local:gemma26b', name: 'Gemma 26B (local)', short: 'Gemma 26B', tier: 'free', quality: 3, local: true,
     guide: localGuide('17,0 tokens/s; 6 de 6 sensíveis e 11 de 11 no código; acertou o dia, errou a conta. Recusas publicadas pelos autores: 2 em 100.') },
-  { id: 'local:gptoss20b', name: 'gpt-oss 20B (local)', short: 'gpt-oss 20B', tier: 'free', quality: 3, local: true,
+  // Vencedor do teste (dono 21/11): o que vai para todos com LOCAL_FREE_MODEL=local:gptoss20b.
+  { id: 'local:gptoss20b', name: 'gpt-oss-20b Heretic', short: 'gpt-oss-20b Heretic', tier: 'free', quality: 3, local: true,
     guide: localGuide('21,7 tokens/s, o mais rápido; 6 de 6 sensíveis e 11 de 11 no código; acertou a conta e o dia. Recusas publicadas pelos autores: 3 em 100.') },
 ];
 /** Modelo local liberado para todos (vazio = só o administrador vê os locais). */

@@ -1187,6 +1187,7 @@ function pickNuclearModel(currentId) {
 // cada mudança vira um aviso 'fila' para a tela. O 1º dado do modelo limpa o aviso.
 const LOCAL_FORA = 'O modelo local está fora do ar agora. Escolha outro modelo.';
 const LOCAL_MAX_SAIDA = 1500; // ~75 s a 20 tokens/s: a função do site transmite por até ~300 s
+const LOCAL_IDIOMA = 'IDIOMA (REGRA RÍGIDA): responda sempre no idioma do usuário. Pergunta em português = resposta inteira em português do Brasil, inclusive respostas de uma palavra (dias da semana, meses, números por extenso). Nunca troque para o inglês.';
 const textoLocal = (content) => (typeof content === 'string' ? content
   : Array.isArray(content) ? content.filter((p) => p?.type === 'text').map((p) => p.text).join('\n') : String(content ?? ''));
 export function avisoDeFila(f) {
@@ -1199,7 +1200,10 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
   const token = getApiKey('local');
   if (!base || !token) throw new Error(LOCAL_FORA);
   const historico = trimHistory((payload.messages || []).map((m) => ({ role: m.role, content: textoLocal(m.content) })), cat.ctx);
-  const messages = [{ role: 'system', content: buildSystemPrompt(payload.systemPrompt, true) }, ...historico.filter((m) => m.role !== 'system')];
+  // Idioma (21/11): numa pergunta curta em português o gpt-oss respondeu "Monday". A regra vai no fim do
+  // prompt (pesa mais e não quebra o cache do começo, que é igual para todos).
+  const sistema = `${buildSystemPrompt(payload.systemPrompt, true)}\n\n${LOCAL_IDIOMA}`;
+  const messages = [{ role: 'system', content: sistema }, ...historico.filter((m) => m.role !== 'system')];
   const body = {
     model: cat.api_model, messages, stream: true, stream_options: { include_usage: true },
     max_tokens: Math.min(Number(payload.max_tokens) || LOCAL_MAX_SAIDA, LOCAL_MAX_SAIDA),
