@@ -15,7 +15,7 @@ const REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_A
 const hasRedis = () => !!(REST_URL && REST_TOKEN);
 
 export const CREDIT_BRL = 0.01;
-const FX = Number(process.env.CREDIT_FX_BRL) || 5.80;       // R$ por US$ (20/11: dólar a R$ 5,77)
+const FX = Number(process.env.CREDIT_FX_BRL) || 5.95;       // R$ por US$ (21/11: dólar a R$ 5,94)
 const MARKUP = Number(process.env.CREDIT_MARKUP) || 2;       // preço = 2× o custo real
 export const MIN_TO_START = 3;                                // saldo mínimo para começar uma resposta
 
@@ -59,6 +59,24 @@ export function priceCredits(usd) {
   const v = Number(usd) || 0;
   if (v <= 0) return 1;
   return Math.max(1, Math.ceil(v * FX * MARKUP / CREDIT_BRL));
+}
+
+// Créditos nunca no vermelho (dono 21/11). Antes, bastavam 3 créditos para começar e o desconto vinha no
+// fim: uma mensagem grande no Kimi custava milhares de créditos e o saldo ficava negativo, com o custo
+// já pago ao provedor. Agora o pior caso (entrada inteira + saída máxima, com folga) tem de caber no saldo.
+const SAIDA_MINIMA = 300; // tokens: abaixo disso a resposta não vale a pena
+/**
+ * Cabe no saldo? Devolve a saída máxima (tokens) que o saldo paga, ou quantos créditos faltam.
+ * @param {{saldo:number, precoEntrada:number, precoSaida:number, tokensEntrada:number, saidaPedida?:number, folga?:number}} o
+ */
+export function tetoDeCreditos({ saldo, precoEntrada, precoSaida, tokensEntrada, saidaPedida = 4096, folga = 1.25 }) {
+  const cobreUsd = (Math.max(0, Number(saldo) || 0) * CREDIT_BRL) / (FX * MARKUP); // custo real que o saldo paga
+  const entradaUsd = (tokensEntrada * precoEntrada / 1e6) * folga;
+  const maxSaida = Math.floor(((cobreUsd - entradaUsd) / (precoSaida * folga)) * 1e6);
+  if (!(maxSaida >= SAIDA_MINIMA)) {
+    return { ok: false, precisa: priceCredits(((tokensEntrada * precoEntrada + SAIDA_MINIMA * precoSaida) / 1e6) * folga) };
+  }
+  return { ok: true, maxSaida: Math.min(saidaPedida, maxSaida) };
 }
 
 /** Dá a cota do mês uma vez por mês (na primeira consulta do mês). */

@@ -61,15 +61,21 @@ export async function recordFreeCost(usd) {
   }
   mem.set(freeDayKey(), (mem.get(freeDayKey()) || 0) + v);
 }
-/** O grátis ainda pode começar pelo Claude hoje? */
-export async function freeClaudeOk() {
+// Teto TOTAL do grátis por dia (dono 21/11): chat e imagens, com ou sem Claude. Passou, o grátis pausa até
+// o dia seguinte (UTC). Ajuste pela variável FREE_DAY_USD na Vercel (vale a partir do próximo deploy).
+export const freeDayUsd = () => Number(process.env.FREE_DAY_USD || 5);
+async function freeGastoHoje() {
   let gasto = mem.get(freeDayKey()) || 0;
   if (hasRedis()) {
     try { gasto = Number((await pipeline([['GET', freeDayKey()]]))[0]) || 0; }
     catch (e) { console.error('[custo] redis falhou, usando memória:', e.message); }
   }
-  return gasto < freeClaudeDayUsd();
+  return gasto;
 }
+/** O grátis ainda pode começar pelo Claude hoje? */
+export async function freeClaudeOk() { return (await freeGastoHoje()) < freeClaudeDayUsd(); }
+/** O grátis ainda funciona hoje (teto total)? */
+export async function freeDiaOk() { return (await freeGastoHoje()) < freeDayUsd(); }
 
 // Saldo da chave OpenUncensored: uma checagem por hora (custa zero e evita bater na API a cada chat).
 let _balance = { at: 0, usd: null };

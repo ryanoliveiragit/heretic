@@ -17,6 +17,19 @@ const GRATIS = (dia) => `451:uso:gratis:${dia}`;
 const GRATIS_VIS = (dia) => `451:uso:gratis:vis:${dia}`;
 const PAGOS = '451:uso:pagos';                  // set com os pedidos já contados
 const PAGAMENTOS = '451:uso:pagamentos';        // lista com os últimos pagamentos
+// Detalhe por mensagem (dono 21/11, "gastei R$ 0,10 num prompt? em qual modelo?"): só números e nomes
+// de modelo, nunca texto. Lista geral com as últimas 500 e, por usuário, as últimas 30 (30 dias).
+const MSGS = '451:uso:msgs';
+const MSGS_U = (sid) => `451:uso:m:${sid}`;
+const GUARDA_MSGS = String(30 * 86400);
+const r6 = (v) => Math.round((Number(v) || 0) * 1e6) / 1e6;
+// No grátis o id é o IP: no detalhe vai só um apelido (hash com o segredo do servidor), nunca o IP.
+function apelido(sid, tier, admin) {
+  if (!(tier === 'free' && !admin)) return String(sid).slice(-6);
+  let h = 0x811c9dc5;
+  for (const ch of `${process.env.ACCESS_SECRET || '451'}|${sid}`) { h ^= ch.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16).padStart(8, '0').slice(-6);
+}
 const GUARDA_GRATIS = String(120 * 86400);
 
 // ── armazenamento ──
@@ -90,6 +103,18 @@ export async function registraUso({ sid, tier, admin = false, nivel, usoJusto = 
   const claude = usage.claude; // 'respondeu' | 'recusou' | 'falhou' | undefined (não passou pelo Claude)
   const buscas = Number(usage.buscas) || 0;
   const cmds = [];
+  // Uma linha por mensagem: rota, tokens, cache e a parte de cada chamada paga no custo.
+  const partes = (usage.partes || []).map((x) => ({ m: nomeModelo(x.m) || x.m, p: x.p, tin: x.tin || 0, tout: x.tout || 0, cg: x.cg || 0, cl: x.cl || 0, usd: r6(x.usd) }));
+  const resto = r6((Number(custo) || 0) - partes.reduce((t, x) => t + x.usd, 0));
+  if (resto > 0.000005) partes.push({ m: entregou || '?', p: 'resto', tin: 0, tout: 0, cg: 0, cl: 0, usd: resto });
+  const linha = JSON.stringify({
+    t: agora, id: apelido(sid, tier, admin), plano: admin ? 'admin' : tier, nivel: `${nivel}${usoJusto ? ' (uso justo)' : ''}`, fonte,
+    rota: (usage.rota || []).map(nomeModelo), claude: claude || null, buscas,
+    tin: Number(usage.input_tokens) || 0, tout: Number(usage.output_tokens) || 0, cg: Number(usage.cache_gravada) || 0, cl: Number(usage.cache_lida) || 0,
+    usd: r6(custo), creditos: Math.round(Number(creditos) || 0), partes,
+  });
+  cmds.push(['LPUSH', MSGS, linha], ['LTRIM', MSGS, '0', '499']);
+  if (!(tier === 'free' && !admin)) cmds.push(['LPUSH', MSGS_U(sid), linha], ['LTRIM', MSGS_U(sid), '0', '29'], ['EXPIRE', MSGS_U(sid), GUARDA_MSGS]);
   if (tier === 'free' && !admin) {
     const k = GRATIS(dia);
     cmds.push(['HINCRBY', k, 'msgs', '1'], ['HINCRBY', k, 'custo_micro', micro]);
@@ -122,6 +147,8 @@ export async function registraImagem({ sid, tier, admin = false, motor, custo = 
   if (!sid) return;
   const agora = Date.now(), dia = new Date(agora).toISOString().slice(0, 10);
   const micro = String(Math.max(0, Math.round((Number(custo) || 0) * 1e6)));
+  const linha = JSON.stringify({ t: agora, id: apelido(sid, tier, admin), plano: admin ? 'admin' : tier, imagem: motor, usd: r6(custo), creditos: Math.round(Number(creditos) || 0) });
+  await exec([['LPUSH', MSGS, linha], ['LTRIM', MSGS, '0', '499']]);
   if (tier === 'free' && !admin) {
     await exec([['HINCRBY', GRATIS(dia), 'imagens', '1'], ['HINCRBY', GRATIS(dia), 'img_custo_micro', micro], ['EXPIRE', GRATIS(dia), GUARDA_GRATIS],
       ['PFADD', GRATIS_VIS(dia), sid], ['EXPIRE', GRATIS_VIS(dia), GUARDA_GRATIS]]);
@@ -150,6 +177,13 @@ export async function registraPagamento({ id, sid, cents, period, method, expire
 }
 
 // ── leitura para o painel ──
+/** Uma linha guardada de mensagem → o que o painel mostra (com reais). */
+const leLinha = (fx) => (raw) => {
+  let m; try { m = JSON.parse(raw); } catch { return null; }
+  if (!m || typeof m !== 'object') return null;
+  const r4 = (usd) => Math.round((Number(usd) || 0) * fx * 10000) / 10000; // 4 casas: R$ 0,0042 aparece
+  return { ...m, custo_rs: r4(m.usd), partes: (m.partes || []).map((x) => ({ ...x, custo_rs: r4(x.usd) })) };
+};
 const hashDe = (arr) => { const o = {}; for (let i = 0; i + 1 < (arr || []).length; i += 2) o[arr[i]] = arr[i + 1]; return o; };
 const num = (v) => Number(v) || 0;
 const porPrefixo = (h, p) => Object.entries(h).filter(([k]) => k.startsWith(p)).map(([k, v]) => [k.slice(p.length), num(v)]);
@@ -175,10 +209,10 @@ export async function lePainel({ fx = 5.94, idDaChave, dias = 30, diasTotal = 12
 
   const lista = (await exec([['ZREVRANGE', USUARIOS, '0', '199', 'WITHSCORES']]))[0] || [];
   const sids = []; for (let i = 0; i < lista.length; i += 2) sids.push(lista[i]);
-  const brutos = sids.length ? await exec(sids.flatMap((s) => [['HGETALL', U(s)], ['SCARD', DIAS(s)]])) : [];
+  const brutos = sids.length ? await exec(sids.flatMap((s) => [['HGETALL', U(s)], ['SCARD', DIAS(s)], ['LRANGE', MSGS_U(s), '0', '9']])) : [];
   const rs = (usd) => Math.round(usd * fx * 100) / 100;
   const usuarios = sids.map((sid, i) => {
-    const h = hashDe(brutos[2 * i]), diasAtivos = num(brutos[2 * i + 1]);
+    const h = hashDe(brutos[3 * i]), diasAtivos = num(brutos[3 * i + 1]);
     const custoUsd = (num(h.custo_micro) + num(h.img_custo_micro)) / 1e6, pagoRs = num(h.pago_cents) / 100;
     const niveis = porPrefixo(h, 'n:').map(([nome, msgs]) => ({ nome, msgs, custo_rs: rs(num(h[`c:${nome}`]) / 1e6) })).sort((a, b) => b.msgs - a.msgs);
     const entregou = porPrefixo(h, 'e:').map(([modelo, msgs]) => ({ modelo, msgs })).sort((a, b) => b.msgs - a.msgs);
@@ -190,6 +224,7 @@ export async function lePainel({ fx = 5.94, idDaChave, dias = 30, diasTotal = 12
       custo_usd: Math.round(custoUsd * 10000) / 10000, custo_rs: rs(custoUsd), lucro_rs: Math.round((pagoRs - custoUsd * fx) * 100) / 100,
       niveis, entregou, desceu_para: porPrefixo(h, 'd:').map(([modelo, msgs]) => ({ modelo, msgs })).sort((a, b) => b.msgs - a.msgs),
       claude: { respondeu: num(h['claude:respondeu']), recusou: num(h['claude:recusou']), falhou: num(h['claude:falhou']) },
+      ultimas: (brutos[3 * i + 2] || []).map(leLinha(fx)).filter(Boolean),
     };
   });
 
@@ -227,8 +262,24 @@ export async function lePainel({ fx = 5.94, idDaChave, dias = 30, diasTotal = 12
   const pagamentos = ((await exec([['LRANGE', PAGAMENTOS, '0', '19']]))[0] || []).map((r) => {
     try { const p = JSON.parse(r); return { id: String(p.sid || '').slice(-6), valor_rs: num(p.cents) / 100, periodo: p.period, metodo: p.method, quando: p.ts }; } catch { return null; }
   }).filter(Boolean);
+  // Últimas mensagens de todo mundo e o custo por modelo nelas (de onde sai cada real).
+  const mensagens = ((await exec([['LRANGE', MSGS, '0', '199']]))[0] || []).map(leLinha(fx)).filter(Boolean);
+  const porModelo = {};
+  for (const m of mensagens) {
+    for (const x of m.partes || []) {
+      const k = `${x.m}|${x.p}`, a = porModelo[k] || (porModelo[k] = { modelo: x.m, papel: x.p, chamadas: 0, usd: 0, tin: 0, tout: 0, cg: 0, cl: 0 });
+      a.chamadas += 1; a.usd += x.usd; a.tin += x.tin; a.tout += x.tout; a.cg += x.cg; a.cl += x.cl;
+    }
+    if (m.imagem) {
+      const k = `${m.imagem}|imagem`, a = porModelo[k] || (porModelo[k] = { modelo: m.imagem, papel: 'imagem', chamadas: 0, usd: 0, tin: 0, tout: 0, cg: 0, cl: 0 });
+      a.chamadas += 1; a.usd += m.usd;
+    }
+  }
+  const custoPorModelo = Object.values(porModelo).map((a) => ({ ...a, usd: r6(a.usd), custo_rs: Math.round(a.usd * fx * 10000) / 10000, media_rs: a.chamadas ? Math.round((a.usd / a.chamadas) * fx * 10000) / 10000 : 0 }))
+    .sort((a, b) => b.usd - a.usd);
   return {
     geradoEm: Date.now(), cambio: fx,
+    mensagens: mensagens.slice(0, 60), custo_por_modelo: custoPorModelo, mensagens_lidas: mensagens.length,
     // Desde o início do registro: recebido e custo dos pagantes. O grátis vai à parte (últimos 30 dias)
     // e o uso do próprio dono (chave de admin) também, porque não tem receita.
     totais: {

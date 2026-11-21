@@ -112,7 +112,7 @@ Responda no MESMO idioma da pergunta. Se estiver em português, use português d
 Comece pela resposta, sem preâmbulo nem repetir a pergunta.
 ENSINE COMO UM TUTORIAL, não uma resposta seca igual às outras IAs: explique o PORQUÊ de cada passo, mostre comandos reais e exemplos de código em blocos com a linguagem (bash, python, etc.), passo a passo.
 Siga a seção "Formato" da persona: Markdown a serviço da clareza, sem decoração nem remarcação inventada.
-DIAGRAMAS (REGRA RÍGIDA): todo fluxograma, fluxo, arquitetura, sequência, árvore ou mapa mental é SEMPRE desenhado em Mermaid, dentro de uma cerca de código cuja linguagem é a palavra mermaid. A interface renderiza o Mermaid como IMAGEM de verdade.
+DIAGRAMAS (REGRA RÍGIDA): todo fluxograma, fluxo, arquitetura, sequência, árvore ou mapa mental é SEMPRE desenhado em Mermaid, dentro de uma cerca de código cuja linguagem é a palavra mermaid. A interface renderiza o Mermaid como IMAGEM de verdade. GRÁFICO DE NÚMEROS (pizza, barras, linha) também é Mermaid: pie para pizza e xychart-beta para barras ou linha, na mesma cerca mermaid. Nunca use cerca chart, JSON de gráfico nem Chart.js: a tela não desenha isso.
 É TERMINANTEMENTE PROIBIDO desenhar diagrama com caracteres de caixa/seta ("ASCII art"): nada de ┌ ─ ┐ │ └ ┘ ├ ┤ ┬ ┴ ▼ ► → ↓ ◄, nem caixas feitas de +---+ ou |__|. Isso é ERRADO, parece quebrado e vira uma sopa ilegível no celular. Se você começar a desenhar com esses caracteres, PARE na hora e reescreva como Mermaid.
 EXEMPLO — siga EXATAMENTE este formato (abra uma cerca de código com a palavra mermaid e, dentro dela, escreva assim):
 flowchart TD
@@ -240,7 +240,14 @@ function proprio(usage, conta) {
     dPc: Math.max(0, (usage.provider_cost || 0) - conta.pc - ((usage.pc_closed || 0) - conta.pcc)),
   };
 }
-function fechaConta(usage, conta, cat) {
+// Painel do dono (21/11, "gastei R$ 0,10 num prompt? em qual modelo?"): cada chamada paga guarda a
+// própria parte da conta (modelo, papel, tokens, cache e custo). Só números: nada do texto.
+function anotaParte(usage, modelo, papel, { tin = 0, tout = 0, cg = 0, cl = 0, usd = 0 } = {}) {
+  if (!usage) return;
+  const l = usage.partes || (usage.partes = []);
+  if (l.length < 16) l.push({ m: String(modelo || ''), p: papel, tin, tout, cg, cl, usd });
+}
+function fechaConta(usage, conta, cat, modelo = '', papel = 'resposta') {
   if (!usage || !conta) return;
   const { dIn, dOut, dPc } = proprio(usage, conta);
   if (!dIn && !dOut && !dPc) return;
@@ -248,12 +255,14 @@ function fechaConta(usage, conta, cat) {
   usage.costed_in = (usage.costed_in || 0) + dIn;
   usage.costed_out = (usage.costed_out || 0) + dOut;
   usage.pc_closed = (usage.pc_closed || 0) + dPc;
+  const usd = dPc || (dIn * (cat.price_in || 0) + dOut * (cat.price_out || 0)) / 1e6;
+  anotaParte(usage, modelo || cat?.api_model || cat?.id, papel, { tin: dIn, tout: dOut, usd });
   if (dPc) return; // o provedor mandou o custo desta chamada (já está em cost_usd)
-  usage.cost_usd = (usage.cost_usd || 0) + (dIn * (cat.price_in || 0) + dOut * (cat.price_out || 0)) / 1e6;
+  usage.cost_usd = (usage.cost_usd || 0) + usd;
 }
 // Chamada avulsa sem stream (classificador de busca, detector de pessoa, busca web, juiz): soma os
 // tokens e o custo dela na mensagem. Sem `usage` na resposta, estima pelo tamanho do pedido.
-function contaAvulsa(usage, data, cat, inChars = 0) {
+function contaAvulsa(usage, data, cat, inChars = 0, modelo = '', papel = 'apoio') {
   if (!usage || !data) return;
   const conta = abreConta(usage);
   const u = data.usage || {};
@@ -266,7 +275,7 @@ function contaAvulsa(usage, data, cat, inChars = 0) {
     usage.output_tokens = (usage.output_tokens || 0) + Math.ceil((String(m.content || '').length + String(m.reasoning_content || '').length) / 4);
   }
   somaCustoDoProvedor(usage, data);
-  fechaConta(usage, conta, cat);
+  fechaConta(usage, conta, cat, modelo, papel);
 }
 /** Custo do turno em US$: o que cada chamada já somou + tokens sem dono pelo preço de quem respondeu. */
 export function custoTurno(usage, cat) {
@@ -551,12 +560,14 @@ async function* anthropicTurnStream({ model, system, systemFixo = '', messages: 
         // Com cache, cada parte da entrada tem o seu preço (tabela oficial): fecha a conta aqui mesmo.
         usage.costed_in = (usage.costed_in || 0) + entrada;
         usage.costed_out = (usage.costed_out || 0) + out;
-        usage.cost_usd = (usage.cost_usd || 0) + (tok.base * cat.price_in
+        const usd = (tok.base * cat.price_in
           + tok.grava * (cat.price_cache_write ?? cat.price_in * 1.25)
           + tok.le * (cat.price_cache_read ?? cat.price_in * 0.1)
           + out * cat.price_out) / 1e6;
+        usage.cost_usd = (usage.cost_usd || 0) + usd;
+        anotaParte(usage, model, 'resposta', { tin: entrada, tout: out, cg: tok.grava, cl: tok.le, usd });
       } else {
-        fechaConta(usage, conta, cat);
+        fechaConta(usage, conta, cat, model);
       }
     }
   }
@@ -754,7 +765,7 @@ async function decideSearchLLM(question, usage = null) {
     });
     if (!res.ok) return null;
     const data = await res.json();
-    contaAvulsa(usage, data, catDe('openuncensored', model), corpo.length);
+    contaAvulsa(usage, data, catDe('openuncensored', model), corpo.length, model, 'classificador');
     const out = (data?.choices?.[0]?.message?.content || '').trim().toUpperCase();
     if (out.startsWith('SIM')) return true;
     if (out.startsWith('NAO') || out.startsWith('NÃO') || out.startsWith('NO')) return false;
@@ -841,7 +852,7 @@ async function personTarget(q, usage = null) {
       });
       if (res.ok) {
         const data = await res.json();
-        contaAvulsa(usage, data, catDe('openuncensored', modeloAlvo), corpo.length);
+        contaAvulsa(usage, data, catDe('openuncensored', modeloAlvo), corpo.length, modeloAlvo, 'pessoa');
         const out = String(data?.choices?.[0]?.message?.content || '').trim();
         const m = /PESSOA\s*:\s*([^\n]+)/i.exec(out);
         if (m) {
@@ -894,7 +905,7 @@ async function webContext(query, signal, { person = false, name = '', detail = '
     if (!res.ok) return null;
     const data = await res.json();
     // Medidor (21/11): a busca entra no custo da mensagem — mesmo descartada pelo teto, ela foi cobrada.
-    contaAvulsa(usage, data, catDe('openrouter', model), prompt.length + String(query).length);
+    contaAvulsa(usage, data, catDe('openrouter', model), prompt.length + String(query).length, model, 'busca');
     if (usage) usage.buscas = (usage.buscas || 0) + 1;
     // Teto de custo por busca (20/11): o provedor devolve o custo real em `usage.cost`; acima do
     // limite a busca é descartada (o app segue sem ela) em vez de faturar um valor absurdo.
@@ -1541,7 +1552,7 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
       } finally {
         clearTimeout(timeout);
         if (est) estimaSemConta(usage, conta, est.inChars, est.outcome.chars);
-        fechaConta(usage, conta, catDe(route.provider, route.model) || MODEL_CATALOG.find(m => m.id === routedId));
+        fechaConta(usage, conta, catDe(route.provider, route.model) || MODEL_CATALOG.find(m => m.id === routedId), route.model);
       }
     }
     if (!hitRefusal) break;
@@ -1665,7 +1676,7 @@ async function classifyRefusal(question, visibleText, usage = null) {
       });
       if (!res.ok) { console.error('[juiz] HTTP', res.status); return false; }
       const j = await res.json();
-      contaAvulsa(usage, j, jcat, prompt.length); // o juiz é chamada paga: entra no custo da mensagem
+      contaAvulsa(usage, j, jcat, prompt.length, model, 'juiz'); // o juiz é chamada paga: entra no custo da mensagem
       const msg = j.choices?.[0]?.message || {};
       let out = String(msg.content || '').trim().toUpperCase();
       if (!out) {
@@ -1981,7 +1992,7 @@ async function* streamWithProvider(provider, model, catalog, messages, systemPro
   } finally {
     clearTimeout(timeout);
     estimaSemConta(usage, conta, inChars, outChars);
-    fechaConta(usage, conta, catalog || catDe(provider, model));
+    fechaConta(usage, conta, catalog || catDe(provider, model), model);
   }
 }
 

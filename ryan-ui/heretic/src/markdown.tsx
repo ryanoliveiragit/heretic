@@ -6,6 +6,10 @@ import { Check, Copy } from "lucide-react";
 import { Mermaid } from "./mermaid";
 import { RadioCards } from "@pro/radio-cards/radio-cards";
 
+// Marcador de opção do card: "- ", "* " e as variantes que os modelos trocam (•, –, —, ·, "1." ou "1)").
+// 21/11: o Sonnet escreveu "– Web/API" e o card de opções virou código cru.
+const OPCAO = /^\s*(?:[-*•·–—]|\d{1,2}[.)])\s+(.+)$/;
+
 // Bloco de código com cabeçalho (linguagem + copiar), no estilo do redesign.
 function CodeBlock({ code, lang }: { code: string; lang?: string }) {
   const [copied, setCopied] = useState(false);
@@ -30,7 +34,7 @@ function AskBlock({ body, onOption, disabled }: { body: string; onOption?: (v: s
   for (const raw of body.split("\n")) {
     const l = raw.trim();
     if (!l) continue;
-    const mo = /^[-*]\s+(.+)$/.exec(l);
+    const mo = OPCAO.exec(l);
     if (mo) opts.push((mo[1] ?? "").trim());
     else if (opts.length === 0) qLines.push(l); // a pergunta vem antes das opções
   }
@@ -145,12 +149,12 @@ export function Markdown({ text, caret, onOption }: { text: string; caret?: bool
       const bodyText = body.join("\n");
       // ```ask (e variantes que o modelo às vezes inventa: select/options/escolha/pergunta): pergunta com
       // opções clicáveis. Só vira card quando há opções "- " de verdade; senão cai pro bloco de código normal.
-      const looksAsk = /^(ask|select|options?|choices?|escolha|op[çc][õo]es|pergunta)$/i.test(lang) && /(^|\n)\s*[-*]\s+\S/.test(bodyText);
+      const looksAsk = /^(ask|select|options?|choices?|escolha|op[çc][õo]es|pergunta)$/i.test(lang) && bodyText.split("\n").some((l) => OPCAO.test(l));
       if (looksAsk) { asks.push(<AskBlock key={`a${b++}`} body={bodyText} onOption={onOption} disabled={!!caret} />); continue; }
       // Detecta Mermaid pelo CONTEÚDO também: se o modelo esquece a tag ```mermaid e manda só
       // ```+flowchart, ainda desenhamos o diagrama em vez de mostrar o código cru.
       const looksMermaid = /^\s*(?:flowchart|graph)\s+(?:TB|TD|BT|RL|LR)\b/i.test(bodyText)
-        || /^\s*(?:sequenceDiagram|mindmap|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|journey|gitGraph|timeline|quadrantChart|pie\b)/i.test(bodyText);
+        || /^\s*(?:sequenceDiagram|mindmap|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|journey|gitGraph|timeline|quadrantChart|pie|xychart-beta|sankey-beta|block-beta|radar-beta|packet-beta|kanban|architecture-beta|requirementDiagram)\b/i.test(bodyText);
       // Renderiza o diagrama quando o bloco fechou OU quando a resposta terminou (!caret), mesmo com cerca malformada.
       // Durante o streaming (caret) espera fechar pra não piscar Mermaid incompleto.
       if ((lang === "mermaid" || looksMermaid) && (closed || !caret)) blocks.push(<Mermaid key={`m${b++}`} code={bodyText} />);
@@ -160,7 +164,7 @@ export function Markdown({ text, caret, onOption }: { text: string; caret?: bool
     // Mermaid SEM cerca: modelos às vezes escrevem "flowchart TD ..." como texto cru, sem ```.
     // Desenha o diagrama mesmo assim (coleta as linhas até a próxima linha em branco).
     const mmHead = /^\s*(?:flowchart|graph)\s+(?:TB|TD|BT|RL|LR)\b/i.test(line)
-      || /^\s*(?:sequenceDiagram|mindmap|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|journey|gitGraph|timeline|quadrantChart|pie)\b/i.test(line);
+      || /^\s*(?:sequenceDiagram|mindmap|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|journey|gitGraph|timeline|quadrantChart|pie|xychart-beta|sankey-beta|block-beta|radar-beta|packet-beta|kanban|architecture-beta|requirementDiagram)\b/i.test(line);
     if (mmHead) {
       flush(); const mm: string[] = [];
       while (i < lines.length && (lines[i] ?? "").trim() !== "" && !/^\s*```/.test(lines[i] ?? "")) mm.push(lines[i++] ?? "");

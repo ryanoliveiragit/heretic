@@ -44,6 +44,13 @@ function loadMermaid(): Promise<MermaidApi> {
           actorTextColor: "#F5F5F7",
           signalColor: "#9A9AA3",
           signalTextColor: "#C8C8CE",
+          // Pizza (21/11): sem estas cores as fatias saíam quase pretas no tema escuro.
+          pie1: "#E8E2D0", pie2: "#1DB362", pie3: "#5B8CFF", pie4: "#F2A93B", pie5: "#C084FC", pie6: "#8E8E98", pie7: "#5A5A63", pie8: "#3A3A42",
+          pieStrokeColor: "#0A0A0C",
+          pieOuterStrokeColor: "#2A2A30",
+          pieTitleTextColor: "#F5F5F7",
+          pieSectionTextColor: "#0A0A0C",
+          pieLegendTextColor: "#C8C8CE",
         },
       });
       return mermaid;
@@ -62,11 +69,23 @@ function repairMermaid(code: string): string {
     .replace(/\|\s*\|/g, "|");
 }
 
+/** Nome no topo do cartão conforme o tipo (antes era sempre "Fluxograma", até em gráfico de pizza). */
+function nomeDoDesenho(code: string): string {
+  const tipo = (code.trim().split(/\s/)[0] || "").toLowerCase();
+  if (tipo === "pie") return "Gráfico de pizza";
+  if (tipo.startsWith("xychart")) return "Gráfico";
+  if (tipo === "sequencediagram") return "Sequência";
+  if (tipo === "mindmap") return "Mapa mental";
+  if (tipo === "gantt" || tipo === "timeline") return "Cronograma";
+  if (tipo === "flowchart" || tipo === "graph") return "Fluxograma";
+  return "Diagrama";
+}
+
 /** Bloco parece Mermaid mesmo sem a tag ```mermaid. */
 export function pareceMermaid(lang: string | undefined, code: string): boolean {
   if ((lang || "").toLowerCase() === "mermaid") return true;
   return /^\s*(?:flowchart|graph)\s+(?:TB|TD|BT|RL|LR)\b/i.test(code)
-    || /^\s*(?:sequenceDiagram|mindmap|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|journey|gitGraph|timeline|quadrantChart|pie\b)/i.test(code);
+    || /^\s*(?:sequenceDiagram|mindmap|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|journey|gitGraph|timeline|quadrantChart|pie\b|xychart(?:-beta)?\b|sankey(?:-beta)?\b|block-beta\b|radar-beta\b|packet-beta\b|kanban\b|architecture-beta\b|requirementDiagram\b)/i.test(code);
 }
 
 // Entrada animada: cada caixa recebe a sua vez (--i) e cada seta o próprio comprimento para "se desenhar".
@@ -111,7 +130,7 @@ export function Mermaid({ code }: { code: string }) {
   return (
     <figure className="hx-mermaid hx-mmd-card" aria-label="Diagrama">
       <figcaption className="hx-mmd-top">
-        <span className="hx-mmd-tag">Fluxograma</span>
+        <span className="hx-mmd-tag">{nomeDoDesenho(code)}</span>
         <CopyButton value={code} variant="plain" label="Copiar código" copiedLabel="Copiado" failedLabel="Não copiou" className="hx-mmd-copy" />
       </figcaption>
       {svg

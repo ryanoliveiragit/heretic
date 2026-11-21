@@ -1,3 +1,32 @@
+## 2026-11-21 (03h16) — PUBLICADO: freios contra prejuízo, cartão de opções, gráficos e custo por mensagem
+
+Pedidos do dono: "Todos" (fechar os 4 buracos de prejuízo + OpenRouter do site = chave do cofre); "o chart
+e o ask estão sem formatação"; "gastei R$ 0,10 num prompt? em qual modelo? preciso saber essas coisas".
+- Freios (`src/credits.js`, `src/cost.js`, `src/entrada.js`, app.js, v1.js): créditos nunca negativos
+  (antes de chamar, o pior caso tem de caber no saldo; a saída é limitada ao que o saldo paga), câmbio
+  5,95; grátis com teto TOTAL de US$ 5/dia (`FREE_DAY_USD`; depois disso 429 até virar o dia UTC); Pro
+  com histórico cortado em 200 mil caracteres (`PRO_MAX_INPUT_CHARS`). Teste: `scripts/teste-freios.mjs`.
+- Chat v2 (`ryan-ui/heretic/src/v2/ai-answer/ai-answer.tsx`): ```ask vira cartão de opções (RadioCards
+  da ryan-ui; aceita –, —, •, · e números), um toque manda a opção como próxima mensagem (`onFollowUp`);
+  pizza e barras simples (Mermaid `pie`/`xychart-beta` ou ```chart em JSON) viram DonutChart/BarChart da
+  ryan-ui; o resto do Mermaid segue desenhado (rótulo do cartão conforme o tipo; pizza do Mermaid com
+  cores). Prompt (upstream.js DIAGRAMAS + persona.js): gráfico de números em Mermaid, opção com "- ".
+  Custo do prompt: +~60 tokens (~1% sem cache; com cache, ~0). Teste: `scripts/teste-tela-chat.mjs`.
+- Custo por mensagem (`src/upstream.js` `anotaParte` + `src/uso.js`): cada chamada paga guarda modelo,
+  papel (resposta, decide busca, confere recusa, busca, confere pessoa), tokens, cache gravado/lido e
+  custo; `451:uso:msgs` (últimas 500) e `451:uso:m:<id>` (30 por usuário, 30 dias). No grátis o id é um
+  apelido com hash e segredo (nunca o IP). Só números. Painel: seção "Últimas mensagens" + "de onde sai
+  o custo" (sw.js v8; backup `backups/painel-antes-mensagens/`). Medidor segue 100% nos 16 cenários.
+- OpenRouter: `OPENROUTER_API_KEY` da Vercel (Production 03h14, Preview 03h15) = chave do cofre. Agora o
+  painel lê o saldo da conta: US$ 4,17 (abaixo do alerta de US$ 5). A chave antiga do site não existe
+  mais em lugar nenhum (era "sensitive"); voltar o deploy volta a chave antiga junto (env por deploy).
+- Deploy `dpl_8pDzmewfgeWPDahRoehLTch2NrbZ` → https://451sh-68830us0p-dwadwdwas-projects.vercel.app
+  (alias 451sh.com); 11 arquivos conferidos por sha1. Antes: `dpl_3D8U5jf6wbaMMe576hceZp56FzmW`.
+  **Undo:** `npx vercel rollback https://451sh-gan17n0q3-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`
+- Conferido no ar com 1 mensagem real de admin (Rapid, R$ 0,116): o Sonnet respondeu com pizza (rosca
+  desenhada) e cartão de 3 opções clicáveis; o painel mostrou Claude Sonnet R$ 0,1160 (7.149 tokens
+  gravando o cache + 148 de saída) e GLM 5.3 decidindo a busca R$ 0,0002.
+
 
 ## 2026-11-21 (02h13) — PUBLICADO: registro de uso por usuário + seção "Usuários do 451" no painel
 

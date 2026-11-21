@@ -37,6 +37,9 @@ import { CopyButton } from "@pro/copy-button/copy-button";
 import { Popover, PopoverContent, PopoverTrigger } from "@pro/popover/popover";
 import styles from "./ai-answer.module.css";
 import { Mermaid, pareceMermaid } from "@app/mermaid";
+import { RadioCards } from "@pro/radio-cards/radio-cards";
+import { BarChart } from "@pro/bar-chart/bar-chart";
+import { DonutChart } from "@pro/donut-chart/donut-chart";
 
 /* -------------------------------------------------------------------------------------------------
  * Types
@@ -1286,6 +1289,168 @@ function TableBlock({ block, shown }: { block: Extract<ParsedBlock, { kind: "tab
   );
 }
 
+/* -------------------------------------------------------------------------------------------------
+ * Cartão de opções (```ask) e gráficos (```chart) — dono 21/11: os dois chegavam como código cru.
+ * -----------------------------------------------------------------------------------------------*/
+
+// Marcador de opção: "- ", "* " e as variantes que os modelos trocam (•, –, —, ·, "1." ou "1)").
+const OPCAO = /^\s*(?:[-*•·–—]|\d{1,2}[.)])\s+(.+)$/;
+const CERCA_ASK = /^(ask|select|options?|choices?|escolha|op[çc][õo]es|pergunta)$/i;
+const CERCA_GRAFICO = /^(chart|charts|chartjs|graph|grafico|gráfico|plot)$/i;
+const semMarcas = (t: string) => t.replace(/\*\*([^*]+)\*\*/g, "$1").replace(/__([^_]+)__/g, "$1").replace(/`([^`]+)`/g, "$1");
+
+/** A 1ª linha é a pergunta; cada "- opção" vira uma linha clicável que manda a opção como a próxima mensagem. */
+function AskCard({ lines, onAsk, disabled }: { lines: string[]; onAsk?: (question: string) => void; disabled: boolean }) {
+  const [picked, setPicked] = React.useState<string | null>(null);
+  const opcoes: string[] = [];
+  const pergunta: string[] = [];
+  for (const raw of lines) {
+    const linha = raw.trim();
+    if (!linha) continue;
+    const m = OPCAO.exec(linha);
+    if (m) opcoes.push(semMarcas((m[1] ?? "").trim()));
+    else if (!opcoes.length) pergunta.push(semMarcas(linha));
+  }
+  const question = pergunta.join(" ");
+  // "Rótulo — descrição" vira rótulo com a descrição embaixo.
+  const options = opcoes.map((o) => {
+    const m = /^(.+?)\s+[—–-]\s+(.+)$/.exec(o);
+    return { value: o, label: m ? m[1]!.trim() : o, description: m ? m[2]!.trim() : undefined, disabled: !!picked && picked !== o };
+  });
+  const escolhe = (v: string) => {
+    if (disabled || picked || !onAsk) return;
+    setPicked(v);
+    onAsk(v);
+  };
+  return (
+    <div className={styles.ask}>
+      {question ? <p className={styles.paragraph}>{question}</p> : null}
+      {options.length ? (
+        <RadioCards
+          layout="list"
+          aria-label={question || "Opções"}
+          value={picked}
+          onValueChange={escolhe}
+          disabled={disabled || !onAsk}
+          options={options}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+interface Grafico {
+  tipo: "pizza" | "barras";
+  titulo: string;
+  unidade: string;
+  dados: { key: string; label: string; value: number }[];
+}
+
+/** Lê um gráfico em JSON nos formatos que os modelos usam (Chart.js, labels+values, lista ou objeto). */
+function leGrafico(source: string): Grafico | null {
+  let j: Record<string, any>;
+  try {
+    j = JSON.parse(source);
+  } catch {
+    return null;
+  }
+  if (!j || typeof j !== "object" || Array.isArray(j)) return null;
+  const d = j.data;
+  let labels: unknown[] = [];
+  let values: unknown[] = [];
+  if (d && Array.isArray(d.labels) && Array.isArray(d.datasets) && d.datasets[0]) {
+    labels = d.labels;
+    values = d.datasets[0].data ?? [];
+  } else if (Array.isArray(j.labels)) {
+    labels = j.labels;
+    values = Array.isArray(j.values) ? j.values : Array.isArray(j.data) ? j.data : (j.datasets?.[0]?.data ?? []);
+  } else if (Array.isArray(d) && d.length && typeof d[0] === "object") {
+    labels = d.map((x: Record<string, unknown>) => x.label ?? x.name ?? x.nome ?? x.x ?? x.key);
+    values = d.map((x: Record<string, unknown>) => x.value ?? x.valor ?? x.y ?? x.count ?? x.total);
+  } else if (d && typeof d === "object" && !Array.isArray(d)) {
+    labels = Object.keys(d);
+    values = Object.values(d);
+  }
+  const dados = labels
+    .map((label, i) => ({ key: `${i}-${String(label)}`, label: String(label), value: Number(values[i]) }))
+    .filter((x) => Number.isFinite(x.value));
+  if (!dados.length) return null;
+  const tipo = String(j.type ?? j.tipo ?? j.kind ?? "bar").toLowerCase();
+  const titulo = String(j.title ?? j.titulo ?? j.options?.plugins?.title?.text ?? j.options?.title?.text ?? d?.datasets?.[0]?.label ?? "Gráfico");
+  return { tipo: /pie|pizza|donut|doughnut|rosca/.test(tipo) ? "pizza" : "barras", titulo, unidade: String(j.unit ?? j.unidade ?? ""), dados };
+}
+
+/**
+ * Pizza e barras simples escritas em Mermaid também viram os gráficos da ryan-ui (mesmo visual dos outros).
+ * Barras com mais de uma série, linha ou eixo numérico ficam no Mermaid.
+ */
+function graficoDoMermaid(source: string): Grafico | null {
+  const linhas = source.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("%%"));
+  const primeira = (linhas[0] ?? "").toLowerCase();
+  const limpa = (t: string) => t.trim().replace(/^["']|["']$/g, "").trim();
+  if (/^pie\b/.test(primeira)) {
+    let titulo = /^pie\s+(?:showdata\s+)?title\s+(.+)$/i.exec(linhas[0] ?? "")?.[1] ?? "";
+    const dados: Grafico["dados"] = [];
+    for (const l of linhas.slice(1)) {
+      const t = /^title\s+(.+)$/i.exec(l);
+      if (t) {
+        titulo = t[1]!;
+        continue;
+      }
+      const m = /^"([^"]+)"\s*:\s*(-?\d+(?:[.,]\d+)?)\s*$/.exec(l) ?? /^'([^']+)'\s*:\s*(-?\d+(?:[.,]\d+)?)\s*$/.exec(l);
+      if (m) dados.push({ key: `${dados.length}-${m[1]}`, label: m[1]!, value: Number(m[2]!.replace(",", ".")) });
+    }
+    return dados.length ? { tipo: "pizza", titulo: limpa(titulo) || "Gráfico", unidade: "", dados } : null;
+  }
+  if (/^xychart(?:-beta)?$/.test(primeira)) {
+    let titulo = "";
+    let rotulos: string[] = [];
+    const barras: number[][] = [];
+    let outraSerie = false;
+    for (const l of linhas.slice(1)) {
+      const t = /^title\s+(.+)$/i.exec(l);
+      const x = /^x-axis\s+(?:"[^"]*"\s+|[^\s[]+\s+)?\[(.*)\]$/i.exec(l);
+      const b = /^bar\s+(?:"[^"]*"\s+)?\[(.*)\]$/i.exec(l);
+      if (t) titulo = limpa(t[1]!);
+      else if (x) rotulos = x[1]!.split(",").map(limpa).filter(Boolean);
+      else if (b) barras.push(b[1]!.split(",").map((v) => Number(v.trim())));
+      else if (/^line\b/i.test(l)) outraSerie = true;
+    }
+    const serie = barras[0];
+    if (outraSerie || barras.length !== 1 || !serie || !rotulos.length || rotulos.length !== serie.length || serie.some((v) => !Number.isFinite(v))) return null;
+    return { tipo: "barras", titulo: titulo || "Gráfico", unidade: "", dados: rotulos.map((label, i) => ({ key: `${i}-${label}`, label, value: serie[i]! })) };
+  }
+  return null;
+}
+
+const numeroBr = (v: number) => v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+
+function GraficoCard({ grafico }: { grafico: Grafico }) {
+  if (grafico.tipo === "pizza")
+    return (
+      <div className={styles.chart}>
+        <p className={cx(styles.paragraph, styles.strong)}>{grafico.titulo}</p>
+        <DonutChart data={grafico.dados} label={grafico.titulo} unit={grafico.unidade} formatValue={numeroBr} totalLabel="Total" otherLabel="Outros" emptyLabel="Sem dados" />
+      </div>
+    );
+  return (
+    <div className={styles.chart}>
+      <BarChart
+        data={grafico.dados.map((x) => ({ ...x, axisLabel: x.label.length > 9 ? `${x.label.slice(0, 8)}…` : x.label }))}
+        label={grafico.titulo}
+        period={grafico.titulo}
+        unit={grafico.unidade}
+        averageLabel="Média"
+        valueLabel="Valor"
+        categoryLabel="Item"
+        // a linha da média vem escrita "Avg" em inglês no componente: fica de fora (a média já aparece no título)
+        showAverage={false}
+        formatValue={numeroBr}
+      />
+    </div>
+  );
+}
+
 interface MarkdownProps {
   markdown: string;
   sources: Source[];
@@ -1295,6 +1460,8 @@ interface MarkdownProps {
   instant: boolean;
   still: boolean;
   onRevealed?: () => void;
+  /** Manda a opção escolhida num cartão ```ask como a próxima mensagem. */
+  onAsk?: (question: string) => void;
 }
 
 /** Reveals the answer by weight rather than by character, so tables and code surfaces settle at a readable pace. */
@@ -1307,6 +1474,7 @@ function MarkdownAnswer({
   hot,
   onHot,
   onRevealed,
+  onAsk,
 }: MarkdownProps) {
   const parsed = React.useMemo(() => parseMarkdown(markdown, live), [markdown, live]);
   const cumulative = React.useMemo(() => {
@@ -1415,17 +1583,26 @@ function MarkdownAnswer({
           }
           case "table":
             return <TableBlock key={index} block={block} shown={shownCount} />;
-          case "code":
-            // Fluxogramas (```mermaid ou conteúdo que parece Mermaid) viram desenho quando a resposta termina.
-            if (!live && shownCount >= parsed.total && pareceMermaid(block.language, block.source)) return <Mermaid key={index} code={block.source} />;
-            return (
-              <CodeBlock
-                key={index}
-                block={block}
-                shown={shownCount}
-                complete={!live && shownCount >= parsed.total}
-              />
-            );
+          case "code": {
+            const complete = !live && shownCount >= parsed.total;
+            // ```ask vira cartão de opções já enquanto chega (desabilitado até a resposta terminar).
+            if (CERCA_ASK.test(block.language) && (!complete || block.lines.some((line) => OPCAO.test(line.text)))) {
+              const visiveis = block.lines.filter((line) => line.i < shownCount).map((line) => line.text);
+              return <AskCard key={index} lines={visiveis} onAsk={onAsk} disabled={!complete} />;
+            }
+            if (complete) {
+              const mermaid = pareceMermaid(block.language, block.source);
+              const grafico = CERCA_GRAFICO.test(block.language)
+                ? (leGrafico(block.source) ?? graficoDoMermaid(block.source))
+                : mermaid
+                  ? graficoDoMermaid(block.source)
+                  : null;
+              if (grafico) return <GraficoCard key={index} grafico={grafico} />;
+              // Fluxogramas e o resto do Mermaid (```mermaid ou conteúdo que parece Mermaid) viram desenho quando a resposta termina.
+              if (mermaid) return <Mermaid key={index} code={block.source} />;
+            }
+            return <CodeBlock key={index} block={block} shown={shownCount} complete={complete} />;
+          }
         }
       })}
     </div>
@@ -2114,6 +2291,8 @@ interface TurnProps {
   onStop: () => void;
   onRegenerate: (mode: Mode, model: Model) => void;
   onAsk: (question: string) => void;
+  /** Opção escolhida num cartão ```ask: vai como a próxima mensagem da conversa. */
+  onChoose: (question: string) => void;
   onFeedback: (value: FeedbackValue | null, reason?: string) => void;
   onSelect: (index: number) => void;
   getLink: (version: number) => string | Promise<string>;
@@ -2128,6 +2307,7 @@ function TurnView({
   onStop,
   onRegenerate,
   onAsk,
+  onChoose,
   onFeedback,
   onSelect,
   getLink,
@@ -2261,6 +2441,7 @@ function TurnView({
               hot={hot}
               onHot={setHot}
               onRevealed={() => onRevealed(version.id)}
+              onAsk={onChoose}
             />
           </motion.div>
         </AnimatePresence>
@@ -2653,6 +2834,9 @@ export function AiAnswer({
                 onStop={stop}
                 onRegenerate={regenerate}
                 onAsk={ask}
+                // No app cada resposta é um AiAnswer próprio: a escolha vira mensagem nova da conversa (onFollowUp),
+                // sem trocar a resposta que tem o cartão.
+                onChoose={onFollowUp ?? ask}
                 onFeedback={feedback}
                 onSelect={(index) => dispatch({ type: "select", index })}
                 getLink={getLink}

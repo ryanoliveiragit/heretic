@@ -8,11 +8,12 @@ import { health, listProjects, createProject, deleteProject,
 import { getPersona, setPersona } from './persona.js';
 import { streamChat, qualityAnswer, enhancePrompt, imagePrompt, imageIntent, imageFollowups, agentTip, getRoutes, setRoute, MODEL_CATALOG, custoTurno } from './upstream.js';
 import { checkBudget, incrementUsage } from './budget.js';
-import { checkGlobalBudget, recordCost, recordFreeCost, freeClaudeOk } from './cost.js';
+import { checkGlobalBudget, recordCost, recordFreeCost, freeClaudeOk, freeDiaOk } from './cost.js';
+import { cortaHistorico, caracteresDe, FREE_MAX_INPUT_CHARS, PRO_MAX_INPUT_CHARS } from './entrada.js';
 import { registraUso, registraImagem, lePainel, nomeNivel, tabelaPrecos, saldosChaves } from './uso.js';
 import { AGENTS, agentPrompt } from './agents.js';
 import { planOf, tierOf, modelsFor, resolveModel, visitorIds, keyFrom, planForKey, isAdmin, FAIR_USE_MODEL, PUBLIC_MODELS } from './plans.js';
-import { creditBalance, spendCredits, addExtraCredits, priceCredits, throttle, MIN_TO_START, THROTTLE_SECONDS, THROTTLE_PRO_SECONDS } from './credits.js';
+import { creditBalance, spendCredits, addExtraCredits, priceCredits, tetoDeCreditos, throttle, MIN_TO_START, THROTTLE_SECONDS, THROTTLE_PRO_SECONDS } from './credits.js';
 import { LIMITS, RESOURCES, HIDDEN_BUCKETS, bucketOf, subjectsFor, peekQuota, consumeQuota, refundQuota, limitsStore, spendStatus, addSpend, idDaChave } from './limits.js';
 import { readAttachments, newUploads } from './attachments.js';
 import { v1 } from './v1.js';
@@ -49,18 +50,8 @@ const visibleLimits = () => Object.fromEntries(Object.entries(LIMITS).map(([r, b
 // Quem está sendo contado nos limites deste pedido.
 const subjectsOf = (c, plan) => subjectsFor({ plan, proKey: keyFrom(c), visitorIds: visitorIds(c) });
 // Corta o histórico antigo do grátis: o limite de mensagens não segura o tamanho de cada mensagem.
-const FREE_MAX_INPUT_CHARS = 48000;
-function capHistory(messages) {
-  let room = FREE_MAX_INPUT_CHARS;
-  const kept = [];
-  for (const m of [...messages].reverse()) {
-    const text = typeof m?.content === 'string' ? m.content : '';
-    if (room <= 0) break;
-    kept.unshift(text.length > room ? { ...m, content: text.slice(0, room) } : m);
-    room -= text.length;
-  }
-  return kept;
-}
+// Corte do histórico: grátis 48 mil caracteres, Pro 200 mil (dono 21/11). Ver src/entrada.js.
+const MSG_GRATIS_PAUSA = 'O plano grátis chegou ao limite de hoje. Volte amanhã ou assine o Pro.';
 const ATTACHMENT_ERRORS = {
   attachment_type: 'Tipo de arquivo não aceito. Envie JPG, PNG, WEBP, GIF ou PDF.',
   attachment_invalid: 'Não consegui abrir este arquivo.',
@@ -200,6 +191,8 @@ const MSG_SEM_CREDITOS = 'Acabaram as imagens do seu plano e os créditos. Image
 async function cobrancaImagem(subjects, pro, tier, admin = false) {
   // Administrador: sem cota de imagens, sem teto e sem créditos.
   if (admin) return { modo: 'admin', charges: [], reserved: { quotas: undefined } };
+  // Teto total do grátis no dia (dono 21/11): imagem também para quando ele estoura.
+  if (!pro && !(await freeDiaOk().catch(() => true))) return { erro: { error: 'free_day_cap', message: MSG_GRATIS_PAUSA }, status: 429 };
   const charges = [{ resource: 'image_gen', bucket: pro ? 'pro' : 'free' }];
   const teto = pro ? await spendStatus(subjects, 'pro').catch(() => ({})) : {};
   if (!teto.blocked) {
@@ -216,6 +209,7 @@ const podePagar = (cob, motor) => cob.modo !== 'creditos' || cob.saldo >= IMG_CR
 async function fecharCobranca(subjects, tier, cob, motor) {
   // Painel do dono (21/11): só a contagem e o custo da imagem, nunca o pedido.
   await registraImagem({ sid: subjects[0]?.id, tier, admin: cob.modo === 'admin', motor, custo: MOTOR_USD[motor], creditos: cob.modo === 'creditos' ? IMG_CREDITOS[motor] : 0 }).catch(() => {});
+  if (tier === 'free' && cob.modo !== 'admin') await recordFreeCost(MOTOR_USD[motor]).catch(() => {}); // teto do dia do grátis
   if (cob.modo === 'creditos') { await spendCredits(subjects[0].id, tier, IMG_CREDITOS[motor]).catch(() => {}); return IMG_CREDITOS[motor]; }
   if (cob.modo === 'admin') return 0;
   if (tier !== 'free') await addSpend(subjects, 'pro', MOTOR_USD[motor]).catch(() => {});
@@ -502,7 +496,7 @@ app.options('/api/admin/painel', (c) => { corsPainel(c); return c.body(null, 204
 app.get('/api/admin/painel', async (c) => {
   corsPainel(c);
   if (!isAdmin(c)) return c.json({ error: 'admin', message: 'Só com a chave de administrador.' }, 401);
-  const fx = Number(process.env.PAINEL_FX_BRL) || 5.94;
+  const fx = Number(process.env.PAINEL_FX_BRL) || 5.95; // mesmo câmbio dos créditos (21/11)
   const [dados, saldos] = await Promise.all([lePainel({ fx, idDaChave }), saldosChaves()]);
   return c.json({ ...dados, saldos, precos: tabelaPrecos(MODEL_CATALOG, PERIODS, fx) });
 });
@@ -544,7 +538,9 @@ app.post('/api/chat', async (c) => {
   const parsed = readAttachments(body.messages);
   if (parsed.error) return c.json({ error: parsed.error, message: ATTACHMENT_ERRORS[parsed.error] }, 400);
   if (parsed.count && bucket === 'free') return c.json({ error: 'pro_attachment', message: 'Imagem e PDF fazem parte dos modelos Pro.' }, 403);
-  const chatMessages = plan === 'pro' ? parsed.messages : capHistory(parsed.messages);
+  const chatMessages = cortaHistorico(parsed.messages, plan === 'pro' ? PRO_MAX_INPUT_CHARS : FREE_MAX_INPUT_CHARS);
+  // Teto total do grátis no dia (dono 21/11): passou, pausa até amanhã. Falha do Redis não bloqueia.
+  if (bucket === 'free' && !admin && !(await freeDiaOk().catch(() => true))) return c.json({ error: 'free_day_cap', message: MSG_GRATIS_PAUSA }, 429);
 
   const budget = checkBudget();
   if (budget.blocked && !admin) return c.json({ error: 'Daily limit reached' }, 429);
@@ -566,8 +562,15 @@ app.post('/api/chat', async (c) => {
     return c.json({ error: 'slow_down', message: `Calma: espere ${freio} segundos entre uma mensagem e outra.` }, 429);
   }
   // Modelos de ponta só com créditos.
+  let limiteSaida = null; // créditos: a saída máxima que o saldo paga
   if (bucket === 'credits') {
     const bal = await creditBalance(subjects[0].id, tier);
+    const cat = MODEL_CATALOG.find(m => m.id === modelId);
+    // Pior caso (entrada inteira + saída máxima, com folga) tem de caber no saldo: nunca fica negativo.
+    // Entrada estimada: o texto da conversa (~3,5 caracteres por token) + ~5 mil do prompt do site.
+    const teto = cat ? tetoDeCreditos({ saldo: bal.total, precoEntrada: cat.price_in, precoSaida: cat.price_out, tokensEntrada: Math.ceil(caracteresDe(chatMessages) / 3.5) + 5000, saidaPedida: maxTokensFor(modelId) }) : { ok: true, maxSaida: null };
+    if (!teto.ok) return c.json({ error: 'no_credits', message: `Esta mensagem pode custar até ${teto.precisa} créditos e você tem ${bal.total}. Os modelos 451 Rapid, Titan e Max seguem no uso justo do Pro; para Hermes e Kimi, recarregue créditos.` }, 402);
+    limiteSaida = teto.maxSaida;
     if (bal.total < MIN_TO_START) return c.json({ error: 'no_credits', message: 'Seus créditos acabaram. Os modelos 451 Rapid, Titan e Max seguem no uso justo do Pro; para Hermes e Kimi, recarregue créditos ou espere a cota do próximo mês.', credits: bal }, 402);
   }
   // Administrador: nada a reservar (sem cota de mensagens, imagens enviadas ou arquivos).
@@ -621,6 +624,7 @@ app.post('/api/chat', async (c) => {
     ...(effortNorm ? { effort: effortNorm } : {}),
   };
 
+  if (limiteSaida) params.max_tokens = Math.min(params.max_tokens, limiteSaida);
   const ac = new AbortController();
   let fullText = '';
 

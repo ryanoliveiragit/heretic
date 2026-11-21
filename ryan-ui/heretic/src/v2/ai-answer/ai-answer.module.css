@@ -465,8 +465,20 @@
   text-wrap: balance;
 }
 .body > .code,
-.body > .tableWrap {
+.body > .tableWrap,
+.body > .ask,
+.body > .chart {
   margin-block: 8px;
+}
+/* Cartão de opções (```ask): a pergunta e as opções do RadioCards logo abaixo. */
+.ask {
+  display: grid;
+  gap: 12px;
+}
+/* Largura cheia: a rosca da ryan-ui mede o próprio espaço (container query); centralizar encolhia e cortava. */
+.chart {
+  display: grid;
+  gap: 12px;
 }
 .strong {
   font-weight: 500;

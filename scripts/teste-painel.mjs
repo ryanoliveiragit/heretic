@@ -85,6 +85,15 @@ for (const u of d.usuarios) {
 console.log(`grátis (7 dias): ${d.gratis.semana.msgs} mensagens, ${d.gratis.semana.visitantes} visitante(s), custo R$ ${d.gratis.semana.custo_rs}, Claude respondeu ${d.gratis.semana.claude.respondeu}`);
 console.log(`totais: ${JSON.stringify(d.totais)}`);
 console.log(`pagamentos: ${JSON.stringify(d.pagamentos)}`);
+// Detalhe por mensagem (21/11): rota, tokens, cache e a parte de cada chamada paga no custo.
+console.log(`\núltimas mensagens (${d.mensagens.length}):`);
+for (const m of d.mensagens) {
+  console.log(`- ${m.plano} ${m.id} · ${m.nivel || m.imagem} · rota ${(m.rota || []).join(' → ') || '—'} · Claude ${m.claude || '—'} · entrada ${m.tin} (cache gravado ${m.cg}, lido ${m.cl}) · saída ${m.tout} · US$ ${m.usd} = R$ ${m.custo_rs}`);
+  const soma = (m.partes || []).reduce((t, x) => t + x.usd, 0);
+  for (const x of m.partes || []) console.log(`     ${x.p}: ${x.m} · ${x.tin} entrada${x.cg ? ` (${x.cg} gravando cache)` : ''}${x.cl ? ` (${x.cl} do cache)` : ''} · ${x.tout} saída · US$ ${x.usd} = R$ ${x.custo_rs}`);
+  if (m.partes && Math.abs(soma - m.usd) > 0.000002) console.log(`     !! partes somam US$ ${soma.toFixed(6)}, mensagem US$ ${m.usd}`);
+}
+console.log(`\ncusto por modelo: ${d.custo_por_modelo.map((a) => `${a.modelo} (${a.papel}) ${a.chamadas}x R$ ${a.custo_rs}`).join(' · ')}`);
 // Nenhum texto de conversa pode estar guardado.
 const tudo = JSON.stringify([...uso._memoria().entries()].map(([k, v]) => [k, v instanceof Map ? [...v.entries()] : v instanceof Set ? [...v] : v]));
 const vazou = ['PERGUNTA-SECRETA', 'RESPOSTA-SECRETA', 'Desculpe, mas'].filter((t) => tudo.includes(t) || JSON.stringify(d).includes(t));

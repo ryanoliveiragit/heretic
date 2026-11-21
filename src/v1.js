@@ -19,7 +19,8 @@ import { streamChat, MODEL_CATALOG, enhancePrompt, custoTurno } from './upstream
 import { registraUso, nomeNivel } from './uso.js';
 import { bucketOf, subjectsFor, consumeQuota, refundQuota, spendStatus, addSpend } from './limits.js';
 import { checkGlobalBudget, recordCost } from './cost.js';
-import { creditBalance, spendCredits, priceCredits, throttle, MIN_TO_START, THROTTLE_SECONDS, THROTTLE_PRO_SECONDS } from './credits.js';
+import { creditBalance, spendCredits, priceCredits, tetoDeCreditos, throttle, MIN_TO_START, THROTTLE_SECONDS, THROTTLE_PRO_SECONDS } from './credits.js';
+import { cortaHistorico, caracteresDe, PRO_MAX_INPUT_CHARS } from './entrada.js';
 
 export const v1 = new Hono();
 
@@ -200,9 +201,14 @@ v1.post('/chat/completions', async (c) => {
   const subjects = await subjectsFor({ plan: 'pro', proKey: key, visitorIds: [] });
   if (!admin && !(await throttle(subjects[0].id, THROTTLE_PRO_SECONDS))) return oaErr(c, 429, `Muitas chamadas: espere ${THROTTLE_PRO_SECONDS}s entre uma mensagem e outra.`, 'rate_limit');
 
-  // Hermes/Kimi: precisa de créditos.
+  // Hermes/Kimi: precisa de créditos, e o pior caso tem de caber no saldo (nunca fica negativo, 21/11).
+  let limiteSaida = null;
   if (bucket === 'credits') {
     const bal = await creditBalance(subjects[0].id, tier);
+    const cat = MODEL_CATALOG.find(m => m.id === modelId);
+    const teto = cat ? tetoDeCreditos({ saldo: bal.total, precoEntrada: cat.price_in, precoSaida: cat.price_out, tokensEntrada: Math.ceil(caracteresDe(messages) / 3.5) + 5000, saidaPedida: Math.min(Number(body.max_tokens) || 4096, 8192) }) : { ok: true, maxSaida: null };
+    if (!teto.ok) return oaErr(c, 402, `Esta mensagem pode custar até ${teto.precisa} créditos e o saldo é ${bal.total}. Rapid, Titan e Max seguem no uso justo do Pro.`, 'no_credits');
+    limiteSaida = teto.maxSaida;
     if (bal.total < MIN_TO_START) return oaErr(c, 402, 'Sem créditos para Hermes/Kimi. Rapid, Titan e Max seguem no uso justo do Pro.', 'no_credits');
   }
 
@@ -227,7 +233,8 @@ v1.post('/chat/completions', async (c) => {
   // responder igual aqui e lá. Antes a API montava só persona + IDENTITY + idLine, sem o plano e
   // sem o prompt de agente — e o Max respondia diferente do chat (dono 20/11).
   const parsed = toChat(messages);
-  const chat = parsed.chat;
+  // Pro também tem teto de entrada (21/11): 200 mil caracteres, os mais recentes. Ver src/entrada.js.
+  const chat = cortaHistorico(parsed.chat, PRO_MAX_INPUT_CHARS);
   const publicId = PUBLIC_BY_INTERNAL[modelId] || body.model || '451-titan';
   const modeloNome = API_MODELS.find(m => m.id === publicId)?.name || '451';
   const planLine = `Plano ${tier === 'plus' ? 'Pro Plus' : 'Pro'}. Respostas diretas, sem repetir contexto.`;
@@ -247,6 +254,7 @@ v1.post('/chat/completions', async (c) => {
     ...(tools.length ? { tools, ...(body.tool_choice ? { tool_choice: body.tool_choice } : {}) } : {}),
     ...(effortNorm ? { effort: effortNorm } : {}),
   };
+  if (limiteSaida) params.max_tokens = Math.min(params.max_tokens, limiteSaida);
 
   const usage = {};
   let doneId = modelId; // o roteador/escalada pode trocar o modelo que responde
