@@ -1,3 +1,21 @@
+## 2026-11-21 (16h40) — PUBLICADO: totais por dia no /api/admin/painel ("geral") e 200 mensagens
+
+Pedido do dono via agente Redesig geral (painel novo do 451 Painel): uso por dia e por grupo desde agora.
+- `src/uso.js`: hash `451:uso:geral:AAAA-MM-DD` (guarda 400 dias) com HINCRBY no mesmo pipeline do registro:
+  grupo (`Grátis` p/ free não-admin, senão o nível: Rapid, Titan, Max, Kimi, Hermes, gpt-oss…) com msgs, custo
+  (micro-US$), Claude respondeu/recusou/falhou e o modelo do repasse; plano (free/pro/admin); modelo
+  (entregues, chamadas, custo somado das partes); cache do Claude (gravou/leu, n e custo); imagens por plano.
+  Zeros não são enviados. Só números e nomes de modelo. Dias em UTC (como o resto do painel).
+- `GET /api/admin/painel`: `geral = { inicio: '2026-11-21', dias: [últimos 30], total }` (dias antes da
+  janela de 30 somados e guardados 2 dias em `451:uso:geral:soma:<corte>`); `mensagens` até 200 (antes 60).
+- Custo medido sem rede (`scripts/teste-comandos-redis.mjs`, Upstash falso que conta comandos): +4 comandos
+  por mensagem no gpt-oss grátis, +12 a +13 nos que passam pelo Claude; leitura do painel +30 no máximo.
+  Base medida: 105 comandos por mensagem grátis no Claude (64 só do /api/me), 74 no gpt-oss, 67 no Pro.
+  O Upstash do 451 está nas variáveis à mão (fora da integração da Vercel): plano não confirmado; se for o
+  grátis (500 mil comandos/mês) a folga é de ~140 mensagens grátis/dia. Pagando por uso: US$ 0,20/100 mil.
+- Deploy `dpl_8mhpTDmeWmFEXbYZwUN4da8UjwKf`; conferido com 1 mensagem grátis no gpt-oss e leitura de admin.
+  **Undo:** `npx vercel rollback https://451sh-gfbn94ymq-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`
+
 ## 2026-11-21 (15h50) — PUBLICADO: só o gpt-oss entre os locais; Rapid grátis com limite
 
 Pedido do dono: "deixar só o melhor gratuito no app… ele free sem limite; o Rapid free com limite; o resto igual".

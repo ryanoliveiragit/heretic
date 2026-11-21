@@ -23,6 +23,35 @@ const MSGS = '451:uso:msgs';
 const MSGS_U = (sid) => `451:uso:m:${sid}`;
 const GUARDA_MSGS = String(30 * 86400);
 const r6 = (v) => Math.round((Number(v) || 0) * 1e6) / 1e6;
+// Totais por dia (painel novo, 21/11, pedido do dono via Redesig geral): um hash por dia com contadores por grupo
+// (Grátis ou nível), plano, modelo, cache do Claude e imagens. Só números e nomes de modelo, nunca texto.
+// Custo: 4 a 13 comandos HINCRBY a mais por mensagem (medido sem rede em scripts/teste-comandos-redis.mjs);
+// os de valor zero não são enviados. Guarda 400 dias.
+const GERAL = (dia) => `451:uso:geral:${dia}`;
+const GERAL_SOMA = (corte) => `451:uso:geral:soma:${corte}`;
+export const INICIO_GERAL = '2026-11-21';
+const GUARDA_GERAL = String(400 * 86400);
+const grupoDe = (tier, admin, nivel) => (tier === 'free' && !admin ? 'Grátis' : String(nivel || 'outro'));
+const planoDe = (tier, admin) => (admin ? 'admin' : tier === 'free' ? 'free' : 'pro');
+function geralCmds({ dia, tier, admin, nivel, claude, entregou, micro, partes }) {
+  const k = GERAL(dia), g = grupoDe(tier, admin, nivel), pl = planoDe(tier, admin), c = [];
+  const inc = (campo, v) => { if (v) c.push(['HINCRBY', k, campo, String(v)]); };
+  inc(`g|${g}|n`, 1); inc(`g|${g}|c`, micro);
+  if (claude) inc(`g|${g}|cl|${claude}`, 1);
+  if (claude && claude !== 'respondeu' && entregou) inc(`g|${g}|r|${entregou}`, 1); // para qual modelo o Claude repassou
+  inc(`p|${pl}|n`, 1); inc(`p|${pl}|c`, micro);
+  if (entregou) inc(`m|${entregou}|e`, 1);
+  const porModelo = new Map();
+  for (const x of partes) { const a = porModelo.get(x.m) || { c: 0, k: 0 }; a.c += Math.round(x.usd * 1e6); a.k += 1; porModelo.set(x.m, a); }
+  for (const [m, a] of porModelo) { inc(`m|${m}|c`, a.c); inc(`m|${m}|k`, a.k); }
+  for (const x of partes) {
+    if (x.p !== 'resposta' || !/^Claude/.test(x.m)) continue; // cache do Claude: a chamada que respondeu
+    const qual = x.cg ? 'g' : x.cl ? 'l' : null;
+    if (qual) { inc(`cache|${qual}|n`, 1); inc(`cache|${qual}|c`, Math.round(x.usd * 1e6)); }
+  }
+  if (c.length && Math.random() < 0.1) c.push(['EXPIRE', k, GUARDA_GERAL]); // validade: 1 em 10 mensagens basta
+  return c;
+}
 // No grátis o id é o IP: no detalhe vai só um apelido (hash com o segredo do servidor), nunca o IP.
 function apelido(sid, tier, admin) {
   if (!(tier === 'free' && !admin)) return String(sid).slice(-6);
@@ -142,6 +171,7 @@ export async function registraUso({ sid, tier, admin = false, nivel, usoJusto = 
     if (usage.cache_lida) cmds.push(['HINCRBY', k, 'cache_lida', String(usage.cache_lida)]);
     if (fonte === 'api') cmds.push(['HINCRBY', k, 'api', '1']);
   }
+  cmds.push(...geralCmds({ dia, tier, admin, nivel, claude, entregou, micro: Number(micro), partes }));
   await exec(cmds);
 }
 
@@ -151,7 +181,10 @@ export async function registraImagem({ sid, tier, admin = false, motor, custo = 
   const agora = Date.now(), dia = new Date(agora).toISOString().slice(0, 10);
   const micro = String(Math.max(0, Math.round((Number(custo) || 0) * 1e6)));
   const linha = JSON.stringify({ t: agora, id: apelido(sid, tier, admin), plano: admin ? 'admin' : tier, imagem: motor, usd: r6(custo), creditos: Math.round(Number(creditos) || 0) });
-  await exec([['LPUSH', MSGS, linha], ['LTRIM', MSGS, '0', '499']]);
+  const kg = GERAL(dia), pl = planoDe(tier, admin);
+  const geral = [['HINCRBY', kg, `img|${pl}|n`, '1'], ['HINCRBY', kg, `m|${motor}|k`, '1']];
+  if (Number(micro)) geral.push(['HINCRBY', kg, `img|${pl}|c`, micro], ['HINCRBY', kg, `m|${motor}|c`, micro]);
+  await exec([['LPUSH', MSGS, linha], ['LTRIM', MSGS, '0', '499'], ...geral]);
   if (tier === 'free' && !admin) {
     await exec([['HINCRBY', GRATIS(dia), 'imagens', '1'], ['HINCRBY', GRATIS(dia), 'img_custo_micro', micro], ['EXPIRE', GRATIS(dia), GUARDA_GRATIS],
       ['PFADD', GRATIS_VIS(dia), sid], ['EXPIRE', GRATIS_VIS(dia), GUARDA_GRATIS]]);
@@ -282,7 +315,8 @@ export async function lePainel({ fx = 5.94, idDaChave, dias = 30, diasTotal = 12
     .sort((a, b) => b.usd - a.usd);
   return {
     geradoEm: Date.now(), cambio: fx,
-    mensagens: mensagens.slice(0, 60), custo_por_modelo: custoPorModelo, mensagens_lidas: mensagens.length,
+    mensagens: mensagens.slice(0, 200), custo_por_modelo: custoPorModelo, mensagens_lidas: mensagens.length,
+    geral: await leGeral().catch((e) => { console.error('[painel] geral:', e.message); return null; }),
     // Desde o início do registro: recebido e custo dos pagantes. O grátis vai à parte (últimos 30 dias)
     // e o uso do próprio dono (chave de admin) também, porque não tem receita.
     totais: {
@@ -298,6 +332,57 @@ export async function lePainel({ fx = 5.94, idDaChave, dias = 30, diasTotal = 12
     },
     usuarios, gratis, pagamentos,
   };
+}
+
+// ── totais por dia (painel novo) ──
+const somaHash = (alvo, h) => { for (const [k, v] of Object.entries(h)) alvo[k] = (alvo[k] || 0) + num(v); return alvo; };
+/** Campos do hash do dia → { grupos, planos, modelos, cache, imagens } (custos em micro-US$). */
+function estrutura(h) {
+  const out = { grupos: {}, planos: {}, modelos: {}, cache: { gravou: { msgs: 0, custo_micro: 0 }, leu: { msgs: 0, custo_micro: 0 } }, imagens: {} };
+  for (const [campo, valor] of Object.entries(h || {})) {
+    const v = num(valor), p = campo.split('|');
+    if (p[0] === 'g') {
+      const g = out.grupos[p[1]] || (out.grupos[p[1]] = { msgs: 0, custo_micro: 0, claude: { respondeu: 0, recusou: 0, falhou: 0 }, repasse: {} });
+      if (p[2] === 'n') g.msgs += v; else if (p[2] === 'c') g.custo_micro += v;
+      else if (p[2] === 'cl') g.claude[p[3]] = (g.claude[p[3]] || 0) + v;
+      else if (p[2] === 'r') { const m = p.slice(3).join('|'); g.repasse[m] = (g.repasse[m] || 0) + v; }
+    } else if (p[0] === 'p') {
+      const pl = out.planos[p[1]] || (out.planos[p[1]] = { msgs: 0, custo_micro: 0 });
+      if (p[2] === 'n') pl.msgs += v; else if (p[2] === 'c') pl.custo_micro += v;
+    } else if (p[0] === 'm') {
+      const m = out.modelos[p[1]] || (out.modelos[p[1]] = { entregues: 0, chamadas: 0, custo_micro: 0 });
+      if (p[2] === 'e') m.entregues += v; else if (p[2] === 'k') m.chamadas += v; else if (p[2] === 'c') m.custo_micro += v;
+    } else if (p[0] === 'cache') {
+      const c = p[1] === 'g' ? out.cache.gravou : out.cache.leu;
+      if (p[2] === 'n') c.msgs += v; else if (p[2] === 'c') c.custo_micro += v;
+    } else if (p[0] === 'img') {
+      const i = out.imagens[p[1]] || (out.imagens[p[1]] = { n: 0, custo_micro: 0 });
+      if (p[2] === 'n') i.n += v; else if (p[2] === 'c') i.custo_micro += v;
+    }
+  }
+  return out;
+}
+/** Últimos 30 dias (desde 21/11) e a soma desde o início. Os dias antes da janela ficam somados por 2 dias. */
+async function leGeral(agora = Date.now()) {
+  const dias = [];
+  for (let i = 0; i < 30; i++) { const d = new Date(agora - i * 86400000).toISOString().slice(0, 10); if (d < INICIO_GERAL) break; dias.push(d); }
+  const hashes = (dias.length ? await exec(dias.map((d) => ['HGETALL', GERAL(d)])) : []).map(hashDe);
+  const total = {};
+  hashes.forEach((h) => somaHash(total, h));
+  const corte = dias[dias.length - 1];
+  if (dias.length === 30 && corte > INICIO_GERAL) {
+    let antes = null;
+    try { const raw = (await exec([['GET', GERAL_SOMA(corte)]]))[0]; antes = raw ? JSON.parse(raw) : null; } catch { antes = null; }
+    if (!antes) {
+      antes = {};
+      const velhos = [];
+      for (let t = Date.parse(`${INICIO_GERAL}T00:00:00Z`); velhos.length < 400; t += 86400000) { const d = new Date(t).toISOString().slice(0, 10); if (d >= corte) break; velhos.push(d); }
+      for (let i = 0; i < velhos.length; i += 100) (await exec(velhos.slice(i, i + 100).map((d) => ['HGETALL', GERAL(d)]))).forEach((b) => somaHash(antes, hashDe(b)));
+      await exec([['SET', GERAL_SOMA(corte), JSON.stringify(antes), 'EX', '172800']]);
+    }
+    somaHash(total, antes);
+  }
+  return { inicio: INICIO_GERAL, dias: dias.map((dia, i) => ({ dia, ...estrutura(hashes[i]) })), total: estrutura(total) };
 }
 
 // ── preços e saldos para o painel ──
