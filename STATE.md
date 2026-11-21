@@ -15,6 +15,8 @@ Decisão do dono (pergunta no chat): "Publicar tudo já", sem rodar de novo a ba
 - **Undo:** `npx vercel rollback https://451sh-kwo3gnx80-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`
   (deploy anterior `dpl_6FqQP8msNTaFXYJadiJeEB3JHBXK`).
 - Não testado: iPhone/Safari de verdade; a bateria "não sei" do grátis com a busca do Claude (antes: 13/15).
+- Depois do deploy: troca de modelos não publicada reaplicada na árvore de trabalho; `backups/troca-modelos-2111/troca.patch`
+  atualizado para o commit 4181335 (antes de publicar de novo: `git apply -R backups/troca-modelos-2111/troca.patch`).
 
 
 Pedido do dono: "usar o Claude pro máximo de coisas que der"; "a uncensored entra na parte da censura".
