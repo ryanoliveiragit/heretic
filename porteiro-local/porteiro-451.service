@@ -1,0 +1,11 @@
+[Unit]
+Description=Porteiro do 451: túnel com senha até os modelos locais (porta 8017 -> gateway 8000)
+After=network-online.target
+
+[Service]
+ExecStart=/home/ethical/.nvm/versions/node/v24.20.0/bin/node /home/ethical/OpenBot/Agents/agent-93309c59-405f-4014-907c-1678704894c7/porteiro-local/porteiro.mjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

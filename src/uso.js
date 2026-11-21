@@ -83,9 +83,11 @@ export async function _gravaPedidoTeste(order) { await exec([['SET', `pay:order:
 const NIVEIS = {
   'zai-org/glm-5.3-flash-uncensored': 'Rapid', 'nousresearch/hermes-4-405b': 'Titan', 'claude-sonnet-5-5': 'Max',
   'hermes-4-405b': 'Hermes', 'kimi-k3.1-pro-uncensored': 'Kimi', 'sao10k/l3.1-euryale-70b': 'Titan',
+  'local:qwen35b': 'Qwen 35B local', 'local:gemma26b': 'Gemma 26B local', 'local:gptoss20b': 'gpt-oss 20B local',
 };
 export const nomeNivel = (modelId) => NIVEIS[modelId] || String(modelId || 'outro').split('/').pop();
 const MODELOS = [
+  [/^local\/(qwen3\.6-35b|qwen3-4b)/, 'Qwen 35B local'], [/^local\/gemma-4-26b/, 'Gemma 26B local'], [/^local\/gpt-oss-20b/, 'gpt-oss 20B local'],
   [/claude-sonnet/, 'Claude Sonnet'], [/claude-opus/, 'Claude Opus'], [/claude-haiku/, 'Claude Haiku'],
   [/glm-4\.7/, 'GLM 4.7'], [/glm-5\.3/, 'GLM 5.3'], [/1017-heretic/, 'DeepSeek Heretic'], [/1017-uncensored/, 'DeepSeek 1017'],
   [/deepseek-v4\.1-flash-uncensored/, 'DeepSeek V4.1'], [/dolphin/, 'Dolphin'], [/cydonia/, 'Cydonia'],

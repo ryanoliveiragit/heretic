@@ -49,7 +49,7 @@ const DEFAULT_LIMITS = {
     credits: { '5h': 3, day: 6, week: 15, month: 30 },
   },
 };
-export const HIDDEN_BUCKETS = ['pro', 'pro_rapid', 'credits'];
+export const HIDDEN_BUCKETS = ['pro', 'pro_rapid', 'credits', 'local'];
 
 function loadLimits() {
   let custom = {};
@@ -73,6 +73,8 @@ export const RESOURCES = Object.keys(LIMITS);
 
 /** Qual contador um pedido usa: depende do plano e do modelo. */
 export function bucketOf(modelId, tier = 'free') {
+  // Modelos locais (21/11): sem cota e sem custo, em qualquer plano.
+  if (String(modelId || '').startsWith('local:')) return 'local';
   if (tier === 'free') return 'free';
   if (modelId === 'hermes-4-405b' || modelId === 'kimi-k3.1-pro-uncensored') return 'credits';
   return 'pro';

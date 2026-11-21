@@ -92,6 +92,8 @@ type FeedbackValue = "up" | "down";
 
 export type RespondEvent =
   | { type: "reasoning"; text: string }
+  /** Aviso enquanto espera (ex.: fila do modelo local); null limpa e volta ao "Pensando". */
+  | { type: "status"; text: string | null }
   | { type: "sources"; sources: Source[] }
   | { type: "thought"; seconds: number }
   | { type: "text"; text: string }
@@ -127,6 +129,8 @@ interface Version {
   error?: string;
   instant?: boolean;
   feedback?: FeedbackValue;
+  /** Aviso no lugar do "Pensando" enquanto a resposta não começa (fila, troca de modelo). */
+  aviso?: string;
 }
 
 interface Turn {
@@ -752,6 +756,8 @@ function reducer(state: Turn | null, action: Action): Turn | null {
         switch (event.type) {
           case "reasoning":
             return { ...version, reasoning: version.reasoning + event.text };
+          case "status":
+            return { ...version, aviso: event.text || undefined };
           case "sources":
             return { ...version, sources: event.sources };
           case "thought":
@@ -2326,14 +2332,14 @@ function TurnView({
 
   const label =
     version.status === "thinking"
-      ? "Pensando"
+      ? version.aviso || "Pensando"
       : version.thought !== undefined
         ? `Pensou por ${version.thought} s`
         : version.firstText
           ? `Pensou por ${Math.round((version.firstText - version.started) / 1e3)} s`
           : version.status === "stopped"
             ? "Parou enquanto pensava"
-            : "Reasoning";
+            : "Raciocínio";
   const showReasoning = version.status === "thinking" || version.reasoning.length > 0;
 
   const shareLink = React.useCallback(
@@ -2384,7 +2390,7 @@ function TurnView({
                 {version.reasoning ? (
                   <Reasoning text={version.reasoning} live={version.status === "thinking"} />
                 ) : (
-                  <p className={styles.muted}>Waiting for the first thought</p>
+                  <p className={styles.muted}>{version.aviso || "Esperando o primeiro pensamento"}</p>
                 )}
               </div>
             </Panel>

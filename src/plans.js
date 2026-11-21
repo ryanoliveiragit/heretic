@@ -147,6 +147,39 @@ export const PUBLIC_MODELS = PUBLIC_MODELS_RAW.filter(raw => raw.id !== LEGACY_F
   return { ...raw, provider: m?.provider || null, price_in: m?.price_in ?? null, price_out: m?.price_out ?? null, ctx: m?.ctx ?? null, cost100: m ? costPer100(m) : null };
 });
 
+// ── Modelos locais (21/11) ──
+// Rodam no computador do 451 (gateway do agente Super Hacking), de graça, com fila e troca de modelo.
+// Enquanto o dono compara os três, só o administrador vê (balde 'local': sem cota nem custo). Quando
+// ele escolher, a variável LOCAL_FREE_MODEL=<id> na Vercel libera esse modelo para todo mundo, grátis e
+// sem limite de mensagens (o freio de velocidade entre mensagens e a fila continuam valendo).
+// Números do teste do Super Hacking em 21/11 (6 pedidos sensíveis, 11 casos de código, conta e dia da semana).
+const localGuide = (style) => ({
+  role: 'Roda no computador do 451: grátis e sem censura.',
+  bestFor: 'Conversa, explicação e código do dia a dia.',
+  style,
+  limits: [
+    'Uma máquina só: com muita gente há fila, e trocar de modelo leva até 1 minuto.',
+    'Só texto: não lê imagem nem PDF e não busca na web.',
+    'Conversa longa mantém só as últimas mensagens.',
+  ],
+  fallback: 'Se o computador do 451 estiver fora do ar, escolha outro modelo.',
+  tested: 'Medido em 21/11/2026.',
+});
+export const LOCAL_MODELS = [
+  { id: 'local:qwen35b', name: 'Qwen 35B (local)', short: 'Qwen 35B', tier: 'free', quality: 3, local: true,
+    guide: localGuide('19,6 tokens/s; respondeu 6 de 6 pedidos sensíveis e acertou 11 de 11 no código; errou a conta e o dia da semana. Recusas publicadas pelos autores: 10 em 100.') },
+  { id: 'local:gemma26b', name: 'Gemma 26B (local)', short: 'Gemma 26B', tier: 'free', quality: 3, local: true,
+    guide: localGuide('17,0 tokens/s; 6 de 6 sensíveis e 11 de 11 no código; acertou o dia, errou a conta. Recusas publicadas pelos autores: 2 em 100.') },
+  { id: 'local:gptoss20b', name: 'gpt-oss 20B (local)', short: 'gpt-oss 20B', tier: 'free', quality: 3, local: true,
+    guide: localGuide('21,7 tokens/s, o mais rápido; 6 de 6 sensíveis e 11 de 11 no código; acertou a conta e o dia. Recusas publicadas pelos autores: 3 em 100.') },
+];
+/** Modelo local liberado para todos (vazio = só o administrador vê os locais). */
+export const localLiberado = () => {
+  const id = (process.env.LOCAL_FREE_MODEL || '').trim();
+  return LOCAL_MODELS.some((m) => m.id === id) ? id : '';
+};
+const localVisivel = (id, admin) => admin || id === localLiberado();
+
 // ── access codes ──
 // Free is public (no code needed). A valid access code unlocks Pro (all models).
 // Two kinds of valid code, both checked without any database:
@@ -262,8 +295,11 @@ export function planOf(c) {
   return tierOf(c) === 'free' ? 'free' : 'pro';
 }
 
-export function modelsFor(plan) {
-  return PUBLIC_MODELS.map(m => ({ ...m, locked: m.tier !== 'free' && plan !== 'pro' }));
+export function modelsFor(plan, { admin = false } = {}) {
+  const base = PUBLIC_MODELS.map(m => ({ ...m, locked: m.tier !== 'free' && plan !== 'pro' }));
+  const locais = LOCAL_MODELS.filter(m => localVisivel(m.id, admin))
+    .map(m => ({ ...m, locked: false, teste: m.id !== localLiberado() }));
+  return [...base, ...locais];
 }
 
 export function canUse(plan, modelId) {
@@ -273,7 +309,8 @@ export function canUse(plan, modelId) {
 }
 
 /** Modelo que atende o pedido. Id antigo salvo no aparelho (ou de reserva) vira o modelo grátis; Pro sem plano devolve null. */
-export function resolveModel(plan, requested) {
+export function resolveModel(plan, requested, { admin = false } = {}) {
+  if (LOCAL_MODELS.some(x => x.id === requested)) return localVisivel(requested, admin) ? requested : FREE_MODEL;
   const m = PUBLIC_MODELS.find(x => x.id === requested);
   if (m && m.tier === 'pro') return plan === 'pro' ? m.id : null;
   return FREE_MODEL;

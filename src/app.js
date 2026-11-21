@@ -12,7 +12,8 @@ import { checkGlobalBudget, recordCost, recordFreeCost, freeClaudeOk, freeDiaOk 
 import { cortaHistorico, caracteresDe, FREE_MAX_INPUT_CHARS, PRO_MAX_INPUT_CHARS } from './entrada.js';
 import { registraUso, registraImagem, lePainel, nomeNivel, tabelaPrecos, saldosChaves } from './uso.js';
 import { AGENTS, agentPrompt } from './agents.js';
-import { planOf, tierOf, modelsFor, resolveModel, visitorIds, keyFrom, planForKey, isAdmin, FAIR_USE_MODEL, PUBLIC_MODELS } from './plans.js';
+import { planOf, tierOf, modelsFor, resolveModel, visitorIds, keyFrom, planForKey, isAdmin, FAIR_USE_MODEL, PUBLIC_MODELS, LOCAL_MODELS } from './plans.js';
+import { gravaUrlLocal, tokenConfere, URL_TUNEL } from './local.js';
 import { creditBalance, spendCredits, addExtraCredits, priceCredits, tetoDeCreditos, throttle, MIN_TO_START, THROTTLE_SECONDS, THROTTLE_PRO_SECONDS } from './credits.js';
 import { LIMITS, RESOURCES, HIDDEN_BUCKETS, bucketOf, subjectsFor, peekQuota, consumeQuota, refundQuota, limitsStore, spendStatus, addSpend, idDaChave } from './limits.js';
 import { readAttachments, newUploads } from './attachments.js';
@@ -78,7 +79,9 @@ const NOTA_PUBLICA = {
   'hermes-4-405b': 'Modelo grande para textos longos. Usa créditos.',
   'kimi-k3.1-pro-uncensored': 'O mais forte, para tarefas difíceis. Usa créditos.',
 };
-const modeloPublico = (m) => { const { provider, price_in, price_out, api_model, venice_model, ...resto } = m; return { ...resto, note: NOTA_PUBLICA[m.id] ?? '' }; };
+// Modelos locais (21/11): em teste, só o administrador vê; o liberado aparece para todos, grátis e sem limite.
+const notaLocal = (m) => (m.teste ? 'Teste: só você vê. Roda no computador do 451, de graça, com fila.' : 'Grátis e sem limite de mensagens. Roda no computador do 451 e pode ter fila.');
+const modeloPublico = (m) => { const { provider, price_in, price_out, api_model, venice_model, ...resto } = m; return { ...resto, note: NOTA_PUBLICA[m.id] ?? (m.local ? notaLocal(m) : '') }; };
 
 // ── Agents ──
 app.get('/api/agents', (c) => c.json(Object.entries(AGENTS).map(([id, a]) => ({ id, name: a.name }))));
@@ -154,7 +157,7 @@ app.put('/api/persona', async (c) => {
 // Who is asking: plan, today's token use and the models they can pick.
 app.get('/api/me', async (c) => {
   const plan = planOf(c), tier = tierOf(c), subjects = await subjectsOf(c, plan);
-  const models = modelsFor(plan).map(m => modeloPublico({ ...m, bucket: bucketOf(m.id, tier) }));
+  const models = modelsFor(plan, { admin: isAdmin(c) }).map(m => modeloPublico({ ...m, bucket: bucketOf(m.id, tier) }));
   const buckets = [...new Set(models.filter(m => !m.locked).map(m => m.bucket))].filter(b => !HIDDEN_BUCKETS.includes(b));
   const rows = await Promise.all(RESOURCES.flatMap(resource => buckets.map(bucket => peekQuota(subjects, resource, bucket))));
   const credits = tier === 'free' ? null : await creditBalance(subjects[0].id, tier).catch(() => null);
@@ -520,6 +523,17 @@ app.post('/api/checkout', async (c) => {
   return c.json({ ok: false, error: 'disabled', message: 'Pro não está aberto.' }, 403);
 });
 
+// Modelos locais (21/11): o porteiro do computador do 451 avisa o endereço novo do túnel da Cloudflare.
+app.post('/api/local/registro', async (c) => {
+  if (!tokenConfere(c.req.header('x-451-local'))) return c.json({ error: 'unauthorized' }, 401);
+  let body = {};
+  try { body = await c.req.json(); } catch { /* corpo vazio */ }
+  const url = String(body.url || '').replace(/\/+$/, '');
+  if (!URL_TUNEL.test(url)) return c.json({ error: 'url', message: 'Endereço de túnel inválido.' }, 400);
+  await gravaUrlLocal(url);
+  return c.json({ ok: true });
+});
+
 app.post('/api/chat', async (c) => {
   // QA 20/11: JSON quebrado dava 500; lista sem mensagem da pessoa chamava o modelo só com o prompt de
   // sistema (gastava e ele se apresentava pelo nome do fornecedor). Os dois agora param aqui, sem custo.
@@ -531,13 +545,14 @@ app.post('/api/chat', async (c) => {
   const mode = body.mode || 'chat';
   const convId = body.conversationId;
   const plan = planOf(c), tier = tierOf(c), admin = isAdmin(c);
-  let modelId = resolveModel(plan, body.model);
+  let modelId = resolveModel(plan, body.model, { admin });
   if (!modelId) return c.json({ error: 'pro_model', message: 'Este modelo faz parte do Pro.' }, 403);
   let bucket = bucketOf(modelId, tier);
 
   const parsed = readAttachments(body.messages);
   if (parsed.error) return c.json({ error: parsed.error, message: ATTACHMENT_ERRORS[parsed.error] }, 400);
   if (parsed.count && bucket === 'free') return c.json({ error: 'pro_attachment', message: 'Imagem e PDF fazem parte dos modelos Pro.' }, 403);
+  if (parsed.count && bucket === 'local') return c.json({ error: 'local_attachment', message: 'Os modelos locais leem só texto. Para imagem e PDF, escolha outro modelo.' }, 400);
   const chatMessages = cortaHistorico(parsed.messages, plan === 'pro' ? PRO_MAX_INPUT_CHARS : FREE_MAX_INPUT_CHARS);
   // Teto total do grátis no dia (dono 21/11): passou, pausa até amanhã. Falha do Redis não bloqueia.
   if (bucket === 'free' && !admin && !(await freeDiaOk().catch(() => true))) return c.json({ error: 'free_day_cap', message: MSG_GRATIS_PAUSA }, 429);
@@ -547,7 +562,7 @@ app.post('/api/chat', async (c) => {
   // Teto global em dólar (OpenUncensored): mês estourado ou saldo da chave acabando.
   const globalBudget = await checkGlobalBudget();
   // Administrador passa do teto mensal; só para se o saldo do provedor acabar de verdade.
-  if (!globalBudget.ok && bucket !== 'free' && !(admin && globalBudget.reason === 'monthly_budget')) {
+  if (!globalBudget.ok && bucket !== 'free' && bucket !== 'local' && !(admin && globalBudget.reason === 'monthly_budget')) {
     return c.json({ error: 'budget', message: globalBudget.reason === 'monthly_budget' ? 'Teto mensal do provedor atingido.' : 'Saldo do provedor acabou.', budget: globalBudget }, 402);
   }
 
@@ -574,7 +589,8 @@ app.post('/api/chat', async (c) => {
     if (bal.total < MIN_TO_START) return c.json({ error: 'no_credits', message: 'Seus créditos acabaram. Os modelos 451 Rapid, Titan e Max seguem no uso justo do Pro; para Hermes e Kimi, recarregue créditos ou espere a cota do próximo mês.', credits: bal }, 402);
   }
   // Administrador: nada a reservar (sem cota de mensagens, imagens enviadas ou arquivos).
-  const chargesFor = (b) => (admin ? [] : [
+  // Modelos locais: sem cota de mensagens (custo zero; a fila do computador do 451 segura o volume).
+  const chargesFor = (b) => (admin || b === 'local' ? [] : [
     { resource: 'messages', bucket: b },
     { resource: 'image_upload', bucket: b, amount: uploads.images },
     { resource: 'files', bucket: b, amount: uploads.files },
@@ -590,7 +606,7 @@ app.post('/api/chat', async (c) => {
     if (st.blocked) return c.json({ error: 'fair_use_cap', message: fairUseStop(st), resetAt: st.resetAt }, 429);
   }
   let charges = chargesFor(bucket);
-  let reserved = admin ? { ok: true, quotas: [] } : await consumeQuota(subjects, charges);
+  let reserved = admin || bucket === 'local' ? { ok: true, quotas: [] } : await consumeQuota(subjects, charges);
   // Uso justo do "ilimitado": passou do teto do dia nos modelos 451 → a conversa segue no Rapid.
   let fairUse = spendFair;
   if (!reserved.ok && bucket === 'pro' && reserved.quota?.resource === 'messages') {
@@ -605,7 +621,7 @@ app.post('/api/chat', async (c) => {
 
   const agent = agentPrompt(body.agent);
   const planLine = `Plano ${TIER_LABEL[tier]}. Respostas diretas, sem repetir contexto.`;
-  const modelNome = PUBLIC_MODELS.find(p => p.id === modelId)?.name || '451';
+  const modelNome = [...PUBLIC_MODELS, ...LOCAL_MODELS].find(p => p.id === modelId)?.name || '451';
   const idLine = `Identidade: você é o ${modelNome} (451sh.com). Se perguntarem qual modelo ou IA você é, responda "${modelNome}" — nunca o nome do provedor, da infraestrutura ou de outro modelo.`;
   const systemPrompt = agent ? `${planLine}\n\n${getPersona()}\n\n${agent}\n\n${idLine}` : `${planLine}\n\n${getPersona()}\n\n${idLine}`;
   // Sampling calmo por padrão: temperatura 1.0 + top_p 1.0 fazia os modelos menores
@@ -647,7 +663,7 @@ app.post('/api/chat', async (c) => {
         // Afinador: antes de responder, um modelo rápido reescreve o pedido do usuário (só Pro/Plus,
         // quando ligado). Emite 'enhanced' para o app animar o texto trocando. Falhou → segue igual.
         let sendMessages = chatMessages;
-        if (body.enhance && (tier === 'pro' || tier === 'plus') && userMsg && typeof userMsg.content === 'string') {
+        if (body.enhance && bucket !== 'local' && (tier === 'pro' || tier === 'plus') && userMsg && typeof userMsg.content === 'string') {
           send('warning', { type: 'enhancing', message: 'Afinando o pedido…' });
           const better = await enhancePrompt(mode, userMsg.content, ac.signal, usage, body.agentPrefs || null).catch(() => '');
           if (better && better !== userMsg.content.trim()) {
@@ -675,7 +691,7 @@ app.post('/api/chat', async (c) => {
           usage,
         };
         // Modo Qualidade (best-of-2) só no Pro; caso contrário, stream normal de 1 modelo.
-        if (body.quality && plan === 'pro' && !parsed.count) {
+        if (body.quality && plan === 'pro' && !parsed.count && bucket !== 'local') {
           await qualityAnswer(mode, chatPayload, handlers);
         } else {
           for await (const _ of streamChat(mode, chatPayload, handlers)) { /* tokens via onToken */ }

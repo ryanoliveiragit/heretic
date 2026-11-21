@@ -1,3 +1,31 @@
+## 2026-11-21 (04h12) — PUBLICADO: modelos locais no site (só admin) com aviso de fila
+
+Pedido do dono via agente Super Hacking: testar no site os 3 modelos locais do gateway dele (porta 8000:
+Qwen3.6 35B, Gemma 4 26B, gpt-oss 20B), escolher o melhor e depois deixá-lo grátis e sem limite, com aviso
+de fila. Porta 8000, gateway e serviços do llama são DELE: não mexer.
+- Ponte: `porteiro-local/porteiro.mjs` (serviço `porteiro-451.service` do usuário, liga no boot) ouve em
+  127.0.0.1:8017, só aceita o segredo `x-451-local` (arquivo `/home/ethical/.config/451-local/token`, 600;
+  na Vercel `LOCAL_LLM_TOKEN`), repassa à 8000 só os 3 nomes de modelo, corta a saída em 2.048 tokens, e
+  mantém um túnel rápido da Cloudflare (trycloudflare) avisando o endereço ao site (`POST
+  /api/local/registro` → Redis `451:local:url`). Log sem conteúdo em `porteiro-local/porteiro.log`.
+  Comandos: `systemctl --user status|restart|stop porteiro-451.service`.
+- Site: provedor `local` (src/local.js + upstream.js `streamLocal`): sem nenhuma chamada paga (sem Claude,
+  busca, juiz nem reserva), histórico até 6 mil tokens, saída até 1.500 (a função Edge corta em ~300 s).
+  O comentário `: fila {...}` do gateway vira aviso no lugar do "Pensando": "Você está na fila (posição N).
+  Tem muita gente usando o modelo grátis agora." ou "Trocando de modelo, pode levar até 1 minuto.".
+  Balde `local`: sem cota e sem custo. Seletor: grupo "Modelos locais", só para o admin.
+  `api/local/registro.js` existe porque o `[[...route]]` só pega um nível de caminho.
+- Liberar o vencedor para todos (grátis, sem limite de mensagens; freio de segundos e fila valem):
+  `LOCAL_FREE_MODEL=local:qwen35b|local:gemma26b|local:gptoss20b` na Vercel + deploy.
+- Conferido no ar (como admin, custo zero): Qwen 109 s, Gemma 114 s, gpt-oss 52 s, cada um com troca de
+  modelo e o aviso na tela; com o modelo já carregado e o prompt em cache, o 1º token sai em ~1 s (o 1º
+  pedido depois de uma troca lê ~4,3 mil tokens: ~37 s no Qwen). Fila testada localmente (posição 1).
+  Visitante não vê nem usa os locais (o pedido cai no modelo grátis normal: um teste meu gastou 1
+  mensagem grátis real).
+- Deploy no ar: ver `npx vercel inspect 451sh.com`. Antes: `dpl_8pDzmewfgeWPDahRoehLTch2NrbZ`.
+  **Undo:** `npx vercel rollback https://451sh-68830us0p-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`
+  e `systemctl --user disable --now porteiro-451.service`.
+
 ## 2026-11-21 (03h16) — PUBLICADO: freios contra prejuízo, cartão de opções, gráficos e custo por mensagem
 
 Pedidos do dono: "Todos" (fechar os 4 buracos de prejuízo + OpenRouter do site = chave do cofre); "o chart

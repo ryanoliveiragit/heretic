@@ -136,7 +136,7 @@ function grupoDe(ts: number) {
 }
 
 /* Pedido em andamento: guardado fora do estado (não vai para o localStorage). */
-type Evento = { type: "text"; text: string } | { type: "reasoning"; text: string } | { type: "sources"; sources: Source[] };
+type Evento = { type: "text"; text: string } | { type: "reasoning"; text: string } | { type: "sources"; sources: Source[] } | { type: "status"; text: string | null };
 interface Pendente { history: WireMsg[]; model: string; enhance: boolean; quality: boolean; prefs: Prefs; creditosAntes: number; esforco: "baixo" | "medio" | "alto" | null }
 
 /* ---------------------------------------------------------------- peças */
@@ -293,15 +293,16 @@ export function App451() {
   const saldo = total(conta);
 
   /* modelos: os do servidor, em grupos */
-  const ordem = ["No seu plano", "No Pro", "Com créditos"];
+  const ordem = ["No seu plano", "Modelos locais", "No Pro", "Com créditos"];
   const modelos: ModelOption[] = (me?.models ?? []).map((m: MeModel) => {
     const credito = m.bucket === "credits" || /^(451|Heretic) (Hermes|Kimi)$/.test(m.name);
-    const grupo = credito && !(m.locked && m.bucket !== "credits") ? "Com créditos" : m.locked ? "No Pro" : "No seu plano";
+    const grupo = m.bucket === "local" ? "Modelos locais" : credito && !(m.locked && m.bucket !== "credits") ? "Com créditos" : m.locked ? "No Pro" : "No seu plano";
     return { ...m, name: m.name.replace(/^Heretic\b/, "451"), short: m.short.replace(/^Heretic\b|^451\s+/, ""), grupo, badge: credito ? "Créditos" : undefined } as ModelOption;
   }).sort((a, b) => ordem.indexOf(a.grupo!) - ordem.indexOf(b.grupo!));
   const atual = modelos.find((m) => m.id === modelo && !m.locked) ?? modelos.find((m) => !m.locked) ?? modelos[0];
   const setModelo = (id: string) => { setModeloS(id); try { localStorage.setItem("451-model", id); } catch { /* */ } };
   const porCredito = (atual as ModelOption & { bucket?: string } | undefined)?.bucket === "credits";
+  const porLocal = (atual as ModelOption & { bucket?: string } | undefined)?.bucket === "local"; // sem limite de mensagens
 
   /* limite de mensagens: a cota do balde do modelo atual */
   const cota: Quota | undefined = me?.quotas?.find((q) => q.resource === "messages" && q.bucket === (atual as ModelOption & { bucket?: string } | undefined)?.bucket) ?? me?.quotas?.find((q) => q.resource === "messages");
@@ -310,7 +311,7 @@ export function App451() {
   RENOVA = quando(cota?.resetAt ?? dia?.resetAt);
   const restam = cota ? Math.max(0, cota.remaining) : LIMITE;
   const usado = dia ? dia.used : 0;
-  const temLimite = !pro && !!cota && !porCredito;
+  const temLimite = !pro && !!cota && !porCredito && !porLocal;
 
   const conv = conversas.find((c) => c.id === ativa) ?? null;
   const msgs = conv?.msgs ?? [];
@@ -478,6 +479,8 @@ export function App451() {
           onWarning: (d) => {
             const w = d as { type?: string; query?: string; sources?: { url: string; title: string; snippet?: string }[]; answers?: { model: string; text: string }[]; recommended?: number; reason?: string };
             if (w.type === "search" && w.query) push({ type: "reasoning", text: `Buscando na web: ${w.query}. ` });
+            // Modelo local (21/11): posição na fila ou troca de modelo, no lugar do "Pensando"; null limpa.
+            else if (w.type === "fila") push({ type: "status", text: (w as { message?: string | null }).message ?? null });
             else if (w.type === "sources" && Array.isArray(w.sources)) {
               const fontes: Source[] = w.sources.slice(0, 8).map((s, i) => { let dom = s.url; try { dom = new URL(s.url).hostname.replace(/^www\./, ""); } catch { /* */ } return { id: String(i + 1), title: s.title || dom, site: dom, domain: dom, url: s.url, date: "", snippet: s.snippet }; });
               push({ type: "sources", sources: fontes });

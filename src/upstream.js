@@ -3,6 +3,7 @@
 import { sanitizePii, cleanSources } from './pii.js';
 import { anthropicBlocks, digestAttachments, prepareForMax } from './attachments.js';
 import { routeFor, alternateFor, MAX_ID, RAPID_ID, TITAN_ID, RESERVA_ID } from './router451.js';
+import { urlLocal } from './local.js';
 
 export const MODEL_CATALOG = [
   // Heretic Max — cérebro de nuvem Claude (Anthropic) com server-side-fallback (técnica do drael). Gated em CLAUDE_KEY.
@@ -41,6 +42,12 @@ export const MODEL_CATALOG = [
   { id: 'venice:olafangensan-glm-4.7-flash-heretic', label: 'Venice Heretic 4.7', provider: 'venice', venice_model: 'olafangensan-glm-4.7-flash-heretic', price_in: 0.07, price_out: 0.40, ctx: 200000, tools: true, uncensored: true, note: 'Barato, tools' },
   { id: 'venice:deepseek-v4-1-flash-uncensored', label: 'DeepSeek V4.1 Flash UC 🔓 abliterated', provider: 'venice', venice_model: 'deepseek-v4-1-flash-uncensored', price_in: 0.33, price_out: 1.32, ctx: 1000000, tools: true, uncensored: true, note: 'MoE abliterated, visão, tools, 1M ctx' },
   { id: 'venice:gemma-4-uncensored', label: 'Gemma 4 Uncensored 🔓', provider: 'venice', venice_model: 'gemma-4-uncensored', price_in: 0.16, price_out: 0.50, ctx: 256000, tools: true, uncensored: true, note: 'Barato, visão, tools, 256k ctx' },
+  // Modelos locais (21/11, teste do dono): rodam no computador do 451, de graça, com fila e troca de modelo
+  // no gateway do agente Super Hacking. Só o administrador vê enquanto o dono escolhe (plans.js).
+  // ctx = teto do histórico enviado (o prompt do site já usa ~4,3 mil dos 16 mil tokens do servidor).
+  { id: 'local:qwen35b', api_model: 'local/qwen3.6-35b-a3b-heretic', label: 'Qwen3.6 35B-A3B Heretic (local)', provider: 'local', price_in: 0, price_out: 0, ctx: 6000, tools: false, uncensored: true, kwargs: { enable_thinking: false } },
+  { id: 'local:gemma26b', api_model: 'local/gemma-4-26b-a4b-heretic', label: 'Gemma 4 26B-A4B Heretic (local)', provider: 'local', price_in: 0, price_out: 0, ctx: 6000, tools: false, uncensored: true },
+  { id: 'local:gptoss20b', api_model: 'local/gpt-oss-20b-heretic', label: 'gpt-oss-20b Heretic (local)', provider: 'local', price_in: 0, price_out: 0, ctx: 6000, tools: false, uncensored: true, kwargs: { reasoning_effort: 'low' } },
   // 100% grátis, sem chave, independente da Venice/OpenRouter (Pollinations → GPT-OSS 20B). venice_model = nome enviado ao provedor.
   { id: 'pollinations:openai-fast', label: '451 Free (Pollinations)', provider: 'pollinations', venice_model: 'openai-fast', price_in: 0, price_out: 0, ctx: 128000, tools: false, uncensored: true, note: '100% grátis, sem chave' },
 ];
@@ -382,6 +389,7 @@ function getApiKey(provider) {
   // OpenUncensored: roteador de modelos sem censura (OpenAI-compatível e Anthropic-compatível).
   if (provider === 'openuncensored' || provider === 'openuncensored-anthropic') return process.env.OU_API_KEY || null;
   if (provider === 'pollinations') return 'free'; // provedor 100% grátis, sem chave (sentinela p/ não cair no echo)
+  if (provider === 'local') return process.env.LOCAL_LLM_TOKEN || null; // segredo do porteiro (src/local.js)
   return null;
 }
 
@@ -1173,7 +1181,95 @@ function pickNuclearModel(currentId) {
   return null;
 }
 
+// ── Modelos locais (21/11) ──
+// Direto no gateway local, sem nenhuma chamada paga: sem Claude, busca, juiz nem reserva de outro provedor.
+// Quem espera recebe do gateway, a cada segundo, um comentário SSE ": fila {"posicao":N,"carregando":bool}";
+// cada mudança vira um aviso 'fila' para a tela. O 1º dado do modelo limpa o aviso.
+const LOCAL_FORA = 'O modelo local está fora do ar agora. Escolha outro modelo.';
+const LOCAL_MAX_SAIDA = 1500; // ~75 s a 20 tokens/s: a função do site transmite por até ~300 s
+const textoLocal = (content) => (typeof content === 'string' ? content
+  : Array.isArray(content) ? content.filter((p) => p?.type === 'text').map((p) => p.text).join('\n') : String(content ?? ''));
+export function avisoDeFila(f) {
+  if (!f || !(f.posicao > 0)) return null;
+  return f.carregando ? 'Trocando de modelo, pode levar até 1 minuto.'
+    : `Você está na fila (posição ${f.posicao}). Tem muita gente usando o modelo grátis agora.`;
+}
+async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, signal, usage = null } = {}) {
+  const base = await urlLocal();
+  const token = getApiKey('local');
+  if (!base || !token) throw new Error(LOCAL_FORA);
+  const historico = trimHistory((payload.messages || []).map((m) => ({ role: m.role, content: textoLocal(m.content) })), cat.ctx);
+  const messages = [{ role: 'system', content: buildSystemPrompt(payload.systemPrompt, true) }, ...historico.filter((m) => m.role !== 'system')];
+  const body = {
+    model: cat.api_model, messages, stream: true, stream_options: { include_usage: true },
+    max_tokens: Math.min(Number(payload.max_tokens) || LOCAL_MAX_SAIDA, LOCAL_MAX_SAIDA),
+    temperature: payload.temperature ?? 0.6, top_p: payload.top_p ?? 0.9,
+    ...(cat.kwargs ? { chat_template_kwargs: cat.kwargs } : {}),
+  };
+  marcaRota(usage, cat.api_model);
+  const ac = new AbortController();
+  const cancela = () => ac.abort();
+  signal?.addEventListener('abort', cancela);
+  let res;
+  try {
+    res = await fetch(`${base}/v1/chat/completions`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-451-local': token }, body: JSON.stringify(body), signal: ac.signal });
+  } catch (e) {
+    signal?.removeEventListener('abort', cancela);
+    if (signal?.aborted) throw e;
+    throw new Error(LOCAL_FORA);
+  }
+  if (!res.ok || !res.body) {
+    signal?.removeEventListener('abort', cancela);
+    console.error('[local] HTTP', res.status);
+    throw new Error(res.status === 503 ? 'O modelo local não conseguiu carregar. Tente de novo em 1 minuto ou escolha outro.' : LOCAL_FORA);
+  }
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', fila = '', avisou = false, tin = 0, tout = 0, chars = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, i).replace(/\r$/, '');
+        buf = buf.slice(i + 1);
+        if (line.startsWith(': fila ')) {
+          let f; try { f = JSON.parse(line.slice(7)); } catch { continue; }
+          const chave = `${f.posicao}|${!!f.carregando}`;
+          if (chave !== fila) { fila = chave; avisou = true; onWarning?.({ type: 'fila', posicao: f.posicao, carregando: !!f.carregando, message: avisoDeFila(f) }); }
+          continue;
+        }
+        if (!line.startsWith('data: ')) continue;
+        if (avisou) { avisou = false; onWarning?.({ type: 'fila', posicao: 0, carregando: false, message: null }); }
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') continue;
+        let j; try { j = JSON.parse(data); } catch { continue; }
+        if (j.usage) { tin = Number(j.usage.prompt_tokens) || tin; tout = Number(j.usage.completion_tokens) || tout; }
+        const d = j.choices?.[0]?.delta || {};
+        if (d.reasoning_content) onReasoning?.(d.reasoning_content);
+        if (d.content) { chars += d.content.length; onToken?.(d.content); yield d.content; }
+      }
+    }
+  } finally {
+    signal?.removeEventListener('abort', cancela);
+    if (usage) {
+      // Custo zero, mas o painel mostra os tokens (o que o computador do 451 processou).
+      const ent = tin || Math.ceil(JSON.stringify(messages).length / 4), sai = tout || Math.ceil(chars / 4);
+      usage.input_tokens = (usage.input_tokens || 0) + ent;
+      usage.output_tokens = (usage.output_tokens || 0) + sai;
+      usage.costed_in = (usage.costed_in || 0) + ent;
+      usage.costed_out = (usage.costed_out || 0) + sai;
+      anotaParte(usage, cat.api_model, 'resposta', { tin: ent, tout: sai, usd: 0 });
+    }
+  }
+}
+
 export async function* streamChat(mode, payload, { onToken, onWarning, onToolCall, onReasoning, signal, usage = null } = {}) {
+  // Modelo local: caminho próprio e gratuito, antes de qualquer roteador, busca ou troca para provedor pago.
+  const localCat = MODEL_CATALOG.find(m => m.id === payload.modelId && m.provider === 'local');
+  if (localCat) { yield* streamLocal(localCat, payload, { onToken, onWarning, onReasoning, signal, usage }); return; }
   // A model picked in the chat (already checked against the plan) wins over the mode's route.
   const requestedId = payload.modelId && MODEL_CATALOG.some(m => m.id === payload.modelId) ? payload.modelId : (ROUTES[mode] || ROUTES.chat).model;
   // Roteador: pedido direto não paga o tempo de raciocínio do Max. Decide ANTES de qualquer
