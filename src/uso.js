@@ -347,13 +347,16 @@ export async function saldosChaves() {
       return Number.isFinite(v) ? Math.round(v * 100) / 100 : null;
     } catch { return null; }
   };
-  const orAuth = { headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}` } };
+  // 21/11: a chave do cofre é de GESTÃO (lê saldo, cria chaves, mas não gera texto). O site usa uma chave de
+  // uso (OPENROUTER_API_KEY); o painel lê o saldo da conta pela de gestão (OPENROUTER_MGMT_KEY) quando houver.
+  const orKey = process.env.OPENROUTER_MGMT_KEY || process.env.OPENROUTER_API_KEY;
+  const orAuth = { headers: { Authorization: `Bearer ${orKey}` } };
   const [ou, or, rp, orChave] = await Promise.all([
     process.env.OU_API_KEY ? pega('https://api.openuncensored.com/v1/credits', { headers: { Authorization: `Bearer ${process.env.OU_API_KEY}` } }, (j) => Number(j?.data?.remaining_usd)) : null,
-    process.env.OPENROUTER_API_KEY ? pega('https://openrouter.ai/api/v1/credits', orAuth, (j) => Number(j?.data?.total_credits) - Number(j?.data?.total_usage)) : null,
+    orKey ? pega('https://openrouter.ai/api/v1/credits', orAuth, (j) => Number(j?.data?.total_credits) - Number(j?.data?.total_usage)) : null,
     process.env.RUNPOD_API_KEY ? pega('https://api.runpod.io/graphql', { method: 'POST', headers: { Authorization: `Bearer ${process.env.RUNPOD_API_KEY}`, 'content-type': 'application/json' }, body: JSON.stringify({ query: 'query { myself { clientBalance } }' }) }, (j) => Number(j?.data?.myself?.clientBalance)) : null,
     // A chave do site pode não ter permissão de ler o saldo da conta: aí vale o limite da própria chave.
-    process.env.OPENROUTER_API_KEY ? fetch('https://openrouter.ai/api/v1/key', { ...orAuth, signal: AbortSignal.timeout(5000) })
+    orKey ? fetch('https://openrouter.ai/api/v1/key', { ...orAuth, signal: AbortSignal.timeout(5000) })
       .then(async (r) => ({ status: r.status, d: r.ok ? (await r.json())?.data : null })).catch(() => ({ status: 0, d: null })) : null,
   ]);
   const orInfo = orChave ? { status: orChave.status, limite_restante_usd: orChave.d?.limit_remaining ?? null, gasto_da_chave_usd: orChave.d?.usage ?? null } : null;

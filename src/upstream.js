@@ -45,9 +45,11 @@ export const MODEL_CATALOG = [
   // Modelos locais (21/11, teste do dono): rodam no computador do 451, de graça, com fila e troca de modelo
   // no gateway do agente Super Hacking. Só o administrador vê enquanto o dono escolhe (plans.js).
   // ctx = teto do histórico enviado (o prompt do site já usa ~4,3 mil dos 16 mil tokens do servidor).
-  { id: 'local:qwen35b', api_model: 'local/qwen3.6-35b-a3b-heretic', label: 'Qwen3.6 35B-A3B Heretic (local)', provider: 'local', price_in: 0, price_out: 0, ctx: 6000, tools: false, uncensored: true, kwargs: { enable_thinking: false } },
-  { id: 'local:gemma26b', api_model: 'local/gemma-4-26b-a4b-heretic', label: 'Gemma 4 26B-A4B Heretic (local)', provider: 'local', price_in: 0, price_out: 0, ctx: 6000, tools: false, uncensored: true },
-  { id: 'local:gptoss20b', api_model: 'local/gpt-oss-20b-heretic', label: 'gpt-oss-20b Heretic (local)', provider: 'local', price_in: 0, price_out: 0, ctx: 6000, tools: false, uncensored: true, kwargs: { reasoning_effort: 'low' } },
+  // max_out = teto de saída (custo zero; o limite é o tempo: ~90 s na velocidade medida de cada um).
+  { id: 'local:qwen35b', api_model: 'local/qwen3.6-35b-a3b-heretic', label: 'Qwen3.6 35B-A3B Heretic (local)', provider: 'local', price_in: 0, price_out: 0, ctx: 6000, max_out: 1800, tools: false, uncensored: true, kwargs: { enable_thinking: false } },
+  // Gemma sem o raciocínio escondido (21/11): "que dia vem depois de domingo?" caiu de 13,2 s/123 tokens para 1,3 s/5.
+  { id: 'local:gemma26b', api_model: 'local/gemma-4-26b-a4b-heretic', label: 'Gemma 4 26B-A4B Heretic (local)', provider: 'local', price_in: 0, price_out: 0, ctx: 6000, max_out: 1500, tools: false, uncensored: true, kwargs: { enable_thinking: false } },
+  { id: 'local:gptoss20b', api_model: 'local/gpt-oss-20b-heretic', label: 'gpt-oss-20b Heretic (local)', provider: 'local', price_in: 0, price_out: 0, ctx: 6000, max_out: 2000, tools: false, uncensored: true, kwargs: { reasoning_effort: 'low' } },
   // 100% grátis, sem chave, independente da Venice/OpenRouter (Pollinations → GPT-OSS 20B). venice_model = nome enviado ao provedor.
   { id: 'pollinations:openai-fast', label: '451 Free (Pollinations)', provider: 'pollinations', venice_model: 'openai-fast', price_in: 0, price_out: 0, ctx: 128000, tools: false, uncensored: true, note: '100% grátis, sem chave' },
 ];
@@ -1187,9 +1189,51 @@ function pickNuclearModel(currentId) {
 // cada mudança vira um aviso 'fila' para a tela. O 1º dado do modelo limpa o aviso.
 const LOCAL_FORA = 'O modelo local está fora do ar agora. Escolha outro modelo.';
 const LOCAL_MAX_SAIDA = 1500; // ~75 s a 20 tokens/s: a função do site transmite por até ~300 s
+// A função Edge da Vercel corta perto de 300 s e a pessoa perdia a resposta inteira (21/11: 2 respostas da
+// Gemma de 259 e 301 s sumiram). Agora fecha antes, com o que já chegou e um aviso para pedir "continue".
+const LOCAL_PRAZO_MS = Number(process.env.LOCAL_PRAZO_MS) || 265000;
+const LOCAL_OCUPADO = 'O computador do 451 está ocupado agora. Tente de novo em 1 minuto.';
+const LOCAL_CORTE = '\n\n_(Resposta interrompida pelo tempo máximo. Peça "continue" para seguir.)_';
 const LOCAL_IDIOMA = 'IDIOMA (REGRA RÍGIDA): responda sempre no idioma do usuário. Pergunta em português = resposta inteira em português do Brasil, inclusive respostas de uma palavra (dias da semana, meses, números por extenso). Nunca troque para o inglês.';
 const textoLocal = (content) => (typeof content === 'string' ? content
   : Array.isArray(content) ? content.filter((p) => p?.type === 'text').map((p) => p.text).join('\n') : String(content ?? ''));
+// Nota do servidor (21/11, bateria de testes): o gpt-oss errava o dia da semana de datas (2 de 5 e 0 de 5 em 5
+// amostras) e às vezes respondia em inglês (1 em 25). O servidor manda, no fim da última mensagem: a data de hoje
+// (Brasília), o dia da semana CALCULADO de cada data citada e, se a pergunta é em português, o lembrete de idioma
+// (com o lembrete: 0 em 25 em inglês). Só nos modelos locais.
+const DIAS_SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+const MESES_ANO = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const semAcentoLocal = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+export function datasCitadas(texto, anoAtual) {
+  const achadas = [];
+  const add = (d, m, a) => {
+    const dt = new Date(Date.UTC(a, m - 1, d));
+    if (!(a >= 1 && a <= 9999) || dt.getUTCFullYear() !== a || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return;
+    const chave = `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${a}`;
+    if (!achadas.some((x) => x.startsWith(chave))) achadas.push(`${chave} é ${DIAS_SEMANA[dt.getUTCDay()]}`);
+  };
+  for (const m of String(texto || '').matchAll(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/g)) add(+m[1], +m[2], +m[3]);
+  const t = semAcentoLocal(texto);
+  for (const m of t.matchAll(/\b(\d{1,2})(?:º|o)?\s+de\s+(janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)(?:\s+de\s+(\d{4}))?/g)) {
+    add(+m[1], MESES_ANO.indexOf(m[2]) + 1, m[3] ? +m[3] : anoAtual);
+  }
+  return achadas.slice(0, 5);
+}
+const PT_MARCAS = /\b(que|nao|para|com|uma|voce|qual|quanto|como|sao|esta|dos|das|isso|sobre|porque|quem|onde|quando|responda|explique|faca|me)\b/g;
+const EN_MARCAS = /\b(the|and|what|how|why|is|are|you|with|for|this|that|please|explain|write)\b/g;
+export function notaDoServidor(textoUsuario, agora = new Date()) {
+  const fuso = { timeZone: 'America/Sao_Paulo' };
+  const hoje = agora.toLocaleDateString('pt-BR', { ...fuso, weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+  const ano = Number(agora.toLocaleDateString('pt-BR', { ...fuso, year: 'numeric' }));
+  const partes = [`hoje é ${hoje} (Brasília)`];
+  const datas = datasCitadas(textoUsuario, ano);
+  if (datas.length) partes.push(`calendário conferido: ${datas.join('; ')}`);
+  const t = semAcentoLocal(textoUsuario);
+  const pt = (t.match(PT_MARCAS) || []).length, en = (t.match(EN_MARCAS) || []).length;
+  if (pt && pt >= en) partes.push('responda em português do Brasil');
+  return `\n\n[Nota do servidor, não mencione: ${partes.join('. ')}.]`;
+}
+
 export function avisoDeFila(f) {
   if (!f || !(f.posicao > 0)) return null;
   return f.carregando ? 'Trocando de modelo, pode levar até 1 minuto.'
@@ -1200,13 +1244,15 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
   const token = getApiKey('local');
   if (!base || !token) throw new Error(LOCAL_FORA);
   const historico = trimHistory((payload.messages || []).map((m) => ({ role: m.role, content: textoLocal(m.content) })), cat.ctx);
+  const iu = historico.map((m) => m.role).lastIndexOf('user');
+  if (iu >= 0) historico[iu] = { ...historico[iu], content: historico[iu].content + notaDoServidor(historico[iu].content) };
   // Idioma (21/11): numa pergunta curta em português o gpt-oss respondeu "Monday". A regra vai no fim do
   // prompt (pesa mais e não quebra o cache do começo, que é igual para todos).
   const sistema = `${buildSystemPrompt(payload.systemPrompt, true)}\n\n${LOCAL_IDIOMA}`;
   const messages = [{ role: 'system', content: sistema }, ...historico.filter((m) => m.role !== 'system')];
   const body = {
     model: cat.api_model, messages, stream: true, stream_options: { include_usage: true },
-    max_tokens: Math.min(Number(payload.max_tokens) || LOCAL_MAX_SAIDA, LOCAL_MAX_SAIDA),
+    max_tokens: Math.min(Number(payload.max_tokens) || cat.max_out || LOCAL_MAX_SAIDA, cat.max_out || LOCAL_MAX_SAIDA),
     temperature: payload.temperature ?? 0.6, top_p: payload.top_p ?? 0.9,
     ...(cat.kwargs ? { chat_template_kwargs: cat.kwargs } : {}),
   };
@@ -1214,15 +1260,21 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
   const ac = new AbortController();
   const cancela = () => ac.abort();
   signal?.addEventListener('abort', cancela);
+  // Prazo contado do início do pedido no site (inclui fila e troca de modelo).
+  let porTempo = false;
+  const relogio = setTimeout(() => { porTempo = true; ac.abort(); }, Math.max(5000, (Number(payload.inicio) || Date.now()) + LOCAL_PRAZO_MS - Date.now()));
   let res;
   try {
     res = await fetch(`${base}/v1/chat/completions`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-451-local': token }, body: JSON.stringify(body), signal: ac.signal });
   } catch (e) {
+    clearTimeout(relogio);
     signal?.removeEventListener('abort', cancela);
+    if (porTempo) throw new Error(LOCAL_OCUPADO);
     if (signal?.aborted) throw e;
     throw new Error(LOCAL_FORA);
   }
   if (!res.ok || !res.body) {
+    clearTimeout(relogio);
     signal?.removeEventListener('abort', cancela);
     console.error('[local] HTTP', res.status);
     throw new Error(res.status === 503 ? 'O modelo local não conseguiu carregar. Tente de novo em 1 minuto ou escolha outro.' : LOCAL_FORA);
@@ -1232,7 +1284,9 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
   let buf = '', fila = '', avisou = false, tin = 0, tout = 0, chars = 0;
   try {
     for (;;) {
-      const { done, value } = await reader.read();
+      let lido;
+      try { lido = await reader.read(); } catch (e) { if (porTempo) break; throw e; }
+      const { done, value } = lido;
       if (done) break;
       buf += dec.decode(value, { stream: true });
       let i;
@@ -1256,7 +1310,13 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
         if (d.content) { chars += d.content.length; onToken?.(d.content); yield d.content; }
       }
     }
+    if (porTempo) {
+      if (!chars) throw new Error(LOCAL_OCUPADO);
+      onToken?.(LOCAL_CORTE);
+      yield LOCAL_CORTE;
+    }
   } finally {
+    clearTimeout(relogio);
     signal?.removeEventListener('abort', cancela);
     if (usage) {
       // Custo zero, mas o painel mostra os tokens (o que o computador do 451 processou).

@@ -1,3 +1,27 @@
+## 2026-11-21 (15h) — Bateria dos modelos locais + melhorias; busca na web consertada
+
+Pedido do dono: "bateria de testes e melhorias" nos modelos locais (Qwen 35B, Gemma 26B, gpt-oss 20B).
+- Bateria: `scripts/bateria-locais.mjs` (17 casos pelo caminho do site: português, contas/datas exatas,
+  código rodado com testes, pizza/opções/tabela do app, instrução, texto longo, identidade, velocidade,
+  laço e corte); resumo `scripts/relatorio-bateria.mjs`; amostras repetidas `scripts/amostras-gptoss.mjs`.
+  Custo zero (tudo local). Antes → depois: Gemma 14/17 → 17/17 (típico 20,4 s → 1,6 s); Qwen 16 → 15/17
+  (erra dia da semana sem raciocínio; só admin); gpt-oss 17/17 e 14/17 em duas rodadas → 16/17 com a nota
+  do servidor (25 amostras: 17/25 → 22/25, inglês 1 → 0, mediana 1,9 s → 1,4 s).
+- Publicado: Gemma com `enable_thinking: false` (o raciocínio escondido gastava os 900 tokens e a resposta
+  saía vazia); teto de saída por modelo local (`max_out`: gpt-oss 2.000, Qwen 1.800, Gemma 1.500; antes o
+  grátis cortava em 900); guarda de tempo de 265 s (`LOCAL_PRAZO_MS`): fecha com o texto parcial e aviso
+  de "continue" em vez de a Vercel cortar em ~300 s e sumir a resposta (2 da Gemma sumiram às 13h35);
+  nota do servidor no fim da pergunta dos locais (data de hoje em Brasília, dia da semana calculado das
+  datas citadas, lembrete de idioma se a pergunta é em português). Teste: `scripts/teste-prazo-local.mjs`.
+- OpenRouter (regressão minha): a chave do cofre é de GESTÃO (lê saldo/cria chaves, não gera texto). Das
+  03:14 às ~14:30 a busca na web e a reserva Dolphin ficaram fora. Criei com ela a chave de uso "451 site
+  (Vercel) 21/11" (hash b4983ead5f…, sem limite) e pus em `OPENROUTER_API_KEY`; a de gestão ficou em
+  `OPENROUTER_MGMT_KEY` só para o painel ler o saldo. Apagar a chave nova: openrouter.ai/settings/keys.
+- Deploys: `dpl_9d3hiSpkis1tFYFxYdZgeU8kGfvE` (busca) e `dpl_8kyM17eVga6uPJut9tVtWixEPBm5` (nota). Voltar
+  o deploy para antes de 14h30 traria de volta a chave quebrada: para desfazer, reverta o commit e publique.
+- Prints para o X (pedido do Super Hacking): `Shared/451-prints-x/` (busca no ar, com fontes). O print de
+  "troca de modelo na recusa" não existe: a tela não mostra essa troca (só o aviso do pré-roteador).
+
 ## 2026-11-21 (04h52) — PUBLICADO: gpt-oss-20b Heretic grátis e sem limite para todos
 
 O dono escolheu o vencedor dos modelos locais (via Super Hacking): gpt-oss-20b Heretic (menos recusas

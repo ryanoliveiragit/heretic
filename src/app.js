@@ -42,7 +42,9 @@ app.route('/api/v1', v1);
 
 // Teto de saída por modelo (dono, 19/11): Max e os modelos de créditos respondem mais longo.
 const LONG_MODELS = ['claude-sonnet-5-5', 'hermes-4-405b', 'kimi-k3.1-pro-uncensored'];
-const maxTokensFor = (modelId) => (LONG_MODELS.includes(modelId) ? 2000 : 900);
+// Modelos locais (custo zero): o teto é o do próprio modelo (max_out no catálogo), limitado pelo tempo.
+const maxTokensFor = (modelId) => (String(modelId || '').startsWith('local:') ? (MODEL_CATALOG.find((m) => m.id === modelId)?.max_out || 1500)
+  : LONG_MODELS.includes(modelId) ? 2000 : 900);
 const TIER_LABEL = { free: 'Grátis', pro: 'Pro', plus: 'Pro Plus' };
 // Limites que o app recebe: sem os buckets pagos, que para o assinante são "ilimitados".
 const visibleLimits = () => Object.fromEntries(Object.entries(LIMITS).map(([r, b]) =>
@@ -535,6 +537,7 @@ app.post('/api/local/registro', async (c) => {
 });
 
 app.post('/api/chat', async (c) => {
+  const inicio = Date.now(); // prazo dos modelos locais (a função Edge corta perto de 300 s)
   // QA 20/11: JSON quebrado dava 500; lista sem mensagem da pessoa chamava o modelo só com o prompt de
   // sistema (gastava e ele se apresentava pelo nome do fornecedor). Os dois agora param aqui, sem custo.
   let body;
@@ -675,7 +678,7 @@ app.post('/api/chat', async (c) => {
         // Claude na frente (dono 21/11): Pro e grátis começam pelo Claude. Uso justo (pro_rapid) e
         // Kimi/Hermes (créditos) não. O grátis para de usar o Claude quando o gasto do dia passa do freio.
         const claudeFirst = bucket === 'pro' || (bucket === 'free' && (await freeClaudeOk().catch(() => false)));
-        const chatPayload = { messages: sendMessages, systemPrompt, modelId, ...params, creditsOk: bucket === 'credits', claudeFirst };
+        const chatPayload = { messages: sendMessages, systemPrompt, modelId, ...params, creditsOk: bucket === 'credits', claudeFirst, inicio };
         // Modelo que de fato respondeu pode mudar no meio (roteador e escalada por recusa): o
         // custo/cota têm de seguir quem respondeu, não o que foi pedido.
         let doneId = modelId;
