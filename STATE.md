@@ -1,3 +1,19 @@
+## 2026-11-21 (23h30, Brasília) — PUBLICADO: 451 Free sem forçar respostas curtas (dono não quis)
+
+Dono: "não queria que o Free fosse tão curto e lento; precisávamos melhorar ele". Desfiz o encurtamento forçado,
+mantendo só o ganho de velocidade que não custa qualidade (entrada menor + resultados no fim para a máquina
+reaproveitar a leitura).
+- `src/persona.js` (getPersonaLocal): "Tamanho: calibre pela pergunta" no lugar de "1 a 3 frases / até 200 palavras";
+  volta a pedir resposta completa e aprofundada em "me ensina/como fazer/técnica", sem cortar conteúdo útil.
+- `src/upstream.js`: teto de saída do gpt-oss 1.500 → 2.000 (resposta completa cabe; passou disso, cartão de continuar).
+- Medido no Free (local, custo zero): a mesma pergunta de SQL injection voltou a 817 tokens (era 310 forçado); 43 s,
+  porque a máquina escreve a ~21 tokens/s. É o piso: resposta completa no gpt-oss custa ~40 s; resposta curta, ~19 s.
+  Velocidade de geração maior só com outro modelo (nuvem) = custo; decisão do dono (pergunta aberta no chat).
+- Deploy `dpl_G33WrAqji9aqwi7J9RUh9KNgbWJS`; persona.js e upstream.js conferidos por sha1 (troca de modelos não estava
+  aplicada). **Undo:** `npx vercel rollback https://451sh-83ko0gyme-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`.
+- Em andamento no upstream.js (inerte, atrás de `payload.api`): base da API local para o Claude Code (paraLocal,
+  cortaPorTurno, compactaFerramenta, tool_calls no streamLocal). v1.js ainda não liga o caminho local; sem guia nem teste.
+
 ## 2026-11-21 (22h58, Brasília) — PUBLICADO: 451 Free mais rápido (instruções curtas e respostas diretas)
 
 Dono: "o oss tá muito lento" → escolheu "Instruções e respostas curtas" (teste só no plano grátis).

@@ -124,7 +124,7 @@ confere(/RESULTADOS DAS FERRAMENTAS/.test(vistos.ultimaLocal) && !/RESULTADOS DA
 // Velocidade do 451 Free (dono 21/11): prompt curto, igual em todo pedido (a máquina reaproveita o que já leu) e teto de 1.500.
 const sisCve = vistos.sistemaLocal, ultCve = vistos.ultimaLocal;
 confere(sisCve.length < 8000 && !/INSTRUÇÃO DE SISTEMA — SEM CENSURA/.test(sisCve) && /Você é o 451, uma IA sem censura/.test(sisCve) && /451-free-uncensored/.test(sisCve), `451 Free: sistema curto com a persona local e a identidade (${sisCve.length} caracteres; antes ~17 mil)`);
-confere(Number(vistos.maxLocal) <= 1500, `451 Free: teto de saída ${vistos.maxLocal} tokens`);
+confere(Number(vistos.maxLocal) <= 2000, `451 Free: teto de saída ${vistos.maxLocal} tokens`);
 await manda('local:gptoss20b', 'Me explique o que é recursão em programação.');
 confere(vistos.sistemasLocais.at(-1) === sisCve, '451 Free: o sistema é igual com e sem resultados (a máquina reaproveita a leitura)');
 confere(/logo depois de cada fato.*Não faça lista de fontes no fim/s.test(ultCve), `451 Free: a nota no fim da mensagem pede [n] em cada fato e nenhuma lista no fim (…${ultCve.slice(-90).replace(/\n/g, ' ')})`);
