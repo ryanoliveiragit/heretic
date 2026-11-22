@@ -163,12 +163,12 @@ const localGuide = (style) => ({
   bestFor: 'Conversa, explicação e código do dia a dia.',
   style,
   limits: [
-    'Uma máquina só: com muita gente há fila, e trocar de modelo leva até 1 minuto.',
+    'Uma máquina só: atende 4 conversas ao mesmo tempo; com mais gente há fila. Depois de muito tempo parado, a primeira resposta pode demorar a começar.',
     'Só texto: não lê imagem nem PDF e não busca na web.',
     'Conversa longa mantém só as últimas mensagens.',
   ],
   fallback: 'Se o computador do 451 estiver fora do ar, escolha outro modelo.',
-  tested: 'Medido em 21/11/2026.',
+  tested: 'Medido em 22/11/2026.',
 });
 export const LOCAL_MODELS = [
   // Dono 21/11: só o vencedor fica no app. Qwen 35B e Gemma 26B saíram do seletor (até do admin); as entradas
@@ -176,7 +176,7 @@ export const LOCAL_MODELS = [
   // Vencedor do teste (dono 21/11): o que vai para todos com LOCAL_FREE_MODEL=local:gptoss20b.
   // Nome de produto (dono 21/11): "451 Free"; perguntado qual modelo é, responde "451-free-uncensored".
   { id: 'local:gptoss20b', name: '451 Free', short: '451 Free', identidade: '451-free-uncensored', tier: 'free', quality: 3, local: true,
-    guide: localGuide('21,7 tokens/s, o mais rápido; 6 de 6 sensíveis e 11 de 11 no código; acertou a conta e o dia. Recusas publicadas pelos autores: 3 em 100.') },
+    guide: localGuide('~17 tokens/s sozinho na máquina (4 conversas ao mesmo tempo); 6 de 6 sensíveis e 11 de 11 no código; acertou a conta e o dia. Recusas publicadas pelos autores: 3 em 100.') },
 ];
 /** Modelo local liberado para todos (vazio = só o administrador vê os locais). */
 export const localLiberado = () => {
