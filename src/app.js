@@ -5,7 +5,7 @@ import { Hono } from 'hono';
 import { health, listProjects, createProject, deleteProject,
   listConversations, createConversation, deleteConversation,
   listMessages, addMessage } from './store.js';
-import { getPersona, setPersona } from './persona.js';
+import { getPersona, getPersonaLocal, setPersona } from './persona.js';
 import { streamChat, streamFoto, qualityAnswer, enhancePrompt, imagePrompt, imageIntent, imageFollowups, agentTip, getRoutes, setRoute, MODEL_CATALOG, custoTurno, rotaDoNivel, apoioDoServidor } from './upstream.js';
 import { checkBudget, incrementUsage } from './budget.js';
 import { checkGlobalBudget, recordCost, recordFreeCost, freeClaudeOk, freeDiaOk, buscaGratisOk, registraBuscaGratis, fotoGratisOk, registraFotoGratis, freeClaudeDayUsd } from './cost.js';
@@ -688,7 +688,9 @@ app.post('/api/chat', async (c) => {
   // O 451 Free se apresenta pelo id do modelo (dono 21/11): "451-free-uncensored".
   const idNome = modeloInfo?.identidade || modelNome;
   const idLine = `Identidade: você é o ${modelNome} (451sh.com)${idNome !== modelNome ? `, modelo ${idNome}` : ''}. Se perguntarem qual modelo ou IA você é, responda "${idNome}" — nunca o nome do provedor, da infraestrutura ou de outro modelo.`;
-  const systemPrompt = agent ? `${planLine}\n\n${getPersona()}\n\n${agent}\n\n${idLine}` : `${planLine}\n\n${getPersona()}\n\n${idLine}`;
+  // Modelos locais (451 Free) recebem a persona curta (dono 21/11: "o oss tá muito lento"): a máquina lê devagar.
+  const persona = String(modelId).startsWith('local:') ? getPersonaLocal() : getPersona();
+  const systemPrompt = agent ? `${planLine}\n\n${persona}\n\n${agent}\n\n${idLine}` : `${planLine}\n\n${persona}\n\n${idLine}`;
   // Sampling calmo por padrão: temperatura 1.0 + top_p 1.0 fazia os modelos menores
   // (ex.: Venice UC grátis) degenerarem em texto sem sentido e misturar idioma. 0.6/0.9 +
   // frequency_penalty mantém a resposta coerente e direta.

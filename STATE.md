@@ -1,3 +1,24 @@
+## 2026-11-21 (22h58, Brasília) — PUBLICADO: 451 Free mais rápido (instruções curtas e respostas diretas)
+
+Dono: "o oss tá muito lento" → escolheu "Instruções e respostas curtas" (teste só no plano grátis).
+- Diagnóstico (painel, 15 respostas do Free): mediana 34 s, pior 106 s; escrita ~20 tokens/s; entrada de 4,6 a 6,8 mil
+  tokens (persona 11,5 mil caracteres + prefixo sem censura 4,5 mil); leitura a frio ~200–300 tokens/s; busca +7–8,5 s.
+- Mudanças: persona curta só dos locais (`getPersonaLocal` em `src/persona.js`; `src/app.js` escolhe quando o modelo é
+  `local:`; `PERSONA_LOCAL` na Vercel substitui); prefixo curto `LOCAL_SEM_CENSURA` no lugar do ANTI_CENSORSHIP_PREFIX;
+  regra de tamanho (simples: 1–3 frases; explicação ou "como fazer": 3–6 tópicos ou até 200 palavras; código e lista
+  pedida: completos); resultados de busca e ferramentas no fim da pergunta (o sistema fica igual em todo pedido e a
+  máquina reaproveita a leitura); bloco das ferramentas 10 → 6 mil caracteres; teto de saída do gpt-oss 2.000 → 1.500.
+- Medido: sistema 17 mil → 5,6 mil caracteres (entrada média 4.782 → 1.655 tokens); bateria 16/17 → 17/17; A/B pela
+  ponte com 3 perguntas abertas 101 → 38 s (SQL injection 63 → 29 s; phishing 33 → 20 s com 6 tópicos). No ar: TCP×UDP
+  7 s; SQL injection 41–45 s pelo site contra 19 s direto, porque o gateway (2 vagas) divide a máquina: com 2 pedidos ao
+  mesmo tempo a escrita cai de ~21 para 13–15 tokens/s. Daqui para a frente o limite é a máquina (porta 8000, do dono).
+- Testes: `teste-ferramentas-chat.mjs` 18 ok (sistema curto e igual com e sem resultados, teto 1.500); busca grátis,
+  continuar e prazo local sem falha; `bateria-locais.mjs` passou a usar a persona curta. A/B: `/tmp/opencode/ab-local.mjs`.
+- Deploy `dpl_DCNMGaTAfDBvxmPmMDVqpeypyipB`; 6 arquivos conferidos por sha1 (troca de modelos fora).
+- **Undo:** `npx vercel rollback https://451sh-lmdun8sib-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`.
+- Próximos, na ordem do dono: integração com o Claude Code (API no formato Anthropic), busca na dark web, resumo com
+  casos de uso; todos os testes só no plano grátis. Item 5 (comparativo) aprovado, depois.
+
 ## 2026-11-21 (22h20, Brasília) — PUBLICADO: DNS com fonte própria + numeração única também nos dados das ferramentas
 
 Pedido do Super Hacking (orientação final 5e2d0c06; a RunPod fica fora de tudo):

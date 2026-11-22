@@ -59,6 +59,8 @@ const srv = http.createServer(async (req, res) => {
   if (req.url.startsWith('/local/')) {
     vistos.sistemaLocal = String(body.messages?.[0]?.content || '');
     vistos.ultimaLocal = String(body.messages?.at(-1)?.content || '');
+    (vistos.sistemasLocais ||= []).push(vistos.sistemaLocal);
+    vistos.maxLocal = body.max_tokens;
     res.writeHead(200, { 'content-type': 'text/event-stream' });
     res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: 'Resposta local com fonte [1].' } }] })}\n\n`);
     res.write(`data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: 'stop' }], usage: { prompt_tokens: 3000, completion_tokens: 10 } })}\n\ndata: [DONE]\n\n`);
@@ -118,8 +120,14 @@ r = await manda('zai-org/glm-5.3-flash-uncensored', 'Me explique o que é recurs
 confere(vistos.planejador === antes.planejador && !rotulos(r.avisos).length, 'pergunta comum não chama o planejador (filtro grátis)');
 
 r = await manda('local:gptoss20b', 'O CVE-2021-44228 está sendo explorado?');
-confere(/RESULTADOS DAS FERRAMENTAS/.test(vistos.sistemaLocal) && fontesDe(r.avisos).length === 2, '451 Free também consulta e recebe as fontes');
-confere(/logo depois de cada fato.*Não faça lista de fontes no fim/s.test(vistos.ultimaLocal), `451 Free: a nota no fim da mensagem pede [n] em cada fato e nenhuma lista no fim (…${vistos.ultimaLocal.slice(-90).replace(/\n/g, ' ')})`);
+confere(/RESULTADOS DAS FERRAMENTAS/.test(vistos.ultimaLocal) && !/RESULTADOS DAS FERRAMENTAS/.test(vistos.sistemaLocal) && fontesDe(r.avisos).length === 2, '451 Free também consulta; os resultados vão no fim da pergunta, não no sistema');
+// Velocidade do 451 Free (dono 21/11): prompt curto, igual em todo pedido (a máquina reaproveita o que já leu) e teto de 1.500.
+const sisCve = vistos.sistemaLocal, ultCve = vistos.ultimaLocal;
+confere(sisCve.length < 8000 && !/INSTRUÇÃO DE SISTEMA — SEM CENSURA/.test(sisCve) && /Você é o 451, uma IA sem censura/.test(sisCve) && /451-free-uncensored/.test(sisCve), `451 Free: sistema curto com a persona local e a identidade (${sisCve.length} caracteres; antes ~17 mil)`);
+confere(Number(vistos.maxLocal) <= 1500, `451 Free: teto de saída ${vistos.maxLocal} tokens`);
+await manda('local:gptoss20b', 'Me explique o que é recursão em programação.');
+confere(vistos.sistemasLocais.at(-1) === sisCve, '451 Free: o sistema é igual com e sem resultados (a máquina reaproveita a leitura)');
+confere(/logo depois de cada fato.*Não faça lista de fontes no fim/s.test(ultCve), `451 Free: a nota no fim da mensagem pede [n] em cada fato e nenhuma lista no fim (…${ultCve.slice(-90).replace(/\n/g, ' ')})`);
 
 confere([...vistos.tokens].every((t) => t === TOKEN), 'o token interno do chat é igual ao do lado Node');
 const { atende } = await import(`${dir}/ferramentas/http.js`);

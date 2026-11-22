@@ -61,7 +61,8 @@ const srv = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ choices: [{ message: { content: '- O dólar comercial fechou a R$ 5,88.', annotations: [{ type: 'url_citation', url_citation: { url: 'https://cotacao.exemplo.com.br/dolar', title: 'Dólar hoje', content: 'O dólar comercial fechou em alta.' } }] } }], usage: { prompt_tokens: 1300, completion_tokens: 300, cost: 0.0081 } }));
   }
   if (req.url.startsWith('/local/')) { // gpt-oss local
-    ultimoSistema = String(body.messages?.[0]?.content || '');
+    // Desde 21/11 os resultados vão no fim da pergunta (velocidade): confere o pedido inteiro, não só o sistema.
+    ultimoSistema = (body.messages || []).map((m) => String(m?.content || '')).join('\n');
     const usuario = String(body.messages?.filter((m) => m.role === 'user').pop()?.content || '');
     const texto = /gigante/i.test(usuario) ? '[PRO]\nComeço pelo esqueleto do sistema e pela primeira parte.'
       : /complexo/i.test(usuario) ? 'Aqui vai a primeira parte do projeto, com a estrutura principal.\n\n[PRO]'

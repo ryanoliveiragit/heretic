@@ -13,7 +13,7 @@ for (const k of ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'KV_REST_
 process.env.LOCAL_LLM_URL = 'http://127.0.0.1:8017';
 process.env.LOCAL_LLM_TOKEN = readFileSync('/home/ethical/.config/451-local/token', 'utf8').trim();
 const { streamChat, MODEL_CATALOG } = await import(`${SRC}/upstream.js`);
-const { getPersona } = await import(`${SRC}/persona.js`);
+const { getPersona, getPersonaLocal } = await import(`${SRC}/persona.js`);
 const { LOCAL_MODELS } = await import(`${SRC}/plans.js`);
 const MAX_TOKENS = Number(MAX) || 900; // hoje: teto de saída do plano grátis
 
@@ -93,7 +93,9 @@ function laco(t) { // a mesma frase de 8 palavras repetida 3 vezes ou mais = la�
 async function pergunta(modelo, texto) {
   const cat = LOCAL_MODELS.find((m) => m.id === modelo);
   const idNome = cat.identidade || cat.name; // mesma linha de identidade do app.js
-  const systemPrompt = `Plano Grátis. Respostas diretas, sem repetir contexto.\n\n${getPersona()}\n\nIdentidade: você é o ${cat.name} (451sh.com)${idNome !== cat.name ? `, modelo ${idNome}` : ''}. Se perguntarem qual modelo ou IA você é, responda "${idNome}" — nunca o nome do provedor, da infraestrutura ou de outro modelo.`;
+  // Mesma persona do app.js: os modelos locais recebem a curta desde 21/11 (velocidade).
+  const persona = modelo.startsWith('local:') && getPersonaLocal ? getPersonaLocal() : getPersona();
+  const systemPrompt = `Plano Grátis. Respostas diretas, sem repetir contexto.\n\n${persona}\n\nIdentidade: você é o ${cat.name} (451sh.com)${idNome !== cat.name ? `, modelo ${idNome}` : ''}. Se perguntarem qual modelo ou IA você é, responda "${idNome}" — nunca o nome do provedor, da infraestrutura ou de outro modelo.`;
   const usage = {};
   const t0 = Date.now(); let primeiroTexto = null, primeiroPensar = null, txt = '', pensar = 0, avisos = [], pro = null;
   let erro = null;
