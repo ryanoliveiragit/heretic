@@ -18,8 +18,8 @@ backups/
 drael-replica/
 ryan-ui-work/
 
-# External tools/binaries (2.7GB)
-tools/
+# External tools/binaries (2.7GB) — só a pasta da raiz; src/ferramentas/tools e src/agent/tools são código do site
+/tools/
 
 # Design system docs/demo (not needed to run app)
 ryan-ui/dist/

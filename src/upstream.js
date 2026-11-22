@@ -1175,7 +1175,18 @@ export function blocoDasFerramentas(execucoes, limiteBloco = LIMITE_BLOCO_FERRAM
       fontes.push({ n, url: f.url, title: f.titulo || hostDe(f.url), snippet: f.origem ? `Fonte: ${f.origem}` : '' });
     }
     const renumera = (t) => String(t || '').replace(/\[(\d+)\]/g, (m, d) => (mapa.has(Number(d)) ? `[${mapa.get(Number(d))}]` : m));
-    let dados = res.dados === undefined ? '' : JSON.stringify(res.dados);
+    // "fonte": 2 e "fonte_cvss": 1 dentro dos dados seguem a mesma numeração (na 2ª consulta, o 1 dela vira 3…) e
+    // viram a marca pronta "[3]" no começo de cada bloco: o modelo pequeno cita melhor e o corte de 5 mil não a perde.
+    const ehFonte = (k) => /^fonte/.test(k);
+    const renumeraDados = (v, chave = '') => {
+      if (Array.isArray(v)) return v.map((x) => renumeraDados(x, chave));
+      if (v && typeof v === 'object') {
+        const ents = Object.entries(v);
+        return Object.fromEntries([...ents.filter(([k]) => ehFonte(k)), ...ents.filter(([k]) => !ehFonte(k))].map(([k, x]) => [k, renumeraDados(x, k)]));
+      }
+      return typeof v === 'number' && ehFonte(chave) && mapa.has(v) ? `[${mapa.get(v)}]` : v;
+    };
+    let dados = res.dados === undefined ? '' : JSON.stringify(renumeraDados(res.dados));
     if (dados.length > LIMITE_DADOS_FERRAMENTA) dados = `${dados.slice(0, LIMITE_DADOS_FERRAMENTA)}…(cortado)`;
     partes.push([`### ${e.nome} ${JSON.stringify(e.args)}`, renumera(res.resumo), dados && `DADOS ${dados}`, res.limitacoes?.length ? `LIMITES: ${res.limitacoes.join(' | ')}` : ''].filter(Boolean).join('\n'));
   }
@@ -1183,7 +1194,7 @@ export function blocoDasFerramentas(execucoes, limiteBloco = LIMITE_BLOCO_FERRAM
   if (corpo.length > limiteBloco) corpo = `${corpo.slice(0, limiteBloco)}\n[resultados cortados]`;
   const lista = fontes.map((f) => `[${f.n}] ${f.title} — ${f.url}`).join('\n');
   const bloco = '\n\n## RESULTADOS DAS FERRAMENTAS (consultas públicas feitas agora pelo servidor do 451)\n'
-    + 'Baseie os fatos sobre CVEs, pacotes, IPs, domínios, sites e portas SÓ nestes resultados e cite cada fato logo depois, com o número da fonte entre colchetes, ex.: [1]. '
+    + 'Baseie os fatos sobre CVEs, pacotes, IPs, domínios, sites e portas SÓ nestes resultados e cite cada fato logo depois, com o número da fonte entre colchetes, ex.: [1]; nos DADOS, o campo "fonte" de cada bloco diz qual número usar. Não liste as fontes no fim: a tela já mostra. '
     + 'Os dados vêm de fontes públicas e de varreduras de terceiros: nunca diga que o 451 varreu, testou ou invadiu o alvo. Se um dado não estiver aqui, diga que a consulta não trouxe.\n'
     + corpo + (lista ? `\nFontes numeradas:\n${lista}` : '');
   return { bloco, fontes };
@@ -1714,7 +1725,7 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
   if (iu >= 0) historico[iu] = { ...historico[iu], content: historico[iu].content + notaDoServidor(historico[iu].content)
     + (semResultado ? '\n[Nota do servidor: a busca na web não achou nada sobre isso agora. Não invente: se for algo que não existe, diga que não existe; se for um dado específico, diga que não achou nas fontes públicas e onde procurar.]' : '')
     // Modelo pequeno segue melhor a regra no fim da mensagem (21/11): com resultados, cita [n] em cada fato.
-    + (resultados ? '\n[Nota do servidor: use os resultados que o servidor juntou e, logo depois de cada fato, escreva o número da fonte entre colchetes, ex.: [1] ou [2][3].]' : '') };
+    + (resultados ? '\n[Nota do servidor: use os resultados que o servidor juntou e, logo depois de cada fato, escreva o número da fonte entre colchetes, ex.: [1] ou [2][3]. Não faça lista de fontes no fim: a tela já mostra.]' : '') };
   // Idioma (21/11): numa pergunta curta em português o gpt-oss respondeu "Monday". A regra vai no fim do
   // prompt (pesa mais e não quebra o cache do começo, que é igual para todos).
   const sistema = `${buildSystemPrompt(payload.systemPrompt, true)}\n\n${LOCAL_IDIOMA}\n\n${LOCAL_REGRAS}${resultados}${continuandoLocal ? NOTA_CONTINUAR : ''}`;

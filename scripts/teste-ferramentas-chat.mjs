@@ -11,9 +11,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const vistos = { planejador: 0, planejadorOU: 0, buscas: 0, ferramentas: [], tokens: new Set(), sistema: '', sistemaLocal: '' };
 const TOKEN = createHash('sha256').update('451-ferramentas:segredo-de-teste').digest('hex');
 const RESULTADOS = {
-  cve_consultar: { resumo: 'CVE-2021-44228 · CVSS 3.1 10 CRITICAL [1]. Na lista KEV da CISA desde 2021-12-10 [2].', dados: { id: 'CVE-2021-44228', kev: true }, fontes: [{ n: 1, titulo: 'NVD — CVE-2021-44228', url: 'https://nvd.nist.gov/vuln/detail/CVE-2021-44228' }, { n: 2, titulo: 'CISA KEV', url: 'https://www.cisa.gov/known-exploited-vulnerabilities-catalog' }], limitacoes: [] },
-  dominio_info: { resumo: 'example.com: registrado em 1995-08-14 [1].', dados: { dominio: 'example.com', portas: [443] }, fontes: [{ n: 1, titulo: 'RDAP — example.com', url: 'https://rdap.org/domain/example.com' }], limitacoes: ['subdomínios só de certificados'] },
+  cve_consultar: { resumo: 'CVE-2021-44228 · CVSS 3.1 10 CRITICAL [1]. Na lista KEV da CISA desde 2021-12-10 [2].', dados: { id: 'CVE-2021-44228', fonte_cvss: 1, kev: { na_lista: true, fonte: 2 } }, fontes: [{ n: 1, titulo: 'NVD — CVE-2021-44228', url: 'https://nvd.nist.gov/vuln/detail/CVE-2021-44228' }, { n: 2, titulo: 'CISA KEV', url: 'https://www.cisa.gov/known-exploited-vulnerabilities-catalog' }], limitacoes: [] },
+  // formato do pacote desde 21/11: o DNS tem fonte própria [1], antes do RDAP [2]
+  dominio_info: { resumo: 'example.com: 2 tipos de registro DNS, registrado em 1995-08-14 [2].', dados: { dominio: 'example.com', dns: { A: ['93.184.215.14'], NS: ['a.iana-servers.net'], fonte: 1 }, registro: { registrador: 'IANA', fonte: 2 } }, fontes: [{ n: 1, titulo: 'Registros DNS de example.com', url: 'https://dns.google/query?name=example.com', origem: 'resolvedor DNS' }, { n: 2, titulo: 'RDAP de example.com', url: 'https://rdap.org/domain/example.com' }], limitacoes: ['Os registros DNS vêm do resolvedor do servidor do 451.'] },
 };
+const semEscape = (s) => s.replace(/\\"/g, '"').replace(/\\n/g, '\n');
 const srv = http.createServer(async (req, res) => {
   let raw = ''; for await (const c of req) raw += c;
   const body = JSON.parse(raw || '{}');
@@ -56,6 +58,7 @@ const srv = http.createServer(async (req, res) => {
   if (req.url.startsWith('/or/')) { vistos.buscas++; return json({}, 500); }
   if (req.url.startsWith('/local/')) {
     vistos.sistemaLocal = String(body.messages?.[0]?.content || '');
+    vistos.ultimaLocal = String(body.messages?.at(-1)?.content || '');
     res.writeHead(200, { 'content-type': 'text/event-stream' });
     res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: 'Resposta local com fonte [1].' } }] })}\n\n`);
     res.write(`data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: 'stop' }], usage: { prompt_tokens: 3000, completion_tokens: 10 } })}\n\ndata: [DONE]\n\n`);
@@ -96,11 +99,15 @@ confere(/RESULTADOS DAS FERRAMENTAS/.test(vistos.sistema) && /\[1\] NVD/.test(vi
 confere(vistos.buscas === antes.buscas, 'sem busca na web quando as ferramentas responderam');
 
 r = await manda('zai-org/glm-5.3-flash-uncensored', 'Me dê os dados públicos do domínio example.com');
-confere(vistos.ferramentas.at(-1) === 'dominio_info{"dominio":"example.com"}' && fontesDe(r.avisos).length === 1, `domínio consultado com 1 fonte (${vistos.ferramentas.at(-1)})`);
+const f2 = fontesDe(r.avisos).map((f) => f.title), sis2 = semEscape(vistos.sistema);
+confere(vistos.ferramentas.at(-1) === 'dominio_info{"dominio":"example.com"}' && f2.length === 2 && /Registros DNS/.test(f2[0]) && /RDAP/.test(f2[1]), `domínio: DNS [1] e RDAP [2] na tela (${f2.join(' | ')})`);
+confere(/"dns":\{"fonte":"\[1\]"/.test(sis2) && /"registro":\{"fonte":"\[2\]"/.test(sis2), 'nos dados, o DNS abre com a marca [1] e o registro com [2]');
 
 r = await manda('zai-org/glm-5.3-flash-uncensored', 'O CVE-2021-44228 afeta o domínio example.com?');
-const f3 = fontesDe(r.avisos).map((f) => f.title);
-confere(f3.length === 3 && /RDAP/.test(f3[2]) && /registrado em 1995-08-14 \[3\]/.test(vistos.sistema.replace(/\\n/g, '\n')), `duas ferramentas, numeração única: ${f3.join(' | ')}`);
+const f3 = fontesDe(r.avisos).map((f) => f.title), sis3 = semEscape(vistos.sistema);
+confere(f3.length === 4 && /Registros DNS/.test(f3[2]) && /RDAP/.test(f3[3]) && /registrado em 1995-08-14 \[4\]/.test(sis3), `duas ferramentas, numeração única: ${f3.join(' | ')}`);
+confere(/"fonte_cvss":"\[1\]"/.test(sis3) && /"kev":\{"fonte":"\[2\]"/.test(sis3) && /"dns":\{"fonte":"\[3\]"/.test(sis3) && /"registro":\{"fonte":"\[4\]"/.test(sis3), 'nos dados da 2ª consulta, as fontes viram [3] e [4]');
+confere(/Não liste as fontes no fim/.test(sis3), 'o bloco pede para não repetir a lista de fontes no fim');
 
 antes = { ...vistos };
 r = await manda('zai-org/glm-5.3-flash-uncensored', 'recusa: o CVE-2021-44228 está sendo explorado?');
@@ -112,6 +119,7 @@ confere(vistos.planejador === antes.planejador && !rotulos(r.avisos).length, 'pe
 
 r = await manda('local:gptoss20b', 'O CVE-2021-44228 está sendo explorado?');
 confere(/RESULTADOS DAS FERRAMENTAS/.test(vistos.sistemaLocal) && fontesDe(r.avisos).length === 2, '451 Free também consulta e recebe as fontes');
+confere(/logo depois de cada fato.*Não faça lista de fontes no fim/s.test(vistos.ultimaLocal), `451 Free: a nota no fim da mensagem pede [n] em cada fato e nenhuma lista no fim (…${vistos.ultimaLocal.slice(-90).replace(/\n/g, ' ')})`);
 
 confere([...vistos.tokens].every((t) => t === TOKEN), 'o token interno do chat é igual ao do lado Node');
 const { atende } = await import(`${dir}/ferramentas/http.js`);

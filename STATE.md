@@ -1,3 +1,25 @@
+## 2026-11-21 (22h20, Brasília) — PUBLICADO: DNS com fonte própria + numeração única também nos dados das ferramentas
+
+Pedido do Super Hacking (orientação final 5e2d0c06; a RunPod fica fora de tudo):
+- `src/ferramentas/tools/rede.js` = cópia do pacote compartilhado (só `dominio_info` mudou): os registros DNS têm fonte
+  própria ("Registros DNS de <domínio>", link dns.google), citada antes do RDAP → DNS [1], RDAP [2], crt.sh [3].
+- `blocoDasFerramentas` (`src/upstream.js`): os campos `fonte*` dentro dos DADOS seguem a numeração única (com duas
+  consultas, o 1 da segunda virava o 1 da primeira; agora vira 3) e viram a marca "[n]" no começo de cada bloco. O bloco
+  e a nota do 451 Free pedem [n] em cada fato e nenhuma lista de fontes no fim (a tela já mostra).
+- `.gitignore`: `tools/` → `/tools/` (só os binários da raiz). Antes, `src/ferramentas/tools/*.js` (as 9 consultas) e
+  `src/agent/tools/` (esqueletos) ficavam fora do git, embora subissem no deploy; agora estão versionados.
+- Testes: `scripts/teste-ferramentas-chat.mjs` 16 ok (novos: DNS [1]/RDAP [2], dados renumerados na 2ª consulta, nota do
+  451 Free); `scripts/teste-ferramentas-pacote.mjs` 9 consultas reais + 6 bloqueios de SSRF; `teste-continuar.mjs` e
+  `teste-busca-gratis.mjs` sem falha.
+- No ar, só no 451 Free, "Me dê os dados públicos do domínio example.com": a 1ª versão (`dpl_8zqNbGZ47kDg7PiAGajbvcCJh26J`)
+  separou as fontes, mas o modelo pôs a lista no fim, sem [n] nos fatos; a versão final, em 2 rodadas: DNS citado com 1,
+  RDAP com 2 e crt.sh com 3 (uma com as marcas [n], outra com "Fonte: 1" depois de cada bloco). Prints em
+  `prints/ferramentas-dns-2111/v2-a` e `v2-b` (fora do git: *.png). Custo: ~US$ 0,0009 de planejador (3 perguntas).
+- Deploy `dpl_x9s7FeEkaT643CEHXorg6qni8nid`; 6 arquivos conferidos por sha1 (troca de modelos fora).
+- **Undo:** `npx vercel rollback https://451sh-43tw0tuun-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`.
+- Fase 2: o dono respondeu direto no chat (4 não; 5 não entendeu; 6 não; 7 agora não; 8 créditos servem para planos,
+  imagens ou modelos melhores, o cliente escolhe; 9 sim). Nada começado: falta preço/limite (8 e 9).
+
 ## 2026-11-21 (22h30 UTC) — PUBLICADO: ferramentas de segurança no chat (fase 1 do Super Hacking)
 
 Pedido do dono via Super Hacking: integrar o pacote 451-ferramentas (9 consultas públicas com fontes e proteção SSRF).
