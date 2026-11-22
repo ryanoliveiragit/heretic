@@ -777,15 +777,20 @@ const SEARCH_HINTS = new RegExp([
   'quem [ée]\\b|pesquis|investig|dossi[êe]|antecedente|cve-|changelog|release|download|cota[çc][ãa]o|pre[çc]o|quanto custa|qual o melhor|melhores (ferramentas|repos|modelos)',
   'https?://|www\\.',
 ].join('|'), 'i');
+// Pergunta sobre a própria identidade da IA (dono 22/11: "Quem é você?" buscava na web e trazia fontes inúteis).
+// Isso NUNCA deve buscar: o modelo responde quem é direto. Precede o gatilho forte "quem é" (pesquisa de pessoa).
+const NAO_BUSCA = /(quem\s+(é|e|és|es|eh)\s+(voc|vc|tu)|voc[eê]?\s+(é|e)\s+quem|qual\s+(é\s+|e\s+)?(o\s+)?(seu|teu)\s+nome|como\s+(voc[eê]?|vc)\s+se\s+chama|que\s+(modelo|ia|intelig[eê]ncia|assistente|bot|llm)\b.{0,14}\b(voc|vc|é|e|es|eh)\b|what\s+(model|ai|llm)\s+are\s+you|who\s+are\s+you)/i;
 function shouldSearch(text) {
   const t = (text || '').trim();
-  if (t.length < 8) return false; // saudação/curto: não busca
+  if (t.length < 8 || NAO_BUSCA.test(t)) return false; // saudação/curto ou pergunta de identidade: não busca
   return SEARCH_HINTS.test(t);
 }
 
 // Intenção FORTE de pesquisa de pessoa/alvo ("pesquisa a pessoa X", "quem é Y", "dossiê"):
 // atalho direto pra busca, sem passar pelo classificador (o classificador às vezes erra NAO aqui).
-const STRONG_SEARCH = /(quem [ée]|pesquis\w*|investig\w*|dossi[êe]|antecedentes?|\bbusc\w*)/i;
+// Pergunta de identidade da própria IA ("quem é você") NÃO conta — é respondida direto, sem busca.
+const STRONG_SEARCH_RE = /(quem [ée]|pesquis\w*|investig\w*|dossi[êe]|antecedentes?|\bbusc\w*)/i;
+const STRONG_SEARCH = { test: (t) => STRONG_SEARCH_RE.test(t) && !NAO_BUSCA.test(t) };
 
 // QA 20/11: tarefas auxiliares (classificar imagem, sugestões) iam pelo streamChat completo: prompt de
 // sistema de ~4,5 mil tokens, decisão de busca e reexecução anti-recusa a cada chamada (4–16 s). Agora vão
@@ -1924,24 +1929,39 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
   // Modelo local: caminho próprio e gratuito, antes de qualquer roteador, busca ou troca para provedor pago.
   const localCat = MODEL_CATALOG.find(m => m.id === payload.modelId && m.provider === 'local');
   if (localCat) {
-    // Passe Rapid de 5 min (dono 22/11): na janela do passe, o grátis vai DIRETO pro GLM sem censura, sem checar a fila
-    // (troca instantânea — "mais rápido"). Fora da janela, o bump por fila continua: o streamLocal joga BUMP e aqui
-    // respondemos no GLM, marcando offer:true para a tela oferecer "manter o Rapid por 5 min". Teto do bump sempre vale.
+    // 451 Free (dono 22/11, via Super Hacking): o GLM 5.3 Flash sem censura (OpenUncensored) vai NA FRENTE. Se ele
+    // falhar/recusar, ou se o teto diário de gasto do grátis acabar, o gpt-oss local assume. Com o local em fila cheia
+    // ou o PC fora, a pergunta sobe pro Rapid (GLM) com o cartão do passe. Fase 1 (ferramentas) vale; busca web cara não
+    // roda em toda mensagem (soFerramentas). Teto diário (freeBumpOk) é o guarda de custo; nunca dá prejuízo.
     const ehGratis = payload.bumpPermitido;
     const ultimoLocal = textoLocal((payload.messages || []).filter((m) => m?.role === 'user').pop()?.content).trim();
-    const paraGlm = (extra) => streamChat(mode, { ...payload, modelId: BUMP_ID, claudeFirst: false, semBusca: true, bump: true, rapidPass: false }, { onToken, onWarning, onToolCall, onReasoning, signal, usage });
-    if (ehGratis && payload.rapidPass && !PEDE_CONTINUAR.test(ultimoLocal) && await freeBumpOk().catch(() => false)) {
-      onWarning?.({ type: 'bump', to: BUMP_ID, pass: true }); // já no passe: sem card, só a contagem segue na tela
-      yield* paraGlm();
+    const continuandoL = PEDE_CONTINUAR.test(ultimoLocal);
+    const glmPayload = { ...payload, modelId: BUMP_ID, claudeFirst: false, soFerramentas: true, bump: true, rapidPass: false };
+    const paraGlm = (aviso) => { if (aviso) onWarning?.(aviso); return streamChat(mode, glmPayload, { onToken, onWarning, onToolCall, onReasoning, signal, usage }); };
+    // Passe Rapid ativo (janela de 5 min) → direto GLM, com a contagem na tela.
+    if (ehGratis && payload.rapidPass && !continuandoL && await freeBumpOk().catch(() => false)) {
+      yield* paraGlm({ type: 'bump', to: BUMP_ID, pass: true });
       return;
     }
+    // GLM na frente: com verba, responde o grátis. Se cair antes de escrever, segue pro local.
+    if (ehGratis && !continuandoL && await freeBumpOk().catch(() => false)) {
+      let emitiu = false;
+      // O aviso que marca o medidor como GLM (front) só sai no 1º texto: se o GLM cair sem escrever, o custo não vai
+      // parar no GLM (o local responde de graça). front:true = a tela não mostra "Rapid" (é o Free normal, só mais rápido).
+      const h2 = { onToken: (t) => { if (t) { if (!emitiu) onWarning?.({ type: 'bump', to: BUMP_ID, front: true }); emitiu = true; onToken?.(t); } }, onWarning, onToolCall, onReasoning, signal, usage };
+      try {
+        for await (const ch of streamChat(mode, glmPayload, h2)) yield ch;
+        if (emitiu) return;
+      } catch { /* GLM caiu */ }
+      if (emitiu) return;
+      // GLM não entregou → cai no local (nada foi escrito, então começa limpo).
+    }
+    // Local (sem verba, GLM caiu, ou continuação). Fila cheia / PC fora → sobe pro Rapid (GLM) com o cartão do passe.
     try {
       yield* streamLocal(localCat, payload, { onToken, onWarning, onToolCall, onReasoning, signal, usage });
     } catch (e) {
-      if (e && e.bump) {
-        onWarning?.({ type: 'bump', to: BUMP_ID, message: BUMP_AVISO, offer: true }); // fila cheia: responde no GLM e oferece o passe
-        yield* paraGlm();
-      } else throw e;
+      if (e && e.bump) yield* paraGlm({ type: 'bump', to: BUMP_ID, message: BUMP_AVISO, offer: true });
+      else throw e;
     }
     return;
   }
@@ -2041,7 +2061,9 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
     if (!ferramentasUsadas) step('Entendendo o pedido', 'Vendo se preciso buscar informação de fora.');
     // A decisão usa a busca efetiva (continuação somada), não só a mensagem curta:
     // "São Paulo" sozinho o classificador julgava conversa, e a IA respondia sobre a cidade.
-    if (searchQ.length >= 8 && !payload.semBusca && !continuando && !ferramentasUsadas) {
+    // soFerramentas (GLM na frente do grátis, dono 22/11): mantém a fase 1 (ferramentas), mas sem a busca web cara em
+    // toda mensagem grátis — o teto diário já protege, e a busca de US$ 0,0118 por mensagem sairia caro no volume.
+    if (searchQ.length >= 8 && !payload.semBusca && !payload.soFerramentas && !continuando && !ferramentasUsadas) {
       if (/https?:\/\/|github\.com|gitlab\.com/i.test(searchQ) || STRONG_SEARCH.test(searchQ)) doSearch = true;
       else { const llm = await decideSearchLLM(searchQ, usage); doSearch = (llm === null) ? shouldSearch(searchQ) : llm; }
     }
