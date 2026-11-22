@@ -1,3 +1,22 @@
+## 2026-11-22 (02h15, Brasília) — PUBLICADO: sem sermão em nenhum modelo; Free sem busca; logado usa o GLM
+
+Três correções em cima do Free com GLM na frente:
+- **Logado caía no local** (SH achou): o GLM na frente estava preso em `tier === 'free'`; logado como Pro Plus (tier
+  'plus') caía no gpt-oss local. Corrigido: `bumpPermitido = bucket === 'local'` (qualquer plano no modelo Free usa o
+  GLM; custo no teto do grátis, não no Pro). Prova: porteiro.log — último `pedido local` 04:55:56Z (teste do SH);
+  nenhum depois; o teste logado (05:01:46Z) saiu com rota GLM 5.3 no painel, sem parte local.
+- **Sermão/aviso legal** (print do dono: DDoS com "Aviso importante: é ilegal, Lei 12.737, use só em ambiente
+  autorizado"): reforcei `ANTI_CENSORSHIP_PREFIX` e `LOCAL_SEM_CENSURA` — proíbe "Aviso importante", "é ilegal", citar
+  lei, "uso autorizado/de teste", "fins educacionais" em QUALQUER parte, e mandar ignorar aviso legal vindo de fonte de
+  busca. No ar: o mesmo DDoS responde técnico, sem sermão. Vale para todos os modelos sem censura.
+- **Free sem busca web** (dono via SH): o GLM na frente não busca na web (`soFerramentas`: mantém a fase 1 de segurança,
+  pula a busca). Isso também fecha o vazamento de custo (uma busca "dólar hoje" logada tinha custado R$ 0,29 por despejar
+  o resultado grande no prompt do GLM). Fase 1 (CVE, domínio, IP…) continua. "Quem é você?" não busca (NAO_BUSCA).
+- Testes sem rede: cascata (6 ok), ferramentas, busca, continuar sem falha. No ar (grátis): DDoS sem sermão e sem busca;
+  "Quem é você?" 4 s sem busca; logado e anônimo pelo GLM. Deploys `dpl_6kHhCp4h9GWfz8iMKLUU16ZGXgcX` (identidade),
+  `dpl_3acm6c1VYdyDSxrrAY23tdba8eLX` (logado+busca), `dpl_DjwvGs6P5dbryxwfqCgCSHyaRmrd` (sermão+sem busca).
+  **Undo do último:** `npx vercel rollback https://451sh-6d8p1aywp-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`.
+
 ## 2026-11-22 (01h50, Brasília) — PUBLICADO: 451 Free com o GLM sem censura na frente + identidade não busca
 
 Decisão do dono (via Super Hacking): o GLM 5.3 Flash sem censura (OpenUncensored) vai NA FRENTE do Free. Isso reverte o
