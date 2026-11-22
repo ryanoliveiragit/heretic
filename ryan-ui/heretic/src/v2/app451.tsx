@@ -14,6 +14,7 @@ import { PlushPet, BICHOS, CORES, type Bicho } from "./plush-pet";
 import { TextShimmer } from "@pro/text-shimmer/text-shimmer";
 import { StartBurn } from "@app/start-plate";
 import { Progress } from "@pro/progress/progress";
+import { Badge } from "@pro/badge/badge";
 import { Markdown } from "@app/markdown";
 import { GlassSegmented } from "@pro/glass-segmented/glass-segmented";
 import { ArenaAnswers, type ArenaData } from "@app/arena";
@@ -216,6 +217,7 @@ export function App451() {
   const [gravando, setGravando] = useState(false);
   const [entrar, setEntrar] = useState(false);
   const [upsell, setUpsell] = useState<Upsell | null>(null);
+  const [upsellModelo, setUpsellModelo] = useState<ModelOption | null>(null); // o modelo com cadeado que a pessoa tocou
   const [pay, setPay] = useState<{ open: boolean; orderId: string }>(() => { const id = pendingOrderId(); return { open: !!id, orderId: id }; });
   const [breve, setBreve] = useState<string | null>(null);
   const [busca, setBusca] = useState<string | null>(null);
@@ -311,9 +313,13 @@ export function App451() {
     // Local liberado (gpt-oss) fica no plano de todos; os locais ainda em teste, só o admin vê.
     const grupo = m.bucket === "local" ? ((m as MeModel & { teste?: boolean }).teste ? "Em teste (só você)" : "No seu plano")
       : credito && !(m.locked && m.bucket !== "credits") ? "Com créditos" : m.locked ? "No Pro" : "No seu plano";
-    return { ...m, name: m.name.replace(/^Heretic\b/, "451"), short: m.short.replace(/^Heretic\b|^451\s+/, ""), grupo, badge: credito ? "Créditos" : undefined } as ModelOption;
-  }).sort((a, b) => ordem.indexOf(a.grupo!) - ordem.indexOf(b.grupo!));
-  const atual = modelos.find((m) => m.id === modelo && !m.locked) ?? modelos.find((m) => !m.locked) ?? modelos[0];
+    // Selo verde no 451 Free (dono 21/11). Em português pela regra de não misturar idiomas na tela.
+    const selo = m.bucket === "local" && !(m as MeModel & { teste?: boolean }).teste ? "grátis" : undefined;
+    return { ...m, name: m.name.replace(/^Heretic\b/, "451"), short: m.short.replace(/^Heretic\b|^451\s+/, ""), grupo, selo, badge: credito ? "Créditos" : undefined } as ModelOption;
+  }).sort((a, b) => ordem.indexOf(a.grupo!) - ordem.indexOf(b.grupo!) || forca(a.id) - forca(b.id));
+  // A lista vai do grátis ao mais potente, mas quem nunca escolheu continua começando no 1º liberado do servidor (o Rapid).
+  const padrao = (me?.models ?? []).find((m) => !m.locked)?.id;
+  const atual = modelos.find((m) => m.id === modelo && !m.locked) ?? modelos.find((m) => m.id === padrao) ?? modelos.find((m) => !m.locked) ?? modelos[0];
   const setModelo = (id: string) => { setModeloS(id); try { localStorage.setItem("451-model", id); } catch { /* */ } };
   const porCredito = (atual as ModelOption & { bucket?: string } | undefined)?.bucket === "credits";
   const porLocal = (atual as ModelOption & { bucket?: string } | undefined)?.bucket === "local"; // sem limite de mensagens
@@ -656,7 +662,7 @@ export function App451() {
           ))}
         </div>
         <a className="h-cfg-link" onClick={() => setCfg(conta.chave ? "chave" : "planos")}><Settings size={17} />Configurações</a>
-        <CartaoPlano conta={conta} usado={usado} restam={restam} saldo={saldo} usoJusto={me?.fairUse ?? null} assinar={() => comprar({ tipo: "plano", plano: "pro", periodo: "mensal" })} creditos={() => setCfg("creditos")} />
+        <CartaoPlano conta={conta} usado={usado} restam={restam} saldo={saldo} limitado={temLimite} nome={atual?.name ?? ""} usoJusto={me?.fairUse ?? null} assinar={() => comprar({ tipo: "plano", plano: "pro", periodo: "mensal" })} creditos={() => setCfg("creditos")} />
         <div className="h-rodape-lat">
           {conta.chave ? (
             <a className="h-conta" onClick={() => setCfg("chave")} title="Abrir configurações">
@@ -692,7 +698,7 @@ export function App451() {
             {msgs.length === 0 ? (
               <div className="hx-start hx-start-burn h-burn">
                 <StartBurn suggestions={SUGESTOES} onPick={(t) => enviar(t)} go={<ArrowRight className="hx-burn-go" aria-hidden="true" />}
-                  composer={<>{caixa("Manda o alvo. Nada aqui pede licença")}{temLimite && <p className={`h-uso ${restam <= 3 ? "x-warn" : ""}`}>{usado} de {LIMITE} mensagens hoje{usado > 0 && RENOVA !== "em breve" ? ` · renova ${RENOVA}` : ""}</p>}</>} />
+                  composer={<>{caixa("Manda o alvo. Nada aqui pede licença")}{!pro && <UsoModelo limitado={temLimite} nome={atual?.name ?? ""} usado={usado} restam={restam} assinar={() => comprar({ tipo: "plano", plano: "pro", periodo: "mensal" })} />}</>} />
               </div>
             ) : (
               <>
@@ -726,7 +732,7 @@ export function App451() {
         {cfg && <ModalConfig key="cfg" pet={pet} setPet={setPet} prefs={prefs} setPrefs={setPrefs} aba={cfg} setAba={setCfg} ativo={!pay.open && !entrar && !breve} onClose={() => setCfg(null)} conta={conta} usado={usado} restam={restam} me={me} comprar={comprar} sair={sair} entrar={() => setEntrar(true)} />}
         {confirma && <Modal key="confirma" label={confirma.titulo} onClose={() => setConfirma(null)}><div><h2 className="m-h">{confirma.titulo}</h2><p className="x-tx2">{confirma.texto}</p></div>
           <div className="h-confirma-acoes"><button className="x-btn g" onClick={() => setConfirma(null)}>Cancelar</button><button className="x-btn p" onClick={() => { confirma.acao(); setConfirma(null); }}><Trash2 size={15} />{confirma.botao}</button></div></Modal>}
-        {upsell && <ModalUpsell key="upsell" motivo={upsell} restam={restam} onClose={() => setUpsell(null)} comprar={comprar} />}
+        {upsell && <ModalUpsell key="upsell" motivo={upsell} restam={restam} modelo={upsell === "modelo" ? upsellModelo : null} onClose={() => { setUpsell(null); setUpsellModelo(null); }} comprar={comprar} />}
         {breve && <Modal key="breve" label="Em breve" onClose={() => setBreve(null)}><div><h2 className="m-h">Em breve</h2><p className="x-tx2">{breve}</p></div><button className="x-btn p wide" onClick={() => { setBreve(null); setPay({ open: true, orderId: "" }); }}>Assinar o Pro · R$ 99</button></Modal>}
       </AnimatePresence>
       <PayDialog open={pay.open} orderId={pay.orderId} onOpenChange={(open) => setPay((p) => ({ open, orderId: open ? p.orderId : "" }))} onPaid={() => { setChave(getKey() || null); void loadMe(); }} />
@@ -750,7 +756,11 @@ export function App451() {
     return (
       <Composer ref={composer} models={modelos} model={atual}
         onModel={setModelo}
-        onLockedModel={(id) => (modelos.find((m) => m.id === id) as ModelOption & { bucket?: string } | undefined)?.bucket === "credits" ? setCfg(pro ? "creditos" : "planos") : setUpsell("modelo")}
+        onLockedModel={(id) => {
+          const m = modelos.find((x) => x.id === id);
+          if (m?.bucket === "credits" && pro) { setCfg("creditos"); return; }
+          setUpsellModelo(m ?? null); setUpsell("modelo");
+        }}
         busy={ocupado || gerandoImg} placeholder={ph} onSubmit={submit}
         onStop={() => { pararResp.current?.(); for (const m of msgs) if (m.tipo === "img" && !m.src && !m.erro) cancelarImagem(m.id); }}
         blocked={temLimite && restam <= 0 ? `Volta ${RENOVA}` : null}
@@ -1060,10 +1070,27 @@ function ModalEntrar({ onClose, onEntrar, assinar }: { onClose: () => void; onEn
   );
 }
 /* ---------------------------------------------------------------- plano e limite (preto e cromado, Ryan 19/11) */
-function Medidor({ usado, total = LIMITE }: { usado: number; total?: number }) {
-  return <Progress className="h-prog" data-alerta={total - usado <= 3 || undefined} value={usado} max={total} aria-label={`${usado} de ${total} mensagens usadas`} />;
+/* restante (dono 21/11, "quanto falta pra acabar"): a barra começa cheia e esvazia a cada mensagem. */
+function Medidor({ usado, total = LIMITE, restante = false }: { usado: number; total?: number; restante?: boolean }) {
+  const falta = Math.max(0, total - usado);
+  return <Progress className="h-prog" data-alerta={falta <= 3 || undefined} value={restante ? falta : usado} max={total} aria-label={restante ? `${falta} de ${total} mensagens restantes hoje` : `${usado} de ${total} mensagens usadas`} />;
 }
-function CartaoPlano({ conta, usado, restam, saldo, assinar, creditos, usoJusto }: { conta: Conta; usado: number; restam: number; saldo: number; assinar: () => void; creditos: () => void; usoJusto?: UsoJusto | null }) {
+/* Embaixo da caixa, no grátis (dono 21/11): o modelo com limite mostra numa barra quanto falta hoje; o 451 Free, que é
+   sem limite, não tem barra. O selo para assinar o Pro fica sempre. */
+function UsoModelo({ limitado, nome, usado, restam, assinar }: { limitado: boolean; nome: string; usado: number; restam: number; assinar: () => void }) {
+  return (
+    <div className="h-uso h-uso-linha" data-alerta={(limitado && restam <= 3) || undefined}>
+      {limitado ? (
+        <div className="h-uso-cota">
+          <span>{nome.replace(/^451 /, "")}: {restam === 1 ? "falta 1" : `faltam ${restam}`} de {LIMITE} hoje{usado > 0 && RENOVA !== "em breve" ? ` · renova ${RENOVA}` : ""}</span>
+          <Medidor usado={LIMITE - restam} restante />
+        </div>
+      ) : null}
+      <button type="button" className="h-uso-pro" onClick={assinar}><Badge tone="neutral" size="sm" pill outline>Assinar o Pro</Badge></button>
+    </div>
+  );
+}
+function CartaoPlano({ conta, usado, restam, saldo, assinar, creditos, usoJusto, limitado = true, nome = "" }: { conta: Conta; usado: number; restam: number; saldo: number; assinar: () => void; creditos: () => void; usoJusto?: UsoJusto | null; limitado?: boolean; nome?: string }) {
   const pro = conta.plano !== "gratis";
   if (pro) return (
     <div className="h-cplano h-vidro">
@@ -1080,11 +1107,15 @@ function CartaoPlano({ conta, usado, restam, saldo, assinar, creditos, usoJusto 
     </div>
   );
   return (
-    <div className="h-cplano h-vidro" data-alerta={restam <= 3 || undefined}>
-      <div className="x-between"><span className="x-cap">PLANO GRÁTIS</span>{usado > 0 && RENOVA !== "em breve" ? <span className="x-mono x-mu">renova {RENOVA.replace(/^(hoje|amanhã) às /, "")}</span> : <span className="x-mono x-mu">por dia</span>}</div>
-      <p className="h-cplano-num"><b>{restam}</b><span>de {LIMITE} mensagens hoje</span></p>
-      <Medidor usado={usado} />
-      <div className="x-between h-cplano-linha"><span>Pro: sem limite, Max e Agente</span></div>
+    <div className="h-cplano h-vidro" data-alerta={(limitado && restam <= 3) || undefined}>
+      <div className="x-between"><span className="x-cap">PLANO GRÁTIS</span>{!limitado ? <span className="x-mono x-mu">sem limite</span> : usado > 0 && RENOVA !== "em breve" ? <span className="x-mono x-mu">renova {RENOVA.replace(/^(hoje|amanhã) às /, "")}</span> : <span className="x-mono x-mu">por dia</span>}</div>
+      {limitado ? (
+        <>
+          <p className="h-cplano-num"><b>{restam}</b><span>de {LIMITE} no {nome.replace(/^451 /, "") || "Rapid"} hoje</span></p>
+          <Medidor usado={LIMITE - restam} restante />
+        </>
+      ) : <p className="h-cplano-num"><b>{nome.replace(/^451 /, "") || "Free"}</b><span>sem limite de mensagens</span></p>}
+      <div className="x-between h-cplano-linha"><span>Pro: Titan, Max e Agente</span></div>
       <button className="h-btn-cromo fino" onClick={assinar}>Assinar o Pro <span>R$ 99</span></button>
     </div>
   );
@@ -1094,18 +1125,22 @@ function AvisoLimite({ usado, restam, assinar }: { usado: number; restam: number
     <motion.div className="h-aviso" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", duration: 0.5, bounce: 0.15 }}>
       <div className="h-aviso-linha">
         <p><span className="x-mono h-aviso-cont">{usado}/{LIMITE}</span><span>{restam === 0 ? <>Acabou por hoje. Volta <b>{RENOVA}</b>.</> : <>{restam === 1 ? "Resta 1 mensagem" : `Restam ${restam} mensagens`}. Voltam <b>{RENOVA}</b>.</>}</span></p>
-        <button className="h-aviso-acao" onClick={assinar}>{restam === 0 ? "Continuar no Pro" : "Tirar o limite"}<ArrowRight size={14} /></button>
+        <button className="h-aviso-acao" onClick={assinar}>{restam === 0 ? "Continuar no Pro" : "Seguir no Pro"}<ArrowRight size={14} /></button>
       </div>
       <Medidor usado={usado} />
     </motion.div>
   );
 }
-function ModalUpsell({ motivo, restam: restamReal, onClose, comprar }: { motivo: Upsell; restam: number; onClose: () => void; comprar: (c: Compra) => void }) {
+function ModalUpsell({ motivo, restam: restamReal, onClose, comprar, modelo }: { motivo: Upsell; restam: number; onClose: () => void; comprar: (c: Compra) => void; modelo?: ModelOption | null }) {
   const restam = motivo === "acabou" ? 0 : restamReal;
   const textos: Record<Upsell, [string, string]> = {
-    perto: [`Faltam ${restam}. E você está no meio do alvo.`, `Quando acabarem, esta conversa para aqui até ${RENOVA}. No Pro você termina agora, sem contar mensagem.`],
+    perto: [`Faltam ${restam}. E você está no meio do alvo.`, `Quando acabarem, esta conversa para aqui até ${RENOVA}. No Pro você termina agora.`],
     acabou: ["Acabou por hoje. O alvo não.", `Suas ${LIMITE} mensagens grátis voltam ${RENOVA}. No Pro, esta conversa continua agora, do ponto onde parou.`],
-    modelo: ["Esse modelo é do Pro.", "No Pro você usa o 451 Titan e o 451 Max, e o Rapid fica sem limite diário."],
+    // Modelo com cadeado tocado no seletor (dono 21/11): a ficha dele, para olhar antes de assinar.
+    modelo: modelo
+      ? [modelo.bucket === "credits" ? `${modelo.name} usa créditos do Pro.` : `${modelo.name} é do Pro.`,
+        [modelo.note, modelo.guide?.bestFor ? `Para: ${modelo.guide.bestFor.replace(/\.$/, "")}.` : ""].filter(Boolean).join(" ")]
+      : ["Esse modelo é do Pro.", "No Pro você usa o 451 Titan e o 451 Max, e o Rapid sai do limite de 15 por dia, com uso justo."],
     agente: ["O agente é do Pro.", "Ele reescreve seu pedido como um pentester sênior antes de mandar: mais contexto, entrega em passos, sem rodeio. E fica do lado dando dicas enquanto você pesquisa."],
     arena: ["A arena é do Pro.", "Dois modelos respondem e um juiz escolhe."],
     api: ["A API é do Pro.", "Use o 451 no seu código com a mesma chave."],
@@ -1120,7 +1155,7 @@ function ModalUpsell({ motivo, restam: restamReal, onClose, comprar }: { motivo:
           <h2 className="m-h">{h}</h2>
           <p className="x-tx2 h-up-p">{p}</p>
           <ul className="h-up-lista">
-            {["Mensagens sem limite diário no Rapid, Titan e Max", "451 Max: o que pensa antes de responder", "Agente que afina seu pedido antes de enviar", "500 créditos por mês para os modelos pagos com créditos", "Imagem e PDF no chat, arena e API"].map((t) => <li key={t}><Check size={16} />{t}</li>)}
+            {["Rapid, Titan e Max sem o limite de 15 por dia, com uso justo", "451 Max: o que pensa antes de responder", "Agente que afina seu pedido antes de enviar", "500 créditos por mês para os modelos pagos com créditos", "Imagem e PDF no chat, arena e API"].map((t) => <li key={t}><Check size={16} />{t}</li>)}
           </ul>
         </div>
         <div className="h-up-dir">
@@ -1135,6 +1170,10 @@ function ModalUpsell({ motivo, restam: restamReal, onClose, comprar }: { motivo:
     </Modal>
   );
 }
+
+/* Ordem do seletor (dono 21/11): do grátis ao mais potente. Fora da lista, no fim. */
+const FORCA = ["local:gptoss20b", "zai-org/glm-5.3-flash-uncensored", "nousresearch/hermes-4-405b", "claude-sonnet-5-5", "hermes-4-405b", "kimi-k3.1-pro-uncensored"];
+function forca(id: string) { const i = FORCA.indexOf(id); return i < 0 ? FORCA.length : i; }
 
 /* ---------------------------------------------------------------- configurações (modal, pedido do Ryan 19/11: nada de tela) */
 function ModalConfig({ pet, setPet, prefs, setPrefs, aba, setAba, ativo, onClose, conta, usado, restam, me, comprar, sair, entrar }: { pet: Pet; setPet: (p: Pet) => void; prefs: Prefs; setPrefs: (p: Prefs) => void; aba: Cfg; setAba: (c: Cfg) => void; ativo: boolean; onClose: () => void; conta: Conta; usado: number; restam: number; me: MeX | null; comprar: (c: Compra) => void; sair: () => void; entrar: () => void }) {

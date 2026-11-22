@@ -39,11 +39,14 @@ async function serveStatic(c, relPath) {
   return new Response(data, { headers: { 'Content-Type': mime } });
 }
 
-// Static files (local dev only): landing em /, celular em /m.html, chat em /app/.
+// Static files (local dev only): chat em / e /app/, página de apresentação em /sobre, celular em /m.html.
 app.get('*', async (c) => {
   let rel = decodeURIComponent(new URL(c.req.url).pathname);
   if (rel.startsWith('/api/')) return c.text('Not found', 404);
-  if (rel.endsWith('/')) rel += 'index.html';
+  // Dono 21/11: o site abre direto no chat; a página de apresentação fica em /sobre (igual ao vercel.json).
+  if (rel === '/') rel = '/app/index.html';
+  else if (rel === '/sobre') rel = '/sobre.html';
+  else if (rel.endsWith('/')) rel += 'index.html';
   return serveStatic(c, rel.replace(/^\/+/, ''));
 });
 

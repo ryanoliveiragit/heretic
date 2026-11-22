@@ -24,11 +24,25 @@ alturaApp();
 window.addEventListener("resize", alturaApp);
 window.addEventListener("orientationchange", () => setTimeout(alturaApp, 250));
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App451 />
-  </StrictMode>,
-);
+/* Carregamento (dono 21/11): o CSS do app fica no fim do body (a cigarra pinta antes). Se o navegador rodar este script
+   antes de o CSS chegar, espera por ele (até 10 s) para o app nunca aparecer sem estilo. */
+function esperaCss(): Promise<void> {
+  const link = document.querySelector<HTMLLinkElement>('link[rel="stylesheet"][href*="/app/assets/"]');
+  if (!link || link.sheet) return Promise.resolve();
+  return new Promise((pronto) => {
+    const fim = () => pronto();
+    link.addEventListener("load", fim, { once: true });
+    link.addEventListener("error", fim, { once: true });
+    setTimeout(fim, 10000);
+  });
+}
+void esperaCss().then(() => {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <App451 />
+    </StrictMode>,
+  );
+});
 
 // PWA auto-update: registra o service worker e recarrega sozinho quando entra uma versão nova.
 // start_url do manifesto é /app/, então este é o ponto que mantém o app instalado em dia.

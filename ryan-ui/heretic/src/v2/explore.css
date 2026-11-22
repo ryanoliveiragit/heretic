@@ -177,6 +177,18 @@ body, button, input, textarea, select, [role="dialog"], [role="menu"] { font-fam
 /* início: o 451 queimando, como no app no ar */
 .h-burn { flex: 1; min-height: 0; overflow: hidden; } .h-burn .hx-burn-dock { display: grid; gap: 8px; }
 .h-uso { font: 12.5px "Geist Mono Variable", monospace; color: var(--x-mu); padding: 0 4px; }
+/* Embaixo da caixa no grátis (dono 21/11): barra só no modelo com limite + selo do Pro (componentes Progress e Badge). */
+.h-uso-linha { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.h-uso-cota { display: grid; gap: 6px; min-width: 210px; }
+.h-uso-cota .h-prog { width: 100%; }
+.h-uso-linha[data-alerta] .h-uso-cota > span { color: var(--x-tx); }
+.h-uso-pro { appearance: none; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; }
+.h-uso-pro:hover [class*="badge"] { color: var(--x-tx); border-color: #5A5A62; }
+.h-uso-pro:focus-visible { outline: 2px solid var(--x-tx2); outline-offset: 3px; border-radius: 999px; }
+/* Selo "grátis" ao lado do nome no seletor de modelos */
+.hx-selo { margin-left: 6px; vertical-align: 1px; }
+/* O tema deixa os tons de status em cinza; este selo é verde de propósito (dono 21/11: "badge verde"), o verde antigo do 451. */
+.hx-selo.hx-selo { --badge-tone: #22E584; }
 /* ===== configurações em modal ===== */
 .m-caixa.h-cfg { width: min(1060px, 95vw); height: min(780px, 90vh); padding: 0; overflow: hidden; display: block; }
 .h-cfg-grade { display: grid; grid-template-columns: 230px minmax(0, 1fr); height: 100%; }
@@ -584,6 +596,8 @@ body, button, input, textarea, select, [role="dialog"], [role="menu"] { font-fam
   .hx-burn-title { font-size: 34px; white-space: normal; }
   .hx-burn-facts { font-size: 10.5px; gap: 6px; }
   .h-uso { font-size: 11px; text-align: center; }
+  .h-uso-linha { gap: 10px; }
+  .h-uso-cota { min-width: 0; width: min(260px, 70vw); }
 }
 
 /* Mascote nítido (dono 19/11: "sem qualidade" e "achatado"): sem barra translúcida por cima e respiração leve. */

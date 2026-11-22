@@ -68,7 +68,7 @@ export const PUBLIC_MODELS_RAW = [
       bestFor: 'Conversa longa, resumo, ideia rápida e tarefa do dia a dia.',
       style: 'Medido em 21/11 com o Claude Sonnet na frente: ~2 s numa pergunta curta e ~11 s numa explicação de 3 parágrafos.',
       limits: [
-        'No grátis: 15 mensagens por dia. No Pro: ilimitado, com uso justo.',
+        'No grátis: 15 mensagens por dia. No Pro: sem esse limite, com uso justo.',
         'Para raciocínio profundo, use o Max.',
         'Imagem e PDF só no Pro (leitor auxiliar transcreve o arquivo antes da resposta).',
         'Não roda comandos. Conversa longa mantém as últimas 8 mensagens.',
@@ -88,7 +88,7 @@ export const PUBLIC_MODELS_RAW = [
       bestFor: 'Conversa do dia a dia, análise, técnica e decisões sem enrolação.',
       style: 'Medido em 21/11 com o Claude Sonnet na frente: ~2 s numa pergunta curta e ~11 s numa explicação de 3 parágrafos.',
       limits: [
-        'No Pro: ilimitado, com uso justo.',
+        'No Pro: com uso justo.',
         'Lê imagem e PDF por um leitor auxiliar, que transcreve o arquivo antes da resposta.',
         'Não roda comandos. Conversa longa mantém as últimas mensagens.',
       ],
@@ -120,7 +120,7 @@ export const PUBLIC_MODELS_RAW = [
       bestFor: 'Análise longa, texto denso e raciocínio técnico de verdade.',
       style: 'Testado em 19/11: resposta densa e completa, sem recusa.',
       limits: [
-        'Modelo de ponta: usa créditos (Pro traz 500 por mês, Pro Plus 13.000). Não entra no ilimitado.',
+        'Modelo de ponta: usa créditos (Pro traz 500 por mês, Pro Plus 13.000). Não entra no uso justo.',
         'Lê imagem e PDF por um leitor auxiliar.',
         'Não roda comandos. Conversa longa mantém as últimas 8 mensagens.',
       ],
@@ -135,7 +135,7 @@ export const PUBLIC_MODELS_RAW = [
       bestFor: 'Pesquisa, análise difícil e resposta que precisa acertar de primeira.',
       style: 'Testado em 19/11: resposta precisa e bem estruturada, sem recusa.',
       limits: [
-        'Modelo de ponta: usa créditos (Pro traz 500 por mês, Pro Plus 13.000). Não entra no ilimitado.',
+        'Modelo de ponta: usa créditos (Pro traz 500 por mês, Pro Plus 13.000). Não entra no uso justo.',
         'Lê imagem e PDF por um leitor auxiliar.',
         'Não roda comandos. Conversa longa mantém as últimas 8 mensagens.',
       ],

@@ -61,6 +61,7 @@ import { t, lang } from "@app/i18n";
 import type { WireAttachment } from "@app/api";
 import { KBD } from "@app/kbd";
 import { gravarMicrofone, transcreverAudio } from "./whisper";
+import { Badge } from "@pro/badge/badge";
 
 const { spring, duration, ease } = motionTokens;
 /** The block's shared settle: 240ms, no overshoot. */
@@ -91,6 +92,8 @@ export interface ModelOption {
   locked?: boolean;
   /** Small pill after the name; locked models show "Pro" when this is empty. */
   badge?: string;
+  /** 451 (dono 21/11): selo verde ao lado do nome, ex. "grátis" no 451 Free. Aparece também no menu agrupado. */
+  selo?: string;
   defaultEffort?: Effort;
   /** Janela de contexto, em tokens. */
   ctx?: number | null;
@@ -736,6 +739,7 @@ function ModelMenu({ models, model, reduced, onModel, onLocked }: ModelMenuProps
                   <span className={styles.modelItemText}>
                     <span className={styles.modelItemName}>
                       {option.name}
+                      {option.selo ? <Badge tone="success" size="sm" pill className="hx-selo">{option.selo}</Badge> : null}
                       {option.locked ? <Lock className={styles.lockGlyph} aria-hidden="true" /> : null}
                       {option.locked ? <span className={styles.srOnly}>, locked</span> : null}
                     </span>
@@ -759,7 +763,7 @@ function ModelMenu({ models, model, reduced, onModel, onLocked }: ModelMenuProps
           </DropdownMenu.RadioGroup>
           <DropdownMenu.Separator className={styles.menuSeparator} />
           <DropdownMenu.Label className={styles.menuFoot}>
-            {anyLocked ? "Com cadeado: toque para liberar." : "As barras mostram a força de cada modelo."}
+            {anyLocked ? "Com cadeado: toque para ver o modelo e liberar." : "As barras mostram a força de cada modelo."}
           </DropdownMenu.Label>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>

@@ -9,10 +9,26 @@ const home = process.env.BUILD_HOME === "1";
 const root = path.resolve(import.meta.dirname, home ? "heretic-home" : "heretic");
 const outDir = home ? path.resolve(import.meta.dirname, "..", "public-home") : path.resolve(import.meta.dirname, "..", "public", "app");
 
+// Carregamento (dono 21/11): no build do app, o CSS (300 KB) sai do <head> e vai para o fim do <body>, depois da
+// cigarra de carregamento. Assim a cigarra pinta junto com o HTML; o script do app espera esse CSS antes de montar.
+const cssDepoisDaCarga = {
+  name: "451-css-depois-da-carga",
+  apply: "build" as const,
+  transformIndexHtml: {
+    order: "post" as const,
+    handler(html: string) {
+      const re = /\s*<link rel="stylesheet" crossorigin href="(\/app\/assets\/[^"]+\.css)">/;
+      const m = re.exec(html);
+      if (!m) return html;
+      return html.replace(re, "").replace("</body>", `  <link rel="stylesheet" crossorigin href="${m[1]}">\n  </body>`);
+    },
+  },
+};
+
 export default defineConfig({
   root,
   base: home ? "/" : "/app/",
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), ...(home ? [] : [cssDepoisDaCarga])],
   resolve: {
     alias: {
       "@pro": path.resolve(import.meta.dirname, "..", "ryan-ui-work/rebrand/site-impl/src/components/ryan"),

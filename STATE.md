@@ -1,3 +1,29 @@
+## 2026-11-21 (21h UTC) — PUBLICADO: 451sh.com abre no chat, carregamento novo, seletor do grátis ao mais potente, uso justo honesto
+
+Pedidos do dono (prints): "o loading tá demorando e tá feio", "tem que abrir direto na tela do chat", seletor "do grátis
+até o mais potente" com badge verde no gratuito, "todos os modelos disponíveis para olhar, porém com cadeado", o "0/15"
+virar selo do Pro com barra de progresso só no modelo com limite, e "Mensagens sem limite diário... isso é real?".
+- Rota: `vercel.json` reescreve `/` → `/app/index.html` (URL fica 451sh.com) e `/sobre` → `/sobre.html` (a página de
+  apresentação, antes `public/index.html`). `src/server.js` local igual. `/app/` continua (PWA).
+- Carregamento: cigarra (ícone do 451, inline) dentro do #root com respiração suave; CSS do app (300 KB) movido para o fim
+  do body no build (plugin em `ryan-ui/vite.heretic.config.ts`); `main.tsx` espera o CSS antes de montar; fontes de fora
+  sem travar (preload + onload). Título/descrição de busca no app, `lang="pt-BR"`. Medido no ar, celular 4G lento + CPU
+  4×: abrir 451sh.com ia para a página de apresentação (primeiro texto 17,6 s); agora a cigarra pinta em 0,3 s e o chat fica
+  pronto em 2,5 s (antes no /app/: 2,8 s de tela preta). Computador: chat em 0,35 s. O JS (319 KB gz) segue o gargalo.
+- Seletor: ordem 451 Free → Rapid → Titan → Max → Hermes → Kimi; selo verde "grátis" (Badge do ryan-ui, verde #22E584 só
+  nele, o tema deixa os tons de status em cinza); quem nunca escolheu continua no Rapid. Modelo com cadeado abre a ficha
+  dele ("451 Titan é do Pro." + nota + para que serve) com o botão do Pro.
+- Grátis: embaixo da caixa e no cartão do plano, barra de "quanto falta" só quando o Rapid (limitado) está escolhido; com o
+  451 Free, "sem limite de mensagens" e o selo "Assinar o Pro".
+- Uso justo honesto: "Mensagens sem limite diário no Rapid, Titan e Max" não era verdade (teto de custo por assinante:
+  US$ 0,15/5 h, 0,25/dia, 0,90/semana, 2,60/mês no Pro; depois o Rapid sem Claude com US$ 0,10/dia; depois para até a janela
+  renovar). Textos trocados no app, em /sobre (título, cartão, 2 perguntas) e nos guias dos modelos; aviso do grátis diz
+  "busca na web sem o limite do grátis". Proteção entre mensagens no Pro: 3 s (a página dizia 8 s).
+- Deploy `dpl_215EhjZ5Bmw6XZRkFJ52xX536jKY`, READY, 451sh.com; 10 arquivos conferidos por sha1; sw `451-44074108`.
+  Conferido no ar: telas do visitante no celular e no computador, sem erro de página. Typecheck: só erros antigos.
+- **Undo:** `npx vercel rollback https://451sh-m7noka7qm-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`.
+- Não testado: iPhone de verdade; o Safari pode segurar a pintura até o CSS chegar (sem regressão: era assim antes).
+
 ## 2026-11-21 (20h20 UTC) — PUBLICADO: painel com nível × plano, tempo, fornecedor, ajudas e catálogo oficial
 
 Pedido do dono via Redesig geral ("dados corretos" no painel novo). Deploys `dpl_EBheFhSSZ2WNKGdeEU5iqcc2VhLe` e
