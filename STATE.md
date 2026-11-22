@@ -1,3 +1,27 @@
+## 2026-11-22 (01h, Brasília) — PUBLICADO: API compatível com a Anthropic (/v1/messages) p/ Claude Code (item 9)
+
+Dono: "sim" pra API no formato Anthropic; e "todos os testes no plano gratuito". Então a API responde o modelo LOCAL
+(gpt-oss) de graça para quem não tem chave Pro — assim dá para usar o 451 Free no Claude Code E testar sem gastar.
+- `src/anthropic.js` (`anthropicMessages`): traduz o formato Anthropic ↔ interno. Entrada: system (string/blocos),
+  messages com blocos text/tool_use/tool_result → chat interno (tool_result vira role:tool; tool_use vira tool_calls);
+  tools (input_schema) → function/parameters. Saída streaming: message_start, ping, content_block_start/delta/stop de
+  texto e de tool_use (input_json_delta), message_delta (stop_reason end_turn|tool_use), message_stop. Também resposta
+  única (type:message). Rota em `src/v1.js` (`v1.post('/messages')`) e função `api/v1/messages.js` (Edge).
+- Grátis (sem chave Pro): modelo local, custo zero, freio por aparelho (THROTTLE_SECONDS). Na API o local usa o caminho
+  `api:true` do streamLocal (ferramentas, corta por turno, sem cartão de continuar) e NUNCA sobe pro GLM (sem bump): fila
+  cheia espera, nunca gasta. Orçamento das mensagens desconta o system grande do Claude Code (não estoura o contexto).
+  Pro/Plus (com a chave): 451-rapid/titan (Claude Sonnet na frente) e 451-max (Opus); teto global + uso justo; Hermes/
+  Kimi (créditos) ainda fora da API Anthropic. `custoTurno` + `registraUso` (fonte 'api-anthropic').
+- Base p/ o cliente: `ANTHROPIC_BASE_URL=https://451sh.com/api` (o SDK acrescenta /v1/messages), `ANTHROPIC_API_KEY`=
+  chave Pro, ou `451-free` para o grátis. Guia na página API do app (seção "Claude Code e o SDK da Anthropic").
+- Testes: `scripts/teste-anthropic.mjs` 9/9 sem rede (ordem dos eventos, texto dos deltas, tool_use no stream, tools→
+  function, tool_result→role:tool, resposta única). No ar, só no grátis: streaming (eventos certos + resposta local real),
+  tool_use (stop_reason tool_use, input_json), não-streaming (type:message, "OK"). bump e ferramentas sem regressão.
+- Deploys: `dpl_E7xn6yVr4quVv4SuAoYUecmbjsDa` (backend) e `dpl_DYoRoYorGnX4hNKDsjwqUNqg2ZTh` (guia no app).
+  **Undo:** `npx vercel rollback https://451sh-raklr50o6-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`.
+- Próximos (ordem do dono): busca na dark web (fazer junto com ele — Super Hacking pediu "não sem falar"); resumo final.
+  Item 5 (comparativo) aprovado, depois.
+
 ## 2026-11-22 (00h20, Brasília) — PUBLICADO: bump do grátis pro GLM + passe 451 Rapid de 5 min
 
 Dono: o grátis é lento na fila; "pode usar o Rapid por 5 minutos e depois expira com o aviso do Pro, e fica uma

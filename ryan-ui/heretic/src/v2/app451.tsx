@@ -1400,6 +1400,9 @@ function PaginaApi({ conta, me }: { conta: Conta; me: MeX | null }) {
     js: `import OpenAI from "openai";\n\nconst client = new OpenAI({ baseURL: "${BASE}", apiKey: "${k}" });\nconst r = await client.chat.completions.create({\n  model: "451-titan-uncensored",\n  messages: [{ role: "user", content: "Oi" }],\n});\nconsole.log(r.choices[0].message.content);`,
   }[ling];
   const env = `OPENAI_BASE_URL=${BASE}\nOPENAI_API_KEY=${k}\nOPENAI_MODEL=451-titan-uncensored`;
+  // Claude Code e o SDK da Anthropic: a URL base é o host (o SDK acrescenta /v1/messages).
+  const ANTH = BASE.replace(/\/v1$/, "");
+  const anthEnv = `ANTHROPIC_BASE_URL=${ANTH}\nANTHROPIC_API_KEY=${k}\nANTHROPIC_MODEL=451-max-uncensored`;
   return (
     <div className="x-scroll p-pag"><div className="x-w980 x-gap22">
       <div><h1 className="p-h1">API</h1><p className="x-tx2">Use os modelos do 451.sh no seu código. A API segue o formato da OpenAI: qualquer biblioteca da OpenAI funciona trocando o endereço e a chave.</p></div>
@@ -1415,6 +1418,11 @@ function PaginaApi({ conta, me }: { conta: Conta; me: MeX | null }) {
       <section><div className="x-between"><h2 className="p-h2">Primeira chamada</h2><div className="p-abas peq">{(["curl", "python", "js"] as const).map((l) => <a key={l} aria-selected={ling === l} onClick={() => setLing(l)}>{l === "curl" ? "cURL" : l === "python" ? "Python" : "Node"}</a>)}</div></div>
         <CodeBlock code={cod} language={ling === "curl" ? "bash" : ling === "python" ? "python" : "javascript"} filename={ling === "curl" ? "terminal" : ling === "python" ? "exemplo.py" : "exemplo.mjs"} />
         <p className="x-mu p-nota">Os nomes antigos (451-titan e os outros) continuam funcionando. Streaming: envie "stream": true. Lista de modelos: GET {BASE}/models. Erros: 401 chave inválida ou sem Pro, 429 limite, 402 créditos acabaram.</p>
+      </section>
+      <section><h2 className="p-h2">Claude Code e o SDK da Anthropic</h2>
+        <p className="x-tx2">O 451 também responde no formato da Anthropic (<code>POST {ANTH}/v1/messages</code>). No Claude Code, no Codex ou em qualquer app do SDK da Anthropic, troque só a URL base e a chave:</p>
+        <CodeBlock code={anthEnv} language="bash" filename=".env (Claude Code)" />
+        <p className="x-mu p-nota">Grátis, sem conta: use <code>ANTHROPIC_API_KEY=451-free</code> e o modelo <code>451-free</code> — roda no modelo local do 451, sem custo (pode ter fila). Com a sua chave Pro: 451-rapid, 451-titan ou 451-max.</p>
       </section>
     </div></div>
   );

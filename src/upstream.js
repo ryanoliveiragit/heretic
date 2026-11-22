@@ -1771,7 +1771,10 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onToolCall, onRe
   const viaApi = !!payload.api;
   const comFerramentas = viaApi && Array.isArray(payload.tools) && payload.tools.length > 0;
   const mapeadas = (payload.messages || []).map(paraLocal);
-  const historico = viaApi ? cortaPorTurno(mapeadas, LOCAL_HIST_API) : trimHistory(mapeadas, resultados ? Math.min(cat.ctx, LOCAL_HIST_BUSCA) : cat.ctx);
+  // API (Claude Code manda system grande): o orçamento das mensagens desconta o tamanho do system, para o total
+  // (system + conversa + saída) não estourar o contexto da máquina.
+  const orcamentoApi = Math.max(2000, LOCAL_HIST_API - Math.ceil((payload.systemPrompt || '').length / 4));
+  const historico = viaApi ? cortaPorTurno(mapeadas, orcamentoApi) : trimHistory(mapeadas, resultados ? Math.min(cat.ctx, LOCAL_HIST_BUSCA) : cat.ctx);
   const iu = viaApi ? -1 : historico.map((m) => m.role).lastIndexOf('user');
   // Resultados (busca ou ferramentas) no fim da pergunta, não no sistema (21/11, velocidade): o começo do prompt fica igual
   // em todo pedido e a máquina reaproveita o que já leu (sistema + conversa). Antes, cada resultado novo no sistema

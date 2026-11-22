@@ -21,8 +21,13 @@ import { bucketOf, subjectsFor, consumeQuota, refundQuota, spendStatus, addSpend
 import { checkGlobalBudget, recordCost } from './cost.js';
 import { creditBalance, spendCredits, priceCredits, tetoDeCreditos, throttle, MIN_TO_START, THROTTLE_SECONDS, THROTTLE_PRO_SECONDS } from './credits.js';
 import { cortaHistorico, caracteresDe, PRO_MAX_INPUT_CHARS } from './entrada.js';
+import { anthropicMessages } from './anthropic.js';
 
 export const v1 = new Hono();
+
+// ── POST /v1/messages ── API compatível com a Anthropic (Claude Code e o SDK da Anthropic).
+// Grátis (sem chave Pro): modelo local, custo zero. Pro/Plus: modelos pagos. Ver src/anthropic.js.
+v1.post('/messages', (c) => anthropicMessages(c));
 
 // Identidade certa na API: o modelo responde por esta camada, não pela infraestrutura de trás.
 // A identidade mora na persona (regra do dono 20/11): aqui só entra o contexto da API, sem
