@@ -1,3 +1,25 @@
+## 2026-11-22 (01h50, Brasília) — PUBLICADO: 451 Free com o GLM sem censura na frente + identidade não busca
+
+Decisão do dono (via Super Hacking): o GLM 5.3 Flash sem censura (OpenUncensored) vai NA FRENTE do Free. Isso reverte o
+"local na frente" que o dono tinha escolhido antes. Fluxo (streamChat, src/upstream.js):
+1. GLM sem censura responde o grátis (rápido, nuvem). Fase 1 (ferramentas) vale; busca web cara não roda em toda
+   mensagem (flag `soFerramentas`: mantém a fase 1, pula a busca de US$ 0,0118).
+2. GLM falha/recusa ANTES de escrever, ou o teto diário do grátis estourou → gpt-oss local assume.
+3. Local em fila cheia / PC fora → sobe pro Rapid (GLM) com o cartão do passe de 5 min.
+- O medidor conta como GLM só quando ele escreve (aviso bump front:true no 1º token; a tela não mostra "Rapid" no caso
+  normal). Teto diário = freeBumpOk (FREE_BUMP_USD_DAY, US$ 3). Nunca dá prejuízo.
+- Custo medido no ar (grátis): pergunta normal ~R$ 0,0026; com fase 1 (CVE) ~R$ 0,0052 (Haiku planejador + GLM). Com
+  US$ 3/dia dá ~4 mil a 7 mil respostas pelo GLM por dia; depois cai no local.
+- BUG do dono (print 01h44): "Quem é você?" buscava na web e trazia fontes inúteis (sites de "como se diz quem é você"),
+  e ficava lento. Causa: o gatilho forte de busca casava "quem é" (pesquisa de pessoa). Corrigido: `NAO_BUSCA` exclui
+  pergunta de identidade da própria IA em shouldSearch e no STRONG_SEARCH (todos os caminhos). No ar: "Quem é você?" →
+  sem busca, 4 s, identidade certa; "quem é o Elon Musk" / "dólar hoje" seguem buscando.
+- Testes sem rede: `teste-bump-gratis.mjs` (cascata GLM→local→Rapid, 6 ok); busca grátis, ferramentas e anthropic sem
+  falha. Deploys: `dpl_BWQ4ykcnGvUoAXhNG3PGe8nSKmcU` (GLM frente) e `dpl_6kHhCp4h9GWfz8iMKLUU16ZGXgcX` (identidade).
+  **Undo:** `npx vercel rollback https://451sh-83ko0gyme-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`.
+- Aberto: a busca web do grátis agora só roda quando cai no local; no GLM da frente não roda (custo). Se o dono quiser
+  busca sempre, dá pra ligar no GLM com o teto de busca diário do grátis.
+
 ## 2026-11-22 (01h, Brasília) — PUBLICADO: API compatível com a Anthropic (/v1/messages) p/ Claude Code (item 9)
 
 Dono: "sim" pra API no formato Anthropic; e "todos os testes no plano gratuito". Então a API responde o modelo LOCAL
