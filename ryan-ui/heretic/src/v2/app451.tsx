@@ -498,12 +498,16 @@ export function App451() {
           onEnhanced: (_o, t) => patchMsg(cid, id, (m) => ({ ...m, agente: t } as Msg)),
           onWarning: (d) => {
             const w = d as { type?: string; query?: string; sources?: { url: string; title: string; snippet?: string }[]; answers?: { model: string; text: string }[]; recommended?: number; reason?: string };
-            if (w.type === "search" && w.query) push({ type: "reasoning", text: `Buscando na web: ${w.query}. ` });
+            // Etapas vivas no "Pensando", como no Claude (dono 21/11): a etapa atual aparece no lugar do rótulo.
+            if (w.type === "search" && w.query) { push({ type: "reasoning", text: `Buscando na web: ${w.query}. ` }); push({ type: "status", text: "Buscando na web…" }); }
+            else if (w.type === "step" && (w as { title?: string }).title) push({ type: "status", text: `${(w as { title: string }).title}…` });
+            else if (w.type === "ferramenta" && (w as { rotulo?: string }).rotulo) { const r = (w as { rotulo: string }).rotulo; push({ type: "reasoning", text: `${r}. ` }); push({ type: "status", text: `${r}…` }); }
             // Modelo local (21/11): posição na fila ou troca de modelo, no lugar do "Pensando"; null limpa.
             else if (w.type === "fila") push({ type: "status", text: (w as { message?: string | null }).message ?? null });
             else if (w.type === "sources" && Array.isArray(w.sources)) {
               const fontes: Source[] = w.sources.slice(0, 8).map((s, i) => { let dom = s.url; try { dom = new URL(s.url).hostname.replace(/^www\./, ""); } catch { /* */ } return { id: String(i + 1), title: s.title || dom, site: dom, domain: dom, url: s.url, date: "", snippet: s.snippet }; });
               push({ type: "sources", sources: fontes });
+              push({ type: "status", text: `Lendo ${fontes.length} ${fontes.length === 1 ? "fonte" : "fontes"}…` });
               // Guarda as fontes na conversa: depois de recarregar, os [1] [2] da resposta continuam virando links.
               patchMsg(cid, id, (m) => ({ ...m, fontes } as Msg));
             }

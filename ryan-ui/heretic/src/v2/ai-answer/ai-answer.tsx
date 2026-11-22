@@ -491,7 +491,7 @@ type ParsedBlock =
   | { kind: "p" | "h"; units: Unit[] }
   | { kind: "ol" | "ul"; items: Unit[][] }
   | { kind: "table"; header: Unit[][]; headerIndex: number; rows: { i: number; cells: Unit[][] }[] }
-  | { kind: "code"; language: string; filename: string; source: string; lines: { i: number; text: string }[] };
+  | { kind: "code"; language: string; filename: string; source: string; lines: { i: number; text: string }[]; closed: boolean };
 
 interface Parsed {
   blocks: ParsedBlock[];
@@ -543,6 +543,8 @@ function parseMarkdown(markdown: string, live = false): Parsed {
         filename: fence[2],
         source: body.join("\n"),
         lines: [],
+        // A cerca já fechou (achou o ``` de fim): o bloco não muda mais, mesmo com a resposta ainda chegando.
+        closed: index < lines.length,
       };
       for (const codeLine of visible) {
         const position = state.i++;
@@ -768,6 +770,8 @@ function reducer(state: Turn | null, action: Action): Turn | null {
               text: version.text + event.text,
               status: "writing",
               firstText: version.firstText ?? now,
+              // A etapa de antes ("Lendo 8 fontes…") não vale mais quando o texto começa.
+              aviso: version.firstText ? version.aviso : undefined,
             };
           case "done":
             return {
@@ -1545,10 +1549,8 @@ function MarkdownAnswer({
     }
   }, [done, onRevealed]);
 
-  const blocks = parsed.blocks.filter(
-    (block) =>
-      blockStart(block) < shownCount || (block.kind === "code" && block.lines.length === 0 && live && shownCount >= parsed.total),
-  );
+  // Como no Claude (dono 21/11): bloco de código só aparece com a 1ª linha; nada de moldura vazia enquanto escreve.
+  const blocks = parsed.blocks.filter((block) => blockStart(block) < shownCount);
   const animateCaret = live || shownCount < parsed.total;
   const shared = { shown: shownCount, sources, hot, onHot, cites: parsed.cites };
 
@@ -1591,12 +1593,14 @@ function MarkdownAnswer({
             return <TableBlock key={index} block={block} shown={shownCount} />;
           case "code": {
             const complete = !live && shownCount >= parsed.total;
+            // Diagrama e gráfico desenham assim que a cerca fecha (antes esperavam a resposta inteira e pulavam no fim).
+            const fechado = complete || block.closed;
             // ```ask vira cartão de opções já enquanto chega (desabilitado até a resposta terminar).
             if (CERCA_ASK.test(block.language) && (!complete || block.lines.some((line) => OPCAO.test(line.text)))) {
               const visiveis = block.lines.filter((line) => line.i < shownCount).map((line) => line.text);
               return <AskCard key={index} lines={visiveis} onAsk={onAsk} disabled={!complete} />;
             }
-            if (complete) {
+            if (fechado) {
               const mermaid = pareceMermaid(block.language, block.source);
               const grafico = CERCA_GRAFICO.test(block.language)
                 ? (leGrafico(block.source) ?? graficoDoMermaid(block.source))
@@ -1606,8 +1610,15 @@ function MarkdownAnswer({
               if (grafico) return <GraficoCard key={index} grafico={grafico} />;
               // Fluxogramas e o resto do Mermaid (```mermaid ou conteúdo que parece Mermaid) viram desenho quando a resposta termina.
               if (mermaid) return <Mermaid key={index} code={block.source} />;
+            } else if (CERCA_GRAFICO.test(block.language) || /^mermaid$/i.test(block.language)) {
+              // Enquanto o diagrama é escrito: uma linha viva no lugar do código cru, como o Claude faz.
+              return (
+                <p key={index} className={styles.montando}>
+                  <TextShimmer active duration={1.1}>{CERCA_GRAFICO.test(block.language) ? "Montando o gráfico…" : "Montando o diagrama…"}</TextShimmer>
+                </p>
+              );
             }
-            return <CodeBlock key={index} block={block} shown={shownCount} complete={complete} />;
+            return <CodeBlock key={index} block={block} shown={shownCount} complete={fechado} />;
           }
         }
       })}
@@ -2330,9 +2341,17 @@ function TurnView({
   const busier = turn.versions.some((entry) => isBusyStatus(entry.status));
   const visible = version.status === "stopped" || version.status === "error" || (version.status === "done" && revealed.has(version.id));
 
+  // Como no Claude (dono 21/11, "travado, não sei o que tá fazendo"): enquanto pensa sem etapa, o rótulo conta os segundos.
+  const [, setTique] = React.useState(0);
+  React.useEffect(() => {
+    if (version?.status !== "thinking") return;
+    const relogio = window.setInterval(() => setTique((n) => n + 1), 1000);
+    return () => window.clearInterval(relogio);
+  }, [version?.status]);
+  const pensandoHa = version ? Math.max(0, Math.round((Date.now() - version.started) / 1e3)) : 0;
   const label =
     version.status === "thinking"
-      ? version.aviso || "Pensando"
+      ? version.aviso || (pensandoHa >= 2 ? `Pensando · ${pensandoHa} s` : "Pensando")
       : version.thought !== undefined
         ? `Pensou por ${version.thought} s`
         : version.firstText
@@ -2452,6 +2471,14 @@ function TurnView({
           </motion.div>
         </AnimatePresence>
       </AutoHeight>
+
+      {/* Como no Claude (dono 21/11, "não sei se tá buscando, o que tá fazendo"): enquanto escreve, um sinal de vida no fim. */}
+      {version?.status === "writing" ? (
+        <div className={styles.atividade} aria-live="polite">
+          <img src="/icons/cigarra-mini.svg" alt="" className={styles.atividadeCig} />
+          <TextShimmer active duration={1.1}>{version?.aviso || "Escrevendo"}</TextShimmer>
+        </div>
+      ) : null}
 
       <AnimatePresence initial={false}>
         {version.status === "stopped" || version.status === "error" ? (

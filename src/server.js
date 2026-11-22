@@ -39,6 +39,14 @@ async function serveStatic(c, relPath) {
   return new Response(data, { headers: { 'Content-Type': mime } });
 }
 
+// Ferramentas de segurança (só Node): no ar é a função api/ferramentas.js; aqui, a mesma porta para testes locais.
+app.post('/api/ferramentas', async (c) => {
+  const { atende } = await import('./ferramentas/http.js');
+  const corpo = await c.req.json().catch(() => ({}));
+  const r = await atende(c.req.header('x-451-interno'), corpo);
+  return c.json(r.corpo, r.status);
+});
+
 // Static files (local dev only): chat em / e /app/, página de apresentação em /sobre, celular em /m.html.
 app.get('*', async (c) => {
   let rel = decodeURIComponent(new URL(c.req.url).pathname);

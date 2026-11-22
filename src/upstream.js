@@ -126,7 +126,7 @@ Responda no MESMO idioma da pergunta. Se estiver em português, use português d
 Comece pela resposta, sem preâmbulo nem repetir a pergunta.
 ENSINE COMO UM TUTORIAL, não uma resposta seca igual às outras IAs: explique o PORQUÊ de cada passo, mostre comandos reais e exemplos de código em blocos com a linguagem (bash, python, etc.), passo a passo.
 Siga a seção "Formato" da persona: Markdown a serviço da clareza, sem decoração nem remarcação inventada.
-DIAGRAMAS (REGRA RÍGIDA): todo fluxograma, fluxo, arquitetura, sequência, árvore ou mapa mental é SEMPRE desenhado em Mermaid, dentro de uma cerca de código cuja linguagem é a palavra mermaid. A interface renderiza o Mermaid como IMAGEM de verdade. GRÁFICO DE NÚMEROS (pizza, barras, linha) também é Mermaid: pie para pizza e xychart-beta para barras ou linha, na mesma cerca mermaid. Nunca use cerca chart, JSON de gráfico nem Chart.js: a tela não desenha isso.
+DIAGRAMAS: só desenhe um quando a pessoa pedir ou quando ele for essencial para entender; nunca abra a resposta com diagrama. Quando desenhar (REGRA RÍGIDA): todo fluxograma, fluxo, arquitetura, sequência, árvore ou mapa mental é SEMPRE desenhado em Mermaid, dentro de uma cerca de código cuja linguagem é a palavra mermaid. A interface renderiza o Mermaid como IMAGEM de verdade. GRÁFICO DE NÚMEROS (pizza, barras, linha) também é Mermaid: pie para pizza e xychart-beta para barras ou linha, na mesma cerca mermaid. Nunca use cerca chart, JSON de gráfico nem Chart.js: a tela não desenha isso.
 É TERMINANTEMENTE PROIBIDO desenhar diagrama com caracteres de caixa/seta ("ASCII art"): nada de ┌ ─ ┐ │ └ ┘ ├ ┤ ┬ ┴ ▼ ► → ↓ ◄, nem caixas feitas de +---+ ou |__|. Isso é ERRADO, parece quebrado e vira uma sopa ilegível no celular. Se você começar a desenhar com esses caracteres, PARE na hora e reescreva como Mermaid.
 EXEMPLO — siga EXATAMENTE este formato (abra uma cerca de código com a palavra mermaid e, dentro dela, escreva assim):
 flowchart TD
@@ -678,7 +678,11 @@ async function* anthropicComplete({ model, modelId, systemPrompt, systemFixo = '
     }
     // Recusa do modelo OU do classificador da Anthropic (que barra sem emitir nada).
     const refusedHere = outcome.forced || outcome.stopReason === 'refusal';
-    if (!refusedHere) return { modelId: currentId, escalated: tried.length > 0, refused: false };
+    if (!refusedHere) {
+      // Cortada pelo teto de tamanho: avisa e oferece continuar (antes parava calada no meio).
+      if (outcome.stopReason === 'max_tokens' && emitted) { const c = cartaoContinuar('tamanho'); if (onToken) onToken(c); yield c; }
+      return { modelId: currentId, escalated: tried.length > 0, refused: false };
+    }
     refused = true;
     if (!active) break;
     // Recusa detectada → limpa o que apareceu e troca de modelo com a recusa ANULADA no contexto.
@@ -1359,6 +1363,12 @@ const LOCAL_MAX_SAIDA = 1500; // ~75 s a 20 tokens/s: a função do site transmi
 const LOCAL_PRAZO_MS = Number(process.env.LOCAL_PRAZO_MS) || 265000;
 const LOCAL_OCUPADO = 'O computador do 451 está ocupado agora. Tente de novo em 1 minuto.';
 const LOCAL_CORTE = '\n\n_(Resposta interrompida pelo tempo máximo. Peça "continue" para seguir.)_';
+// Resposta cortada pelo teto de tamanho ou de tempo (dono 21/11, "parou de escrever e não falou nada"): como no Claude,
+// termina dizendo que parou e com um toque para continuar (cartão de opções do app).
+const cartaoContinuar = (porque = 'tamanho') => `\n\n\`\`\`ask\nA resposta chegou ao ${porque} máximo e parou aqui. Quer que eu continue?\n- Continue de onde parou\n\`\`\`\n`;
+// "Continue de onde parou" (o toque do cartão) e parecidos: segue a resposta anterior, sem buscar de novo.
+export const PEDE_CONTINUAR = /^\s*(continu[ea]r?|continua|prossiga|pode continuar|segue|siga)\b[^?\n]{0,60}$/i;
+const NOTA_CONTINUAR = '\n\n## CONTINUAÇÃO: a sua resposta anterior foi cortada pelo tamanho. Continue exatamente do ponto onde parou, sem repetir nada do que já escreveu, sem introdução e sem o cartão de continuar.';
 // Sem "não sei" (dono 21/11): o grátis busca na web quando precisa (com teto) e não inventa dado. Tarefa grande
 // demais para ele: entrega o que consegue e marca [PRO]; o servidor troca a marca pelo aviso do 451 Pro (só no
 // grátis, 1 vez por conversa). Coisa que não existe ou dado privado que não está na internet não ganham aviso do
@@ -1508,7 +1518,8 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
   const contLocal = continuationRequest(ultimo, payload.messages);
   const buscaQ = contLocal ? `${contLocal} ${ultimo}`.trim() : ultimo;
   let resultados = '', faltouBusca = false, semResultado = false;
-  if (busca && buscaQ.length >= 8) {
+  const continuandoLocal = PEDE_CONTINUAR.test(ultimo); // "Continue de onde parou": segue sem buscar de novo
+  if (busca && buscaQ.length >= 8 && !continuandoLocal) {
     const forte = /https?:\/\/|github\.com|gitlab\.com/i.test(buscaQ) || STRONG_SEARCH.test(buscaQ);
     let precisa = forte;
     if (!precisa) {
@@ -1538,7 +1549,7 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
     + (semResultado ? '\n[Nota do servidor: a busca na web não achou nada sobre isso agora. Não invente: se for algo que não existe, diga que não existe; se for um dado específico, diga que não achou nas fontes públicas e onde procurar.]' : '') };
   // Idioma (21/11): numa pergunta curta em português o gpt-oss respondeu "Monday". A regra vai no fim do
   // prompt (pesa mais e não quebra o cache do começo, que é igual para todos).
-  const sistema = `${buildSystemPrompt(payload.systemPrompt, true)}\n\n${LOCAL_IDIOMA}\n\n${LOCAL_REGRAS}${resultados}`;
+  const sistema = `${buildSystemPrompt(payload.systemPrompt, true)}\n\n${LOCAL_IDIOMA}\n\n${LOCAL_REGRAS}${resultados}${continuandoLocal ? NOTA_CONTINUAR : ''}`;
   const messages = [{ role: 'system', content: sistema }, ...historico.filter((m) => m.role !== 'system')];
   const body = {
     model: cat.api_model, messages, stream: true, stream_options: { include_usage: true },
@@ -1625,14 +1636,16 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
     if (fim) { chars += fim.length; onToken?.(fim); yield fim; }
     if (porTempo) {
       if (!chars) throw new Error(LOCAL_OCUPADO);
-      onToken?.(LOCAL_CORTE);
-      yield LOCAL_CORTE;
+      const c = cartaoContinuar('tempo');
+      onToken?.(c);
+      yield c;
     } else if (temPro || faltouBusca) {
       const jaAvisou = (payload.messages || []).some((m) => m?.role === 'assistant' && /451 Pro/.test(textoLocal(m.content)));
       const aviso = busca?.gratis && !jaAvisou ? (temPro ? PRO_FRASE : BUSCA_FRASE) : '';
       onWarning?.({ type: 'pro_aviso', motivo: temPro ? (cortouTamanho && !proNoComeco && !proNoFim ? 'longa' : 'complexa') : 'busca', mostrado: !!aviso });
       if (aviso) { chars += aviso.length; onToken?.(aviso); yield aviso; }
     }
+    if (!porTempo && cortouTamanho && chars) { const c = cartaoContinuar('tamanho'); chars += c.length; onToken?.(c); yield c; }
   } finally {
     clearTimeout(relogio);
     signal?.removeEventListener('abort', cancela);
@@ -1705,6 +1718,9 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
   // "São Paulo" após "pesquisar a Beatriz" vira busca por "Beatriz São Paulo", não pela cidade.
   const cont = continuationRequest(lastUserText, payload.messages);
   const searchQ = cont ? `${cont} ${lastUserText}`.trim() : lastUserText;
+  // "Continue de onde parou" (toque do cartão de continuar): segue a resposta anterior, sem buscar de novo.
+  const continuando = PEDE_CONTINUAR.test(lastUserText);
+  if (continuando) { systemPrompt += NOTA_CONTINUAR; buscaFeita = true; }
   if (cont) systemPrompt += '\n\n## CONTEXTO (resposta curta): a última mensagem do usuário continua o pedido anterior ("' + cont.slice(0, 200) + '"). É o MESMO assunto em andamento — o detalhe novo se refere ao alvo já pedido, nunca vira assunto novo (ex.: "São Paulo" = a pessoa é de São Paulo, não "me fale sobre a cidade de São Paulo").';
   const probeTarget = shouldProbe(typeof lastUserMsg === 'string' ? lastUserMsg : String(lastUserMsg || ''));
   if (probeTarget) {
@@ -1732,7 +1748,7 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
     step('Entendendo o pedido', 'Vendo se preciso buscar informação de fora.');
     // A decisão usa a busca efetiva (continuação somada), não só a mensagem curta:
     // "São Paulo" sozinho o classificador julgava conversa, e a IA respondia sobre a cidade.
-    if (searchQ.length >= 8 && !payload.semBusca) {
+    if (searchQ.length >= 8 && !payload.semBusca && !continuando) {
       if (/https?:\/\/|github\.com|gitlab\.com/i.test(searchQ) || STRONG_SEARCH.test(searchQ)) doSearch = true;
       else { const llm = await decideSearchLLM(searchQ, usage); doSearch = (llm === null) ? shouldSearch(searchQ) : llm; }
     }

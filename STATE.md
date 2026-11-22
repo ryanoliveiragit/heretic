@@ -1,3 +1,24 @@
+## 2026-11-21 (21h50 UTC) — PUBLICADO: resposta no ritmo do Claude + cartão "Continue de onde parou"
+
+Pedido urgente do dono (prints): "vem em slow, joga uma coisa antes de terminar", "travado preto, não sei se tá buscando",
+"parou de escrever e não falou nada"; "o UX igual ao do Claude, só o design muda".
+- "Pensando" mostra a etapa que o servidor manda (Entendendo o pedido…, Buscando na web…, Lendo N fontes…, Escrevendo a
+  resposta…); sem etapa, conta os segundos ("Pensando · 12 s"). Antes o app ignorava as etapas.
+- Enquanto escreve: a cigarra respira no fim da resposta com "Escrevendo" (TextShimmer do ryan-ui).
+- Bloco de código só aparece com a 1ª linha (antes a moldura "Bash / Copiar" vazia ficava na tela).
+- Diagrama e gráfico: "Montando o diagrama…" enquanto é escrito e desenho assim que a cerca fecha (antes saía código cru e
+  pulava para desenho no fim). Prompt: diagrama só quando pedido ou essencial (o Claude ainda abre alguns com diagrama).
+- Corte por tamanho (Claude max_tokens, 451 Free finish_reason length) ou por tempo: a resposta termina com o cartão
+  "A resposta chegou ao tamanho máximo e parou aqui. Quer que eu continue?" e o toque "Continue de onde parou". Esse pedido
+  não busca de novo e leva a nota de continuar do ponto. Visto no ar no Rapid grátis (teto de 900 tokens de saída).
+- Medido no ar (Rapid, pergunta de pentest): rótulo vivo desde 1,5 s, texto aos 7 s, diagrama desenhado aos 7,5 s com o
+  texto ainda chegando, nenhum bloco vazio, sem erro de página.
+- Também no ar, sem uso ainda: `api/ferramentas.js` (função Node com token interno; 401 sem token) e `src/ferramentas/`
+  (fase 1 do Super Hacking, em andamento).
+- Deploy `dpl_2TvycSRUEBVDXZqyFfV9wCEfY3uM`; 8 arquivos conferidos por sha1.
+- **Undo:** `npx vercel rollback https://451sh-f0pceudzf-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`.
+- Troca de modelos não publicada: fora da árvore enquanto a fase 1 é feita (reaplicar com `git apply`).
+
 ## 2026-11-21 (21h UTC) — PUBLICADO: 451sh.com abre no chat, carregamento novo, seletor do grátis ao mais potente, uso justo honesto
 
 Pedidos do dono (prints): "o loading tá demorando e tá feio", "tem que abrir direto na tela do chat", seletor "do grátis
