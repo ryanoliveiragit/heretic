@@ -746,7 +746,9 @@ app.post('/api/chat', async (c) => {
         // ferramentas (dono 21/11, via Super Hacking): consultas públicas de segurança com fontes [n]; origem = onde fica api/ferramentas.
         // Bump do grátis (dono 21/11): só o visitante grátis no local; se a máquina estiver com fila, a resposta sobe pro GLM sem censura.
         // Passe Rapid de 5 min (dono 22/11): na janela, o app manda rapidPass=true e o grátis vai direto pro GLM.
-        const bumpPermitido = bucket === 'local' && tier === 'free';
+        // GLM na frente / bump / passe valem para QUALQUER um no modelo 451 Free (bucket 'local'), inclusive logado como
+        // Pro (dono via SH 22/11): o Free é o Free para todos. O custo do GLM cai no teto diário do grátis, não no Pro.
+        const bumpPermitido = bucket === 'local';
         const chatPayload = { messages: sendMessages, systemPrompt, modelId, ...params, creditsOk: bucket === 'credits', claudeFirst, inicio, buscaLocal, ferramentas: true, bumpPermitido, rapidPass: body.rapidPass === true, origem: new URL(c.req.url).origin };
         // Modelo que de fato respondeu pode mudar no meio (roteador e escalada por recusa): o
         // custo/cota têm de seguir quem respondeu, não o que foi pedido.

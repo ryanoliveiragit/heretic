@@ -1936,7 +1936,9 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
     const ehGratis = payload.bumpPermitido;
     const ultimoLocal = textoLocal((payload.messages || []).filter((m) => m?.role === 'user').pop()?.content).trim();
     const continuandoL = PEDE_CONTINUAR.test(ultimoLocal);
-    const glmPayload = { ...payload, modelId: BUMP_ID, claudeFirst: false, soFerramentas: true, bump: true, rapidPass: false };
+    // Busca web só quando necessário (dono 22/11): o classificador decide por pergunta (e NAO_BUSCA barra identidade);
+    // não forçamos nem bloqueamos. Fase 1 (ferramentas) segue valendo. O teto diário do grátis protege o custo.
+    const glmPayload = { ...payload, modelId: BUMP_ID, claudeFirst: false, bump: true, rapidPass: false };
     const paraGlm = (aviso) => { if (aviso) onWarning?.(aviso); return streamChat(mode, glmPayload, { onToken, onWarning, onToolCall, onReasoning, signal, usage }); };
     // Passe Rapid ativo (janela de 5 min) → direto GLM, com a contagem na tela.
     if (ehGratis && payload.rapidPass && !continuandoL && await freeBumpOk().catch(() => false)) {
