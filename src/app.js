@@ -8,7 +8,7 @@ import { health, listProjects, createProject, deleteProject,
 import { getPersona, getPersonaLocal, setPersona } from './persona.js';
 import { streamChat, streamFoto, qualityAnswer, enhancePrompt, imagePrompt, imageIntent, imageFollowups, agentTip, getRoutes, setRoute, MODEL_CATALOG, custoTurno, rotaDoNivel, apoioDoServidor } from './upstream.js';
 import { checkBudget, incrementUsage } from './budget.js';
-import { checkGlobalBudget, recordCost, recordFreeCost, freeClaudeOk, freeDiaOk, buscaGratisOk, registraBuscaGratis, fotoGratisOk, registraFotoGratis, freeClaudeDayUsd } from './cost.js';
+import { checkGlobalBudget, recordCost, recordFreeCost, recordFreeBump, freeClaudeOk, freeDiaOk, buscaGratisOk, registraBuscaGratis, fotoGratisOk, registraFotoGratis, freeClaudeDayUsd } from './cost.js';
 import { cortaHistorico, caracteresDe, FREE_MAX_INPUT_CHARS, PRO_MAX_INPUT_CHARS } from './entrada.js';
 import { registraUso, registraImagem, registraApoio, catalogoNiveis, nomeModelo, lePainel, nomeNivel, tabelaPrecos, saldosChaves } from './uso.js';
 import { AGENTS, agentPrompt } from './agents.js';
@@ -744,15 +744,20 @@ app.post('/api/chat', async (c) => {
         // Kimi/Hermes (créditos) não. O grátis para de usar o Claude quando o gasto do dia passa do freio.
         const claudeFirst = bucket === 'pro' || (bucket === 'free' && (await freeClaudeOk().catch(() => false)));
         // ferramentas (dono 21/11, via Super Hacking): consultas públicas de segurança com fontes [n]; origem = onde fica api/ferramentas.
-        const chatPayload = { messages: sendMessages, systemPrompt, modelId, ...params, creditsOk: bucket === 'credits', claudeFirst, inicio, buscaLocal, ferramentas: true, origem: new URL(c.req.url).origin };
+        // Bump do grátis (dono 21/11): só o visitante grátis no local; se a máquina estiver com fila, a resposta sobe pro GLM sem censura.
+        // Passe Rapid de 5 min (dono 22/11): na janela, o app manda rapidPass=true e o grátis vai direto pro GLM.
+        const bumpPermitido = bucket === 'local' && tier === 'free';
+        const chatPayload = { messages: sendMessages, systemPrompt, modelId, ...params, creditsOk: bucket === 'credits', claudeFirst, inicio, buscaLocal, ferramentas: true, bumpPermitido, rapidPass: body.rapidPass === true, origem: new URL(c.req.url).origin };
         // Modelo que de fato respondeu pode mudar no meio (roteador e escalada por recusa): o
         // custo/cota têm de seguir quem respondeu, não o que foi pedido.
         let doneId = modelId;
+        let bumpUsado = false;
         const handlers = {
           onToken: (t) => { fullText += t; send('token', { token: t }); },
           // FORÇA TUDO: o guarda descartou uma recusa parcial → o texto final começa limpo.
           onWarning: (w) => {
             if (w && w.type === 'refusal_forced') fullText = '';
+            if (w && w.type === 'bump') bumpUsado = true; // grátis subiu pro GLM por causa da fila
             if (w && w.to && w.type !== 'fair_use') doneId = w.to; // roteador/escalada avisam o destino
             send('warning', w);
           },
@@ -783,6 +788,7 @@ app.post('/api/chat', async (c) => {
           await registraBuscaGratis(throttleId, usdBusca || 0.0118).catch(() => {}); // 21/11: busca pelo Claude Haiku
         }
         if (cost > 0 && tier === 'free') await recordFreeCost(cost).catch(() => {}); // freio diário do grátis
+        if (cost > 0 && bumpUsado) await recordFreeBump(cost).catch(() => {}); // teto próprio do bump do grátis
         custoGravado = true;
         // O balde também pode ter mudado (escalada para modelo de créditos, por exemplo).
         const doneBucket = bucketOf(doneId, tier);

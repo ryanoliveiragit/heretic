@@ -4,6 +4,7 @@ import { sanitizePii, cleanSources } from './pii.js';
 import { anthropicBlocks, digestAttachments, prepareForMax } from './attachments.js';
 import { routeFor, alternateFor, MAX_ID, RAPID_ID, TITAN_ID, RESERVA_ID } from './router451.js';
 import { urlLocal } from './local.js';
+import { freeBumpOk } from './cost.js';
 import { DEFINICOES, INSTRUCAO_SISTEMA } from './ferramentas-defs.js';
 
 export const MODEL_CATALOG = [
@@ -1585,6 +1586,12 @@ function compactaFerramenta(t) {
   const f = (t && t.function) || t || {};
   return { type: 'function', function: { name: f.name, description: String(f.description || '').slice(0, 400), parameters: f.parameters || { type: 'object', properties: {} } } };
 }
+
+// Bump do grátis (dono 21/11): quando o computador do 451 está com fila, a mensagem grátis sobe direto pro GLM sem
+// censura na nuvem (barato, rápido), SEM passar pelo local. Mostra "ganhou um Rapid" uma vez e volta pro local depois.
+// O sinal de fila vem da própria resposta do local (posição > 0 ou carregando), antes de qualquer texto.
+const BUMP_ID = 'zai-org/glm-5.3-flash-uncensored'; // GLM 5.3 Flash sem censura (OpenUncensored) — o mesmo do Rapid
+const BUMP_AVISO = 'A fila do grátis tava cheia, então liberei essa no 451 Rapid pra você ⚡';
 // Nota do servidor (21/11, bateria de testes): o gpt-oss errava o dia da semana de datas (2 de 5 e 0 de 5 em 5
 // amostras) e às vezes respondia em inglês (1 em 25). O servidor manda, no fim da última mensagem: a data de hoje
 // (Brasília), o dia da semana CALCULADO de cada data citada e, se a pergunta é em português, o lembrete de idioma
@@ -1815,6 +1822,7 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onToolCall, onRe
   // O começo e os últimos caracteres ficam segurados: a marca [PRO] (no começo, ou no fim) nunca chega à tela.
   // 21/11: no fim ela não aparecia nas tarefas grandes, porque a resposta batia no teto antes de terminar.
   let segura = '', comeco = true, proNoComeco = false, cortouTamanho = false, chamouFerramenta = false;
+  let vaiBumpar = false, bumpChecado = false; // grátis: fila de verdade antes do 1º texto → sobe pro GLM
   const SEGURA = 12;
   try {
     for (;;) {
@@ -1829,6 +1837,12 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onToolCall, onRe
         buf = buf.slice(i + 1);
         if (line.startsWith(': fila ')) {
           let f; try { f = JSON.parse(line.slice(7)); } catch { continue; }
+          // Bump do grátis (dono 21/11): fila de verdade (posição > 0 ou modelo carregando) antes de qualquer texto →
+          // aborta o local e sobe pro GLM, se ainda houver verba do bump no dia. Uma vez por pedido.
+          if (payload.bumpPermitido && !continuandoLocal && chars === 0 && !bumpChecado && (Number(f.posicao) > 0 || f.carregando)) {
+            bumpChecado = true;
+            if (await freeBumpOk().catch(() => false)) { vaiBumpar = true; ac.abort(); break; }
+          }
           const chave = `${f.posicao}|${!!f.carregando}`;
           if (chave !== fila) { fila = chave; avisou = true; onWarning?.({ type: 'fila', posicao: f.posicao, carregando: !!f.carregando, message: avisoDeFila(f) }); }
           continue;
@@ -1859,7 +1873,11 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onToolCall, onRe
           if (!comeco && segura.length > SEGURA) { const sai = segura.slice(0, -SEGURA); segura = segura.slice(-SEGURA); chars += sai.length; onToken?.(sai); yield sai; }
         }
       }
+      if (vaiBumpar) break;
     }
+    // Bump do grátis: o local avisou fila antes de qualquer texto → joga BUMP; o streamChat responde no GLM.
+    // Cancela o leitor para fechar a conexão e LIBERAR a vaga na fila do gateway (não deixa o pedido abandonado rodando).
+    if (vaiBumpar) { try { await reader.cancel(); } catch { /* já abortado */ } const err = new Error('bump-fila'); err.bump = true; throw err; }
     // Fim (ou corte por tempo): solta o que ficou segurado; a marca [PRO] vira o aviso do Pro.
     let fim = segura; segura = '';
     if (comeco) fim = fim.replace(/^\s*\[PRO\][.!:]?\s*/, (m) => { proNoComeco = true; return ''; }); // resposta curtinha
@@ -1887,7 +1905,7 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onToolCall, onRe
   } finally {
     clearTimeout(relogio);
     signal?.removeEventListener('abort', cancela);
-    if (usage) {
+    if (usage && !vaiBumpar) { // bumpou: não gravou nada no local; o painel conta a parte do GLM
       // Custo zero, mas o painel mostra os tokens (o que o computador do 451 processou).
       const ent = tin || Math.ceil(JSON.stringify(messages).length / 4), sai = tout || Math.ceil(chars / 4);
       usage.input_tokens = (usage.input_tokens || 0) + ent;
@@ -1902,7 +1920,28 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onToolCall, onRe
 export async function* streamChat(mode, payload, { onToken, onWarning, onToolCall, onReasoning, signal, usage = null } = {}) {
   // Modelo local: caminho próprio e gratuito, antes de qualquer roteador, busca ou troca para provedor pago.
   const localCat = MODEL_CATALOG.find(m => m.id === payload.modelId && m.provider === 'local');
-  if (localCat) { yield* streamLocal(localCat, payload, { onToken, onWarning, onToolCall, onReasoning, signal, usage }); return; }
+  if (localCat) {
+    // Passe Rapid de 5 min (dono 22/11): na janela do passe, o grátis vai DIRETO pro GLM sem censura, sem checar a fila
+    // (troca instantânea — "mais rápido"). Fora da janela, o bump por fila continua: o streamLocal joga BUMP e aqui
+    // respondemos no GLM, marcando offer:true para a tela oferecer "manter o Rapid por 5 min". Teto do bump sempre vale.
+    const ehGratis = payload.bumpPermitido;
+    const ultimoLocal = textoLocal((payload.messages || []).filter((m) => m?.role === 'user').pop()?.content).trim();
+    const paraGlm = (extra) => streamChat(mode, { ...payload, modelId: BUMP_ID, claudeFirst: false, semBusca: true, bump: true, rapidPass: false }, { onToken, onWarning, onToolCall, onReasoning, signal, usage });
+    if (ehGratis && payload.rapidPass && !PEDE_CONTINUAR.test(ultimoLocal) && await freeBumpOk().catch(() => false)) {
+      onWarning?.({ type: 'bump', to: BUMP_ID, pass: true }); // já no passe: sem card, só a contagem segue na tela
+      yield* paraGlm();
+      return;
+    }
+    try {
+      yield* streamLocal(localCat, payload, { onToken, onWarning, onToolCall, onReasoning, signal, usage });
+    } catch (e) {
+      if (e && e.bump) {
+        onWarning?.({ type: 'bump', to: BUMP_ID, message: BUMP_AVISO, offer: true }); // fila cheia: responde no GLM e oferece o passe
+        yield* paraGlm();
+      } else throw e;
+    }
+    return;
+  }
   // A model picked in the chat (already checked against the plan) wins over the mode's route.
   const requestedId = payload.modelId && MODEL_CATALOG.some(m => m.id === payload.modelId) ? payload.modelId : (ROUTES[mode] || ROUTES.chat).model;
   // Roteador: pedido direto não paga o tempo de raciocínio do Max. Decide ANTES de qualquer

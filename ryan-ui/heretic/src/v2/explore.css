@@ -189,6 +189,11 @@ body, button, input, textarea, select, [role="dialog"], [role="menu"] { font-fam
 .hx-selo { margin-left: 6px; vertical-align: 1px; }
 /* O tema deixa os tons de status em cinza; este selo é verde de propósito (dono 21/11: "badge verde"), o verde antigo do 451. */
 .hx-selo.hx-selo { --badge-tone: #22E584; }
+/* Passe Rapid de 5 min (dono 22/11): faixa acima da caixa — oferta, contagem ou aviso do Pro. */
+.hx-rapid { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 auto 8px; padding: 8px 12px; max-width: 760px; border: 1px solid var(--x-linha, #26262B); border-radius: 12px; background: var(--x-fundo2, #121214); font-size: 13px; }
+.hx-rapid [class*="badge"] { --badge-tone: #22E584; }
+.hx-rapid .x-tx2 { flex: 1 1 180px; }
+.hx-rapid .x-btn.sm { white-space: nowrap; }
 /* ===== configurações em modal ===== */
 .m-caixa.h-cfg { width: min(1060px, 95vw); height: min(780px, 90vh); padding: 0; overflow: hidden; display: block; }
 .h-cfg-grade { display: grid; grid-template-columns: 230px minmax(0, 1fr); height: 100%; }

@@ -1,3 +1,30 @@
+## 2026-11-22 (00h20, Brasília) — PUBLICADO: bump do grátis pro GLM + passe 451 Rapid de 5 min
+
+Dono: o grátis é lento na fila; "pode usar o Rapid por 5 minutos e depois expira com o aviso do Pro, e fica uma
+contagem"; "a troca tem que ser mais rápida"; "o oss tem que ter mais cadeiras"; "subir e demorar precisa falar: quer
+um plano Rapid por 5 min pela demora?". Decisões antes: padrão do grátis segue local; na fila sobe pro GLM sem censura
+(OpenUncensored, o mesmo do Rapid); reserva cara (DeepSeek) só no Titan; Max = Opus + reserva GLM (ainda não aplicado).
+- Bump (src/upstream.js streamLocal + streamChat): o local avisa "fila" pela própria resposta (posição > 0 ou
+  carregando) ANTES de qualquer texto → `streamLocal` cancela o leitor (libera a vaga no gateway) e joga BUMP; o
+  `streamChat` responde no GLM sem censura, sem passar pelo local. Detecção pelo sinal real (não por uma chamada /fila à
+  parte, que corria e deixava o usuário esperando). No ar: 3º pedido forçado respondeu em 10,6 s (era 90 s) com aviso.
+- Passe Rapid de 5 min: `payload.rapidPass` (grátis) → vai DIRETO pro GLM, sem checar fila (troca instantânea). O
+  auto-bump por fila marca `offer:true`; a tela oferece "manter o 451 Rapid por 5 min". `app.js`: chatPayload leva
+  `bumpPermitido` e `rapidPass`; registra o custo no teto do bump (`recordFreeBump`) além do teto do grátis.
+- Teto: `freeBumpOk`/`recordFreeBump`/`freeBumpDiaUsd` em cost.js (FREE_BUMP_USD_DAY, padrão US$ 3/dia; respeita o teto
+  total do grátis de US$ 5). Estourou → fica no local mesmo com fila. GLM ~R$ 0,004/msg: nunca dá prejuízo.
+- Front (app451.tsx + api.ts + explore.css): manda `rapidPass` na janela; faixa `.hx-rapid` acima da caixa com 3 estados —
+  oferta ("Manter por 5 min? [Manter] [Agora não]"), contagem ("451 Rapid · expira em 4:59", tick de 1 s) e, ao expirar,
+  aviso do Pro ("No Pro não tem fila. [Assinar o Pro]"). Passe guardado em localStorage `451-rapid-ate`.
+- Testes sem rede: `scripts/teste-bump-gratis.mjs` 7/7 (sem fila→local; fila→GLM com offer; passe→GLM direto; carregando;
+  sem verba→local; continuação→local). Ferramentas, continuar, prazo e busca grátis sem falha. Front: tsc 0 erro, build ok.
+- Prints: `prints/rapid-2211/rapid-contagem.png` (faixa de contagem). O card de oferta é a mesma faixa no modo oferta;
+  não capturei ao vivo (precisa das 2 vagas ocupadas no exato segundo do print; a máquina abre antes), mas está testado.
+- Deploys: `dpl_C5VJ7Fu48jUkji92EYjNhjutFeZx` (bump confiável) e `dpl_BBgAkChUVrJVCVU1oVcG9AoLrvVu` (passe de 5 min).
+  **Undo:** `npx vercel rollback https://451sh-raklr50o6-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`.
+- Pendente: mais vagas (cadeiras) no gpt-oss — pedido ao Super Hacking (gateway da porta 8000 é dele). Max = Opus +
+  reserva GLM: combinado, ainda não aplicado.
+
 ## 2026-11-21 (23h30, Brasília) — PUBLICADO: 451 Free sem forçar respostas curtas (dono não quis)
 
 Dono: "não queria que o Free fosse tão curto e lento; precisávamos melhorar ele". Desfiz o encurtamento forçado,

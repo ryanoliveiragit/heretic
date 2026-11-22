@@ -77,6 +77,32 @@ export async function freeClaudeOk() { return (await freeGastoHoje()) < freeClau
 /** O grátis ainda funciona hoje (teto total)? */
 export async function freeDiaOk() { return (await freeGastoHoje()) < freeDayUsd(); }
 
+// Bump do grátis (dono 21/11): quando o computador do 451 está com fila, a mensagem grátis vai pro GLM sem censura
+// na nuvem. Teto PRÓPRIO por dia (menor que o total do grátis), para o bump nunca comer toda a verba. Passou, a
+// mensagem fica no local mesmo com fila. Ajuste por FREE_BUMP_USD_DAY na Vercel (vale a partir do próximo deploy).
+export const freeBumpDiaUsd = () => Number(process.env.FREE_BUMP_USD_DAY || 3);
+const bumpDayKey = () => `gratis:bump:usd:${new Date().toISOString().slice(0, 10)}`;
+/** O grátis ainda pode subir pro GLM (bump) hoje? Respeita o teto do bump e o teto total do grátis. */
+export async function freeBumpOk() {
+  if (!(await freeDiaOk())) return false;
+  let usd = mem.get(bumpDayKey()) || 0;
+  if (hasRedis()) {
+    try { usd = Number((await pipeline([['GET', bumpDayKey()]]))[0]) || 0; }
+    catch (e) { console.error('[custo] redis falhou, usando memória:', e.message); }
+  }
+  return usd < freeBumpDiaUsd();
+}
+/** Soma o gasto do bump no contador próprio do dia (além do total do grátis, gravado à parte). */
+export async function recordFreeBump(usd) {
+  const v = Number(usd) || 0;
+  if (!v) return;
+  if (hasRedis()) {
+    try { await pipeline([['INCRBYFLOAT', bumpDayKey(), String(v)], ['EXPIRE', bumpDayKey(), '172800']]); return; }
+    catch (e) { console.error('[custo] redis falhou, usando memória:', e.message); }
+  }
+  mem.set(bumpDayKey(), (mem.get(bumpDayKey()) || 0) + v);
+}
+
 // Busca na web do grátis nos modelos locais (dono 21/11): teto de R$ 30 por mês, ~US$ 0,17 por dia com o dólar a
 // 5,95 (umas 14 buscas pelo Claude Haiku a US$ 0,0118), e 5 buscas por aparelho por dia (dia em UTC). Passou, o grátis responde sem
 // buscar e mostra o aviso do Pro. Ajuste por FREE_SEARCH_DAY_USD e FREE_SEARCH_PER_DEVICE na Vercel.

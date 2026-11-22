@@ -65,6 +65,8 @@ let petAtual: Pet = PET0;
 
 const ler = <T,>(k: string, padrao: T): T => { try { const v = localStorage.getItem(k); return v ? { ...padrao, ...JSON.parse(v) } : padrao; } catch { return padrao; } };
 const gravar = (k: string, v: unknown) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* cheio ou modo privado */ } };
+// Passe Rapid de 5 min: "4:59" a partir dos milissegundos que faltam.
+const mmss = (ms: number) => { const s = Math.max(0, Math.round(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
 
 /** Quando a janela renova, em português: "hoje às 14h30" ou "amanhã às 9h05". */
 function quando(ts: number | null | undefined): string {
@@ -224,6 +226,18 @@ export function App451() {
   const [avisouPerto, setAvisouPerto] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [menu, setMenu] = useState(false);
+  // Passe Rapid de 5 min (dono 22/11): quando o Free enche, o bump responde no GLM e oferece manter o 451 Rapid por 5 min.
+  const [rapidAte, setRapidAte] = useState<number>(() => { try { return Number(localStorage.getItem("451-rapid-ate") || 0); } catch { return 0; } });
+  const [agora, setAgora] = useState(Date.now());
+  const [ofertaRapid, setOfertaRapid] = useState(false);
+  const [rapidExpirou, setRapidExpirou] = useState(false);
+  const passeAtivo = rapidAte > agora;
+  useEffect(() => {
+    if (rapidAte <= Date.now()) return;
+    const h = setInterval(() => { const n = Date.now(); setAgora(n); if (n >= rapidAte) { setRapidExpirou(true); clearInterval(h); } }, 1000);
+    return () => clearInterval(h);
+  }, [rapidAte]);
+  const ativarRapid = () => { const t = Date.now() + 5 * 60 * 1000; setRapidAte(t); setAgora(Date.now()); setOfertaRapid(false); setRapidExpirou(false); try { localStorage.setItem("451-rapid-ate", String(t)); } catch { /* */ } };
   // A trilha de navegação das mensagens só aparece acima de 820 px; no celular ela ficava escondida pelo CSS mas
   // continuava medindo a página a cada letra da resposta e a cada rolagem. Agora só liga em tela larga.
   const [largo, setLargo] = useState(() => !celular());
@@ -486,7 +500,7 @@ export function App451() {
       const t0 = Date.now();
       setOcupado(true);
       const ctrl = streamChat(
-        { conversationId: 0, mode: "chat", model: p.model, messages: p.history, quality: p.quality, enhance: p.enhance, ...(p.enhance ? { agentPrefs: p.prefs } : {}), ...(p.esforco ? { effort: p.esforco } : {}), params: { temperature: 0.6, top_p: 0.9, max_tokens: 4096 } } as Parameters<typeof streamChat>[0],
+        { conversationId: 0, mode: "chat", model: p.model, messages: p.history, quality: p.quality, enhance: p.enhance, ...(p.enhance ? { agentPrefs: p.prefs } : {}), ...(p.esforco ? { effort: p.esforco } : {}), ...(rapidAte > Date.now() ? { rapidPass: true } : {}), params: { temperature: 0.6, top_p: 0.9, max_tokens: 4096 } } as Parameters<typeof streamChat>[0],
         {
           onToken: (full) => {
             texto = visivel(full);
@@ -504,6 +518,13 @@ export function App451() {
             else if (w.type === "ferramenta" && (w as { rotulo?: string }).rotulo) { const r = (w as { rotulo: string }).rotulo; push({ type: "reasoning", text: `${r}. ` }); push({ type: "status", text: `${r}…` }); }
             // Modelo local (21/11): posição na fila ou troca de modelo, no lugar do "Pensando"; null limpa.
             else if (w.type === "fila") push({ type: "status", text: (w as { message?: string | null }).message ?? null });
+            // Bump do grátis (dono 21-22/11): a fila tava cheia, a resposta subiu pro 451 Rapid (GLM). Mostra no "Pensou"
+            // e, quando é a 1ª (offer), oferece manter o Rapid por 5 min. No passe (pass) só segue a contagem.
+            else if (w.type === "bump") {
+              const t = (w as { message?: string }).message; if (t) push({ type: "reasoning", text: `${t} ` });
+              push({ type: "status", text: "451 Rapid respondendo…" });
+              if ((w as { offer?: boolean }).offer) setOfertaRapid(true);
+            }
             else if (w.type === "sources" && Array.isArray(w.sources)) {
               const fontes: Source[] = w.sources.slice(0, 8).map((s, i) => { let dom = s.url; try { dom = new URL(s.url).hostname.replace(/^www\./, ""); } catch { /* */ } return { id: String(i + 1), title: s.title || dom, site: dom, domain: dom, url: s.url, date: "", snippet: s.snippet }; });
               push({ type: "sources", sources: fontes });
@@ -757,7 +778,16 @@ export function App451() {
     if (!atual) return semConexao
       ? <div className="h-carregando h-sem-conexao" role="alert"><p>Sem conexão com o 451. Confira a internet.</p><button className="x-btn sm" onClick={() => void loadMe()}>Tentar de novo</button></div>
       : <div className="h-carregando"><TextShimmer>Carregando os modelos</TextShimmer></div>;
+    const bannerRapid = pro ? null : passeAtivo ? (
+      <div className="hx-rapid"><Badge tone="success">451 Rapid</Badge><span className="x-tx2">respostas rápidas · expira em {mmss(rapidAte - agora)}</span></div>
+    ) : ofertaRapid ? (
+      <div className="hx-rapid"><Badge tone="success">451 Rapid ⚡</Badge><span className="x-tx2">A fila do Free tava cheia — te dei um Rapid. Manter por 5 min, grátis?</span><button className="x-btn sm" onClick={ativarRapid}>Manter</button><button className="x-btn sm g" onClick={() => setOfertaRapid(false)}>Agora não</button></div>
+    ) : rapidExpirou ? (
+      <div className="hx-rapid"><span className="x-tx2">Seus 5 min de 451 Rapid acabaram. No Pro não tem fila.</span><button className="x-btn sm" onClick={() => { setRapidExpirou(false); comprar({ tipo: "plano", plano: "pro", periodo: "mensal" }); }}>Assinar o Pro</button></div>
+    ) : null;
     return (
+      <>
+      {bannerRapid}
       <Composer ref={composer} models={modelos} model={atual}
         onModel={setModelo}
         onLockedModel={(id) => {
@@ -775,6 +805,7 @@ export function App451() {
         enhanceAvailable onEnhance={() => (pro ? setAgente((a) => !a) : setUpsell("agente"))} enhance={agente && pro} enhanceLocked={!pro}
         effortAvailable={atual.id === "claude-sonnet-5-5"} effort={esforco} onEffort={mudarEsforco}
         qualityAvailable onQuality={() => (pro ? setArena((a) => !a) : setUpsell("arena"))} quality={arena && pro} qualityLocked={!pro} />
+      </>
     );
   }
 }
