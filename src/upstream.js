@@ -4,6 +4,7 @@ import { sanitizePii, cleanSources } from './pii.js';
 import { anthropicBlocks, digestAttachments, prepareForMax } from './attachments.js';
 import { routeFor, alternateFor, MAX_ID, RAPID_ID, TITAN_ID, RESERVA_ID } from './router451.js';
 import { urlLocal } from './local.js';
+import { DEFINICOES, INSTRUCAO_SISTEMA } from './ferramentas-defs.js';
 
 export const MODEL_CATALOG = [
   // Heretic Max — cérebro de nuvem Claude (Anthropic) com server-side-fallback (técnica do drael). Gated em CLAUDE_KEY.
@@ -1050,6 +1051,160 @@ async function webContextClaude(prompt, consulta, signal, usage) {
   }
 }
 
+// ── Ferramentas de segurança no chat (dono 21/11, via Super Hacking) ──
+// Consultas públicas (CVE, pacote, IP, domínio, site, ASN, portas) antes da resposta, como a busca na web: um passo
+// barato escolhe as consultas (Claude Haiku; se ele recusar ou falhar, o GLM sem censura), o servidor roda até 4 no
+// pacote src/ferramentas (função Node api/ferramentas.js, que tem a proteção contra SSRF) e põe os resultados com as
+// fontes [n] no prompt. Qualquer modelo 451 responde citando-as, sem mexer no laço de recusa e escalada. Só dispara
+// quando o pedido parece desses assuntos (filtro grátis); com resultado, a busca na web genérica não roda.
+export const GATILHO_FERRAMENTAS = new RegExp([
+  String.raw`\bCVE-\d{4}-\d{3,}\b`,
+  String.raw`\b(cves?|cvss|epss|kev|cwe|vulnerabilidades?|vulner[aá]ve(l|is)|exploit\w*|explorad[ao]s?|zero.?day|0day)\b`,
+  String.raw`\b(dns|whois|rdap|subdom[ií]nios?|certificados?|tls|ssl|cabe[çc]alhos?|headers?|hsts|csp)\b`,
+  String.raw`\b(asn|AS\d{2,}|ip|ipv4|ipv6|shodan|internetdb|portas? (abertas?|expostas?|p[úu]blicas?)|porta \d+)\b`,
+  String.raw`\b(npm|pypi|maven|crates|nuget|rubygems|packagist|composer|pacotes?|depend[êe]ncias?)\b`,
+  String.raw`\b\d{1,3}(\.\d{1,3}){3}\b`,
+  String.raw`https?:\/\/`,
+  String.raw`\b[a-z0-9][a-z0-9-]*(\.[a-z0-9-]+)*\.(com|net|org|io|br|gov|edu|dev|app|sh|ai|co|me|info|xyz|tech|site|online|cloud)(\.[a-z]{2})?\b`,
+].join('|'), 'i');
+const MAX_FERRAMENTAS = 4;
+const DEF_POR_NOME = Object.fromEntries(DEFINICOES.map((d) => [d.name, d]));
+const hostDe = (u) => { try { return new URL(u).hostname; } catch { return String(u || '').slice(0, 60); } };
+const ROTULO_FERRAMENTA = {
+  cve_consultar: (a) => `Consultando o ${a.id || 'CVE'} no NVD, na lista KEV da CISA e no EPSS`,
+  cve_buscar: (a) => `Buscando CVEs sobre "${String(a.termo || '').slice(0, 60)}" no NVD`,
+  pacote_vulnerabilidades: (a) => `Procurando falhas conhecidas de ${a.pacote || 'um pacote'}${a.versao ? ` ${a.versao}` : ''} no OSV`,
+  pagina_ler: (a) => `Lendo ${hostDe(a.url)}`,
+  ip_info: (a) => `Consultando o IP ${a.ip} em registros públicos`,
+  dominio_info: (a) => `Consultando o domínio ${a.dominio} (DNS, registro e certificados)`,
+  asn_info: (a) => `Consultando o ${a.asn} no RIPEstat`,
+  site_checar: (a) => `Visitando ${hostDe(a.url)} para ver resposta, cabeçalhos e certificado`,
+  portas_publicas: (a) => `Vendo as portas já publicadas de ${a.host} no Shodan InternetDB`,
+};
+const PLANO_FERRAMENTAS = `${INSTRUCAO_SISTEMA}\nAgora você só escolhe as consultas para o pedido abaixo: chame até ${MAX_FERRAMENTAS} ferramentas de uma vez, com os argumentos exatos tirados do pedido. Se nenhuma ajudar, não chame nenhuma e responda apenas "nenhuma".`;
+
+/** Quais ferramentas chamar: [{ nome, args }]. Claude Haiku primeiro; na recusa ou falha, o GLM sem censura. */
+async function planejaFerramentas(pedido, usage, signal) {
+  const haiku = MODEL_CATALOG.find((m) => m.id === 'claude:haiku-5-5');
+  const chave = getApiKey('anthropic');
+  if (haiku && chave) {
+    const t0 = Date.now();
+    const ac = new AbortController(); const to = setTimeout(() => ac.abort(), 12000); const parar = () => ac.abort();
+    if (signal) signal.addEventListener('abort', parar);
+    try {
+      const res = await fetch(getBaseUrl('anthropic'), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-api-key': chave, 'anthropic-version': '2023-06-01' },
+        // temperature não vai: o Haiku 5.5 responde 400.
+        body: JSON.stringify({ model: haiku.api_model, max_tokens: 600, system: PLANO_FERRAMENTAS, messages: [{ role: 'user', content: pedido }],
+          tools: DEFINICOES.map((d) => ({ name: d.name, description: d.description, input_schema: d.schema })) }),
+        signal: ac.signal,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const u = data.usage || {};
+        const base = Number(u.input_tokens) || 0, grava = Number(u.cache_creation_input_tokens) || 0, le = Number(u.cache_read_input_tokens) || 0, saida = Number(u.output_tokens) || 0;
+        const usd = (base * haiku.price_in + grava * haiku.price_cache_write + le * haiku.price_cache_read + saida * haiku.price_out) / 1e6;
+        contaAvulsa(usage, { usage: { prompt_tokens: base + grava + le, completion_tokens: saida, cost: usd } }, haiku, 0, haiku.api_model, 'ferramentas', Date.now() - t0);
+        const blocos = Array.isArray(data.content) ? data.content : [];
+        const chamadas = blocos.filter((b) => b?.type === 'tool_use' && DEF_POR_NOME[b.name]).map((b) => ({ nome: b.name, args: b.input && typeof b.input === 'object' ? b.input : {} }));
+        if (chamadas.length) return chamadas.slice(0, MAX_FERRAMENTAS);
+        const texto = blocos.filter((b) => b?.type === 'text').map((b) => b.text || '').join('').trim();
+        if (data.stop_reason !== 'refusal' && !detectRefusal(texto.slice(0, ABERTURA))) return []; // decidiu que nenhuma ajuda
+      }
+    } catch (e) { if (signal?.aborted) throw e; } finally { clearTimeout(to); if (signal) signal.removeEventListener('abort', parar); }
+  }
+  // O Claude recusou ou falhou: o GLM sem censura escolhe (function calling no formato OpenAI).
+  const chaveOU = getApiKey('openuncensored');
+  if (!chaveOU) return [];
+  const modelo = process.env.ROUTER_MODEL_OU || FAST_MODEL_OU;
+  const t0 = Date.now();
+  const ac = new AbortController(); const to = setTimeout(() => ac.abort(), 12000); const parar = () => ac.abort();
+  if (signal) signal.addEventListener('abort', parar);
+  try {
+    const res = await fetch(getBaseUrl('openuncensored'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${chaveOU}` },
+      body: JSON.stringify({ model: modelo, max_tokens: 600, temperature: 0, messages: [{ role: 'system', content: PLANO_FERRAMENTAS }, { role: 'user', content: pedido }],
+        tools: DEFINICOES.map((d) => ({ type: 'function', function: { name: d.name, description: d.description, parameters: d.schema } })), tool_choice: 'auto' }),
+      signal: ac.signal,
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    contaAvulsa(usage, data, catDe('openuncensored', modelo), PLANO_FERRAMENTAS.length + pedido.length, modelo, 'ferramentas', Date.now() - t0);
+    return (data?.choices?.[0]?.message?.tool_calls || []).filter((c) => DEF_POR_NOME[c?.function?.name]).slice(0, MAX_FERRAMENTAS).map((c) => {
+      let args = {}; try { args = JSON.parse(c.function.arguments || '{}'); } catch { args = {}; }
+      return { nome: c.function.name, args };
+    });
+  } catch (e) { if (signal?.aborted) throw e; return []; } finally { clearTimeout(to); if (signal) signal.removeEventListener('abort', parar); }
+}
+
+/** Token interno da função api/ferramentas.js: sha256 de "451-ferramentas:" + ACCESS_SECRET (o mesmo cálculo do lado Node). */
+async function tokenFerramentas() {
+  const segredo = process.env.ACCESS_SECRET;
+  if (!segredo) return '';
+  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`451-ferramentas:${segredo}`));
+  return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function rodaFerramenta(nome, args, origem, token, signal) {
+  const url = process.env.FERRAMENTAS_URL || (origem ? `${origem}/api/ferramentas` : '');
+  if (!url || !token) return { ok: false, texto: `${nome}: as ferramentas estão fora do ar agora`, resultado: null };
+  const ac = new AbortController(); const to = setTimeout(() => ac.abort(), 25000); const parar = () => ac.abort();
+  if (signal) signal.addEventListener('abort', parar);
+  try {
+    const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-451-interno': token }, body: JSON.stringify({ nome, args }), signal: ac.signal });
+    if (!r.ok) return { ok: false, texto: `${nome}: a consulta não respondeu (${r.status})`, resultado: null };
+    return await r.json();
+  } catch { return { ok: false, texto: `${nome}: a consulta não respondeu a tempo`, resultado: null }; }
+  finally { clearTimeout(to); if (signal) signal.removeEventListener('abort', parar); }
+}
+
+// O que entra no prompt fica curto (custo): cada resultado até 5 mil caracteres de dados, o bloco até 18 mil.
+const LIMITE_DADOS_FERRAMENTA = 5000, LIMITE_BLOCO_FERRAMENTAS = 18000;
+/** Junta os resultados numa numeração só de fontes ([1], [2]… na ordem), do jeito que a tela mostra. */
+export function blocoDasFerramentas(execucoes, limiteBloco = LIMITE_BLOCO_FERRAMENTAS) {
+  const fontes = [], partes = [];
+  for (const e of execucoes) {
+    const res = e.r?.resultado;
+    if (!e.r?.ok || !res) { partes.push(`### ${e.nome} ${JSON.stringify(e.args)}\n${String(e.r?.texto || 'sem resultado').slice(0, 300)}`); continue; }
+    const mapa = new Map();
+    for (const f of res.fontes || []) {
+      const n = fontes.length + 1;
+      mapa.set(Number(f.n), n);
+      fontes.push({ n, url: f.url, title: f.titulo || hostDe(f.url), snippet: f.origem ? `Fonte: ${f.origem}` : '' });
+    }
+    const renumera = (t) => String(t || '').replace(/\[(\d+)\]/g, (m, d) => (mapa.has(Number(d)) ? `[${mapa.get(Number(d))}]` : m));
+    let dados = res.dados === undefined ? '' : JSON.stringify(res.dados);
+    if (dados.length > LIMITE_DADOS_FERRAMENTA) dados = `${dados.slice(0, LIMITE_DADOS_FERRAMENTA)}…(cortado)`;
+    partes.push([`### ${e.nome} ${JSON.stringify(e.args)}`, renumera(res.resumo), dados && `DADOS ${dados}`, res.limitacoes?.length ? `LIMITES: ${res.limitacoes.join(' | ')}` : ''].filter(Boolean).join('\n'));
+  }
+  let corpo = partes.join('\n\n');
+  if (corpo.length > limiteBloco) corpo = `${corpo.slice(0, limiteBloco)}\n[resultados cortados]`;
+  const lista = fontes.map((f) => `[${f.n}] ${f.title} — ${f.url}`).join('\n');
+  const bloco = '\n\n## RESULTADOS DAS FERRAMENTAS (consultas públicas feitas agora pelo servidor do 451)\n'
+    + 'Baseie os fatos sobre CVEs, pacotes, IPs, domínios, sites e portas SÓ nestes resultados e cite cada fato logo depois, com o número da fonte entre colchetes, ex.: [1]. '
+    + 'Os dados vêm de fontes públicas e de varreduras de terceiros: nunca diga que o 451 varreu, testou ou invadiu o alvo. Se um dado não estiver aqui, diga que a consulta não trouxe.\n'
+    + corpo + (lista ? `\nFontes numeradas:\n${lista}` : '');
+  return { bloco, fontes };
+}
+
+/** Escolhe, roda e junta. null quando nenhuma consulta deu resultado (aí a busca na web normal decide). */
+async function faseFerramentas(pedido, payload, { onWarning, signal, usage, limiteBloco }) {
+  if (onWarning) onWarning({ type: 'step', title: 'Entendendo o pedido', text: 'Vendo quais consultas públicas ajudam.' });
+  const chamadas = await planejaFerramentas(pedido, usage, signal);
+  if (!chamadas.length) return null;
+  const token = await tokenFerramentas();
+  for (const c of chamadas) {
+    const rotulo = (ROTULO_FERRAMENTA[c.nome] || (() => `Consultando ${c.nome}`))(c.args || {});
+    if (onWarning) onWarning({ type: 'ferramenta', nome: c.nome, rotulo });
+  }
+  const execucoes = await Promise.all(chamadas.map(async (c) => ({ ...c, r: await rodaFerramenta(c.nome, c.args, payload.origem, token, signal) })));
+  if (usage) usage.ferramentas = (usage.ferramentas || 0) + execucoes.length;
+  if (!execucoes.some((e) => e.r?.ok)) return null;
+  return blocoDasFerramentas(execucoes, limiteBloco);
+}
+
 // Estepe da busca: OpenRouter com o plugin web (Exa) e o resumo do DeepSeek. ~US$ 0,0081 por busca.
 async function webContextOR(query, signal, { person = false, name = '', detail = '', usage = null } = {}) {
   const key = process.env.OPENROUTER_API_KEY;
@@ -1519,7 +1674,18 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
   const buscaQ = contLocal ? `${contLocal} ${ultimo}`.trim() : ultimo;
   let resultados = '', faltouBusca = false, semResultado = false;
   const continuandoLocal = PEDE_CONTINUAR.test(ultimo); // "Continue de onde parou": segue sem buscar de novo
-  if (busca && buscaQ.length >= 8 && !continuandoLocal) {
+  // Ferramentas de segurança também no 451 Free (dono 21/11): mesma fase dos pagos, antes da busca. Com resultado, a
+  // busca genérica não roda. Bloco menor (contexto curto do modelo local).
+  let ferramentasLocal = false;
+  if (payload.ferramentas && !continuandoLocal && buscaQ.length >= 6 && GATILHO_FERRAMENTAS.test(buscaQ)) {
+    const r = await faseFerramentas(buscaQ, payload, { onWarning, signal, usage, limiteBloco: 10000 }).catch(() => null);
+    if (r) {
+      resultados = r.bloco;
+      ferramentasLocal = true;
+      if (r.fontes.length) onWarning?.({ type: 'sources', sources: r.fontes.slice(0, 8).map((f) => ({ url: f.url, title: f.title, snippet: f.snippet })) });
+    }
+  }
+  if (busca && buscaQ.length >= 8 && !continuandoLocal && !ferramentasLocal) {
     const forte = /https?:\/\/|github\.com|gitlab\.com/i.test(buscaQ) || STRONG_SEARCH.test(buscaQ);
     let precisa = forte;
     if (!precisa) {
@@ -1546,7 +1712,9 @@ async function* streamLocal(cat, payload, { onToken, onWarning, onReasoning, sig
   const historico = trimHistory((payload.messages || []).map((m) => ({ role: m.role, content: textoLocal(m.content) })), resultados ? Math.min(cat.ctx, LOCAL_HIST_BUSCA) : cat.ctx);
   const iu = historico.map((m) => m.role).lastIndexOf('user');
   if (iu >= 0) historico[iu] = { ...historico[iu], content: historico[iu].content + notaDoServidor(historico[iu].content)
-    + (semResultado ? '\n[Nota do servidor: a busca na web não achou nada sobre isso agora. Não invente: se for algo que não existe, diga que não existe; se for um dado específico, diga que não achou nas fontes públicas e onde procurar.]' : '') };
+    + (semResultado ? '\n[Nota do servidor: a busca na web não achou nada sobre isso agora. Não invente: se for algo que não existe, diga que não existe; se for um dado específico, diga que não achou nas fontes públicas e onde procurar.]' : '')
+    // Modelo pequeno segue melhor a regra no fim da mensagem (21/11): com resultados, cita [n] em cada fato.
+    + (resultados ? '\n[Nota do servidor: use os resultados que o servidor juntou e, logo depois de cada fato, escreva o número da fonte entre colchetes, ex.: [1] ou [2][3].]' : '') };
   // Idioma (21/11): numa pergunta curta em português o gpt-oss respondeu "Monday". A regra vai no fim do
   // prompt (pesa mais e não quebra o cache do começo, que é igual para todos).
   const sistema = `${buildSystemPrompt(payload.systemPrompt, true)}\n\n${LOCAL_IDIOMA}\n\n${LOCAL_REGRAS}${resultados}${continuandoLocal ? NOTA_CONTINUAR : ''}`;
@@ -1730,6 +1898,19 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
       + '\nInterprete: TTFB alto (>600ms) + x-vercel-cache=MISS → cold start / sem cache. TTFB baixo + status 200 → respondeu rápido no teste, então pergunte ONDE exatamente a pessoa vê lentidão (navegador, uma rota específica, horário de pico).';
   }
 
+  // Ferramentas de segurança (dono 21/11, via Super Hacking): consultas públicas antes da resposta, com fontes [n].
+  // Com resultado, a busca na web genérica não roda (economia e menos fonte repetida).
+  let ferramentasUsadas = false;
+  if (payload.ferramentas && !payload.semBusca && !payload.keepMax && !continuando && searchQ.length >= 6 && GATILHO_FERRAMENTAS.test(searchQ)) {
+    const r = await faseFerramentas(searchQ, payload, { onWarning, signal, usage }).catch(() => null);
+    if (r) {
+      systemPrompt += r.bloco;
+      ferramentasUsadas = true;
+      buscaFeita = true;
+      if (onWarning && r.fontes.length) onWarning({ type: 'sources', sources: r.fontes.slice(0, 8).map((f) => ({ url: f.url, title: f.title, snippet: f.snippet })) });
+    }
+  }
+
   // Caminho do Claude: o Max (Opus) e, desde 21/11, o Claude na frente do Rapid e do Titan (Sonnet).
   // O prompt é suavizado só na hora da chamada: se o Claude recusar, os sem censura recebem o original.
   if (route.provider === 'anthropic' || route.provider === 'openuncensored-anthropic' || claudeCat) {
@@ -1745,10 +1926,10 @@ export async function* streamChat(mode, payload, { onToken, onWarning, onToolCal
     let writeNote = 'Juntando tudo numa resposta direta.';
     // Etapa IMEDIATA, antes do classificador (dono 18/11 — velocidade): a tela sai do "Pensando"
     // vazio na hora, em vez de esperar a decisão de busca (que pode levar alguns segundos).
-    step('Entendendo o pedido', 'Vendo se preciso buscar informação de fora.');
+    if (!ferramentasUsadas) step('Entendendo o pedido', 'Vendo se preciso buscar informação de fora.');
     // A decisão usa a busca efetiva (continuação somada), não só a mensagem curta:
     // "São Paulo" sozinho o classificador julgava conversa, e a IA respondia sobre a cidade.
-    if (searchQ.length >= 8 && !payload.semBusca && !continuando) {
+    if (searchQ.length >= 8 && !payload.semBusca && !continuando && !ferramentasUsadas) {
       if (/https?:\/\/|github\.com|gitlab\.com/i.test(searchQ) || STRONG_SEARCH.test(searchQ)) doSearch = true;
       else { const llm = await decideSearchLLM(searchQ, usage); doSearch = (llm === null) ? shouldSearch(searchQ) : llm; }
     }

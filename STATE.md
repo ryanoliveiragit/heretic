@@ -1,3 +1,24 @@
+## 2026-11-21 (22h30 UTC) — PUBLICADO: ferramentas de segurança no chat (fase 1 do Super Hacking)
+
+Pedido do dono via Super Hacking: integrar o pacote 451-ferramentas (9 consultas públicas com fontes e proteção SSRF).
+- `src/ferramentas/` (cópia do pacote) roda na função Node `api/ferramentas.js` (o Edge não tem DNS nem conexão presa ao
+  IP conferido). Só o servidor chama: token = sha256("451-ferramentas:" + ACCESS_SECRET); sem token → 401.
+- Fase antes da resposta (`faseFerramentas` em `src/upstream.js`): filtro grátis por regex (CVE, pacote, IP, domínio,
+  site, ASN, portas) → Claude Haiku escolhe até 4 consultas (recusa/falha → GLM sem censura) → roda em paralelo →
+  resultados no prompt com fontes numa lista só ([1]…), até 18 mil caracteres (10 mil no 451 Free). Com resultado, a busca
+  na web genérica não roda. Vale para todos os modelos do app (Rapid, Titan, Max, Hermes, Kimi e o 451 Free); a API /v1
+  não usa. Definições para o Edge geradas por `scripts/gera-defs-ferramentas.mjs` (--conferir).
+- Tela: etapa "Consultando o CVE-…" no "Pensando" e no "Pensou"; fontes clicáveis como na busca.
+- Custo: só o planejador (Haiku, ~US$ 0,0003 por pergunta com gatilho); as consultas são de APIs públicas grátis
+  (NVD sem chave: 5 por 30 s; NVD_API_KEY opcional).
+- Conferido no ar só no 451 Free (dono: "não faça testes nos outros"): "O CVE-2021-44228 está sendo explorado?" → 3 fontes
+  (NVD, CISA KEV, EPSS) e [1][2][3]; "Me dê os dados públicos do domínio example.com" → RDAP [1] em cada fato. Prints em
+  `prints/ferramentas-2111/`. Testes sem rede: `scripts/teste-ferramentas-chat.mjs` (11 ok) e as baterias antigas.
+- Deploy `dpl_FSRWGXSN5czi4WZprj6U5YJgtwKp`; 9 arquivos conferidos por sha1.
+- **Undo:** `npx vercel rollback https://451sh-mbra51iqk-dwadwdwas-projects.vercel.app --scope dwadwdwas-projects`.
+- Fase 2 (páginas de modelos, comparativo, confiança, indicação, créditos pré-pagos, API compatível com Anthropic): não
+  começada; cada item depende de decisão do dono (ver resposta ao Super Hacking).
+
 ## 2026-11-21 (21h50 UTC) — PUBLICADO: resposta no ritmo do Claude + cartão "Continue de onde parou"
 
 Pedido urgente do dono (prints): "vem em slow, joga uma coisa antes de terminar", "travado preto, não sei se tá buscando",

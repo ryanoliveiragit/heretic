@@ -741,7 +741,8 @@ app.post('/api/chat', async (c) => {
         // Claude na frente (dono 21/11): Pro e grátis começam pelo Claude. Uso justo (pro_rapid) e
         // Kimi/Hermes (créditos) não. O grátis para de usar o Claude quando o gasto do dia passa do freio.
         const claudeFirst = bucket === 'pro' || (bucket === 'free' && (await freeClaudeOk().catch(() => false)));
-        const chatPayload = { messages: sendMessages, systemPrompt, modelId, ...params, creditsOk: bucket === 'credits', claudeFirst, inicio, buscaLocal };
+        // ferramentas (dono 21/11, via Super Hacking): consultas públicas de segurança com fontes [n]; origem = onde fica api/ferramentas.
+        const chatPayload = { messages: sendMessages, systemPrompt, modelId, ...params, creditsOk: bucket === 'credits', claudeFirst, inicio, buscaLocal, ferramentas: true, origem: new URL(c.req.url).origin };
         // Modelo que de fato respondeu pode mudar no meio (roteador e escalada por recusa): o
         // custo/cota têm de seguir quem respondeu, não o que foi pedido.
         let doneId = modelId;
